@@ -1,0 +1,2 @@
+Date(dd.mm.yyyy-hh:mm) Length(Minutes) Room Title (separated by space!)
+24.04.2023-18:12 3 30.95 TestLecture2
