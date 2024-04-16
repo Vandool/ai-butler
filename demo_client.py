@@ -20,8 +20,10 @@ from huggingface_hub import InferenceClient
 from sseclient import SSEClient
 import socket
 import logging
+from butler import Butler
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
+butler = None
 
 def verify_chunk_size(value: Union[str, int]) -> int:
     try:
@@ -63,7 +65,6 @@ def send_start(url, sessionID, streamID, api, token):
 
     
     if info.status_code != 200:
-        logging.debug(res.status_code,res.text)
         logging.debug("ERROR in starting session")
         sys.exit(1)
 
@@ -75,7 +76,6 @@ def send_keepalive(url, sessionID, streamID, api, token):
     data["seq"] = json.dumps(command)
     info = requests.post(url + "/"+api+"/" + sessionID + "/" + streamID + "/append", json=json.dumps(data), cookies={'_forward_auth': token})
     if info.status_code != 200:
-        logging.debug(res.status_code,res.text)
         logging.debug("ERROR in starting session")
         sys.exit(1)
 
@@ -88,7 +88,6 @@ def send_audio(audio_source, url, sessionID, streamID, api, token, raise_interru
     data = {"b64_enc_pcm_s16le":base64.b64encode(chunk).decode("ascii"),"start":s,"end":e}
     res = requests.post(url + "/"+api+"/" + sessionID + "/" + streamID + "/append", json=json.dumps(data), cookies={'_forward_auth': token})
     if res.status_code != 200:
-        logging.debug(res.status_code,res.text)
         logging.debug("ERROR in sending audio")
         sys.exit(1)
     #else:
@@ -100,7 +99,6 @@ def send_end(url, sessionID, streamID, api, token):
     data={'controll': "END"}
     res = requests.post(url + "/"+api+"/" + sessionID + "/" + streamID + "/append", json=json.dumps(data), cookies={'_forward_auth': token})
     if res.status_code != 200:
-        logging.debug(res.status_code,res.text)
         logging.debug("ERROR in sending END message")
         sys.exit(1)
 
@@ -124,21 +122,16 @@ def read_text(url, sessionID, api,token):
 
     send_from = None
     client = None
-    
-
-
 
     logging.debug("Starting SSEClient")
     messages = SSEClient(url + "/"+api+"/stream?channel=" + sessionID)
     for msg in messages:
         if len(msg.data) == 0:
             break
-
         try:
             data = json.loads(msg.data)
-            if "seq" in data:
-                
-                logging.INFO(data["seq"])
+            if "seq" in data:               
+                butler.process(data['seq'])
                 
         except json.decoder.JSONDecodeError:
             logging.debug("WARNING: json.decoder.JSONDecodeError (this may happend when running tts system but no video generation)")
@@ -154,16 +147,15 @@ def set_graph(args):
         if res.status_code == 401:
             logging.debug("You are not authorized. Either authenticate with --url https://$username:$password@$server or with --token $token where you get the token from "+args.url+"/gettoken")
         else:
-            logging.debug(res.status_code,res.text)
+            logging.debug("Status: {}, Text: {}".format(res.status_code,res.text))
             logging.debug("ERROR in requesting default graph for ASR")
         sys.exit(1)
     sessionID, streamID = res.text.split()
 
-    logging.debug("SessionId",sessionID,"StreamID",streamID)
 
     logging.debug("Setting properties")
     graph=json.loads(requests.post(args.url+"/"+args.api+"/"+sessionID+"/getgraph", cookies={'_forward_auth': args.token}).text)
-    logging.debug("Graph:",graph)
+    logging.debug("Graph: {}".format(graph))
 
     return sessionID, streamID
 
@@ -185,7 +177,6 @@ def run_session(args, audio_source):
     data={'controll':"INFORMATION"}
     info = requests.post(args.url + "/"+args.api+"/" + sessionID + "/" + streamID + "/append", json=json.dumps(data), cookies={'_forward_auth': args.token})
     if info.status_code != 200:
-        logging.debug(info.status_code,info.text)
         logging.debug("ERROR in requesting worker information")
         sys.exit(1)
 
@@ -195,7 +186,6 @@ def run_session(args, audio_source):
 def get_available_languages(args):
     info = requests.post(args.url + "/"+args.api+"/list_available_languages", cookies={'_forward_auth': args.token})
     if info.status_code != 200:
-        logging.debug(info.status_code,info.text)
         logging.debug("ERROR in listing languages")
         sys.exit(1)
     return info.json()
@@ -203,7 +193,6 @@ def get_available_languages(args):
 def print_active_sessions():
     info = requests.get(args.url + "/"+args.api+"/get_active_sessions", cookies={'_forward_auth': args.token})
     if info.status_code != 200:
-        logging.debug(info.status_code,info.text)
         logging.debug("ERROR in listing active sessions")
         sys.exit(1)
     sessions = info.json()
@@ -211,14 +200,12 @@ def print_active_sessions():
         logging.debug("No sessions found")
     for s in sessions:
         s = json.loads(s)
-        if "session" in s and "host" in s:
-            logging.debug("Session:",s["session"],"Host:",s["host"])
-        else:
-            logging.debug(s)
 
 def main(args):
 
+    global butler
     audio_source = get_audio_input(args)
+    butler = Butler(args.llm)
     run_session(args, audio_source)
 
 def main_prewait(args, seconds=0):
@@ -246,9 +233,10 @@ def parse():
 
     parser.add_argument('-ch', '--audiochannel', help='index of audio channel to use (first channel = 1)', type=int, default=None)
 
-
     """ Properties """
 
+    parser.add_argument('--llm', default="", help="URL to query LLM using text generation client")
+    
     args = parser.parse_args()
 
     args.api = "ltapi"
@@ -258,6 +246,6 @@ def parse():
 if __name__ == "__main__":
     args = parse()
 
-    logging.debug("args",args)
+    print("args",args)
     main(args)
 
