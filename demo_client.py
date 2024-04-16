@@ -21,7 +21,7 @@ from sseclient import SSEClient
 import socket
 import logging
 
-                
+logging.basicConfig(level=logging.DEBUG)
 
 def verify_chunk_size(value: Union[str, int]) -> int:
     try:
@@ -37,13 +37,13 @@ def get_audio_input(args):
     if args.input == 'portaudio':
         from pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
 
-        print("Using portaudio as input. If you want to use ffmpeg specify '-i ffmpeg'.")
+        logging.debug("Using portaudio as input. If you want to use ffmpeg specify '-i ffmpeg'.")
         stream_adapter = PortaudioStream()
         input = args.audiodevice
         if args.list:
             stream_adapter.print_all_devices()
         if args.audiodevice < 0:
-            print("The portaudio backend requires the '-a' parameter. Run python client.py -L to see the available audio devices.")
+            logging.debug("The portaudio backend requires the '-a' parameter. Run python client.py -L to see the available audio devices.")
             exit(1)
     else:
         raise BugException()
@@ -55,7 +55,7 @@ def get_audio_input(args):
 def send_start(url, sessionID, streamID, api, token):
     
     
-    print("Start sending audio")
+    logging.debug("Start sending audio")
     
     data={'controll':"START"}
     info = requests.post(url + "/"+api+"/" + sessionID + "/" + streamID + "/append", json=json.dumps(data), cookies={'_forward_auth': token})
@@ -63,20 +63,20 @@ def send_start(url, sessionID, streamID, api, token):
 
     
     if info.status_code != 200:
-        print(res.status_code,res.text)
-        print("ERROR in starting session")
+        logging.debug(res.status_code,res.text)
+        logging.debug("ERROR in starting session")
         sys.exit(1)
 
 
 def send_keepalive(url, sessionID, streamID, api, token):
-    print("Send keep alive")
+    logging.debug("Send keep alive")
     data= {'markup':"command"}
     command = {"function": "keep_alive","parameter":{}}
     data["seq"] = json.dumps(command)
     info = requests.post(url + "/"+api+"/" + sessionID + "/" + streamID + "/append", json=json.dumps(data), cookies={'_forward_auth': token})
     if info.status_code != 200:
-        print(res.status_code,res.text)
-        print("ERROR in starting session")
+        logging.debug(res.status_code,res.text)
+        logging.debug("ERROR in starting session")
         sys.exit(1)
 
 
@@ -88,40 +88,20 @@ def send_audio(audio_source, url, sessionID, streamID, api, token, raise_interru
     data = {"b64_enc_pcm_s16le":base64.b64encode(chunk).decode("ascii"),"start":s,"end":e}
     res = requests.post(url + "/"+api+"/" + sessionID + "/" + streamID + "/append", json=json.dumps(data), cookies={'_forward_auth': token})
     if res.status_code != 200:
-        print(res.status_code,res.text)
-        print("ERROR in sending audio")
+        logging.debug(res.status_code,res.text)
+        logging.debug("ERROR in sending audio")
         sys.exit(1)
     #else:
-        #print(len(chunk))
-
-def send_video(videopath, url, sessionID, streamID, api, token):
-    video = open(videopath,"rb").read()
-    data = {"b64_enc_audio":base64.b64encode(video).decode("ascii")}
-    res = requests.post(url + "/"+api+"/" + sessionID + "/" + streamID + "/append", json=json.dumps(data), cookies={'_forward_auth': token})
-    if res.status_code != 200:
-        print(res.status_code,res.text)
-        print("ERROR in sending video")
-        sys.exit(1)
-    print("Video successfully sent.")
-
-def send_link(videopath, url, sessionID, streamID, api, token):
-    data = {"url":videopath}
-    res = requests.post(url + "/"+api+"/" + sessionID + "/" + streamID + "/append", json=json.dumps(data), cookies={'_forward_auth': token})
-    if res.status_code != 200:
-        print(res.status_code,res.text)
-        print("ERROR in sending video")
-        
-        sys.exit(1)
-    print("Video successfully sent.")
+        #logging.debug(len(chunk))
 
     
 def send_end(url, sessionID, streamID, api, token):
-    print("Sending END.")
+    logging.debug("Sending END.")
     data={'controll': "END"}
     res = requests.post(url + "/"+api+"/" + sessionID + "/" + streamID + "/append", json=json.dumps(data), cookies={'_forward_auth': token})
     if res.status_code != 200:
-        print(res.status_code,res.text)
-        print("ERROR in sending END message")
+        logging.debug(res.status_code,res.text)
+        logging.debug("ERROR in sending END message")
         sys.exit(1)
 
 
@@ -135,7 +115,7 @@ def send_session(url, sessionID, streamID, audio_source, api, token):
             send_audio( audio_source, url, sessionID, streamID, api, token)
 
     except KeyboardInterrupt:
-        print("Caught KeyboardInterrupt")
+        logging.debug("Caught KeyboardInterrupt")
 
     time.sleep(1)
     send_end(url, sessionID, streamID, api, token)
@@ -148,7 +128,7 @@ def read_text(url, sessionID, api,token):
 
 
 
-    print("Starting SSEClient")
+    logging.debug("Starting SSEClient")
     messages = SSEClient(url + "/"+api+"/stream?channel=" + sessionID)
     for msg in messages:
         if len(msg.data) == 0:
@@ -156,38 +136,34 @@ def read_text(url, sessionID, api,token):
 
         try:
             data = json.loads(msg.data)
-            print(data)
-            if "markup" in data and data["markup"] == "command":
+            if "seq" in data:
                 
-                cmd_queue.put(data)
-                #cmd_thread = Thread(target=run_command, args=(data,))
-                #cmd_thread.start()
+                logging.INFO(data["seq"])
                 
         except json.decoder.JSONDecodeError:
-            print("WARNING: json.decoder.JSONDecodeError (this may happend when running tts system but no video generation)")
+            logging.debug("WARNING: json.decoder.JSONDecodeError (this may happend when running tts system but no video generation)")
             continue
 
-        print(data)
 
 def set_graph(args):
 
-    print("Requesting default graph for ASR")
+    logging.debug("Requesting default graph for ASR")
     d={}
     res = requests.post(args.url + "/"+args.api+"/start_praktikum", json=json.dumps(d), cookies={'_forward_auth': args.token})
     if res.status_code != 200:
         if res.status_code == 401:
-            print("You are not authorized. Either authenticate with --url https://$username:$password@$server or with --token $token where you get the token from "+args.url+"/gettoken")
+            logging.debug("You are not authorized. Either authenticate with --url https://$username:$password@$server or with --token $token where you get the token from "+args.url+"/gettoken")
         else:
-            print(res.status_code,res.text)
-            print("ERROR in requesting default graph for ASR")
+            logging.debug(res.status_code,res.text)
+            logging.debug("ERROR in requesting default graph for ASR")
         sys.exit(1)
     sessionID, streamID = res.text.split()
 
-    print("SessionId",sessionID,"StreamID",streamID)
+    logging.debug("SessionId",sessionID,"StreamID",streamID)
 
-    print("Setting properties")
+    logging.debug("Setting properties")
     graph=json.loads(requests.post(args.url+"/"+args.api+"/"+sessionID+"/getgraph", cookies={'_forward_auth': args.token}).text)
-    print("Graph:",graph)
+    logging.debug("Graph:",graph)
 
     return sessionID, streamID
 
@@ -205,12 +181,12 @@ def run_session(args, audio_source):
 
     time.sleep(1) # To make sure the SSEClient is running before sending the INFORMATION request
 
-    print("Requesting worker informations")
+    logging.debug("Requesting worker informations")
     data={'controll':"INFORMATION"}
     info = requests.post(args.url + "/"+args.api+"/" + sessionID + "/" + streamID + "/append", json=json.dumps(data), cookies={'_forward_auth': args.token})
     if info.status_code != 200:
-        print(info.status_code,info.text)
-        print("ERROR in requesting worker information")
+        logging.debug(info.status_code,info.text)
+        logging.debug("ERROR in requesting worker information")
         sys.exit(1)
 
     send_session(args.url, sessionID, streamID, audio_source, args.api, args.token)
@@ -219,26 +195,26 @@ def run_session(args, audio_source):
 def get_available_languages(args):
     info = requests.post(args.url + "/"+args.api+"/list_available_languages", cookies={'_forward_auth': args.token})
     if info.status_code != 200:
-        print(info.status_code,info.text)
-        print("ERROR in listing languages")
+        logging.debug(info.status_code,info.text)
+        logging.debug("ERROR in listing languages")
         sys.exit(1)
     return info.json()
 
 def print_active_sessions():
     info = requests.get(args.url + "/"+args.api+"/get_active_sessions", cookies={'_forward_auth': args.token})
     if info.status_code != 200:
-        print(info.status_code,info.text)
-        print("ERROR in listing active sessions")
+        logging.debug(info.status_code,info.text)
+        logging.debug("ERROR in listing active sessions")
         sys.exit(1)
     sessions = info.json()
     if len(sessions) == 0:
-        print("No sessions found")
+        logging.debug("No sessions found")
     for s in sessions:
         s = json.loads(s)
         if "session" in s and "host" in s:
-            print("Session:",s["session"],"Host:",s["host"])
+            logging.debug("Session:",s["session"],"Host:",s["host"])
         else:
-            print(s)
+            logging.debug(s)
 
 def main(args):
 
@@ -282,6 +258,6 @@ def parse():
 if __name__ == "__main__":
     args = parse()
 
-    print("args",args)
+    logging.debug("args",args)
     main(args)
 
