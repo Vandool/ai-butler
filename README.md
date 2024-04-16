@@ -18,6 +18,7 @@ Using the butler.yaml, we now create a environment with the necessary dependenci
 
 ```
 conda env create --name butler --file=butler.yml
+conda activate butler
 ```
 
 This should create the environment with required dependencies to connect with the ASR and MT system hosted in the lecture translator.
