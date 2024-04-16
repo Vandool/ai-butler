@@ -7,6 +7,7 @@ from selenium.webdriver.chrome.options import Options
 import time
 import webhandler.webutils as webutils
 import json
+import logging
 
 class LTHandler:
     def __init__(self, in_session=False, driver=None):
@@ -41,10 +42,10 @@ class LTHandler:
                     self.driver.switch_to.window(self.handle)
                     self.driver.close()
                 except:
-                    print("No browser available")
+                    logging.debug("No browser available")
             self.handle=None
             self.in_session=False
-        print(command_data)
+        logging.debug(command_data)
         return
 
 
@@ -79,7 +80,7 @@ class LTHandler:
     def start_lt(self):
         
         if not self.logged_in:
-            self.login_lt("admin@example.com","!-Qist-!")
+            #self.login_lt("admin@kit.edu","!pwd!")
             self.driver.get("https://lt2srv-backup.iar.kit.edu/index/live")
             
         else:
