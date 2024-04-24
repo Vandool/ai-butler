@@ -7,16 +7,15 @@ This module was written long after MediatorInterface and XmlSocketServer and aim
 that was written interweaved with the modules mentioned and could therefore not be used on its own.
 """
 
+import http.client as httpc
+import json
 import logging
 import re
 import socket
-import struct
-import json
-import http.client as httpc
-import xml.etree.ElementTree as ET
 import ssl
-
-from typing import Union, Optional, Tuple, Type, NamedTuple
+import struct
+import xml.etree.ElementTree as ET
+from typing import NamedTuple
 
 Socket  = socket.socket
 XmlEl   = ET.Element
@@ -50,7 +49,7 @@ Low level helper
 Sending/receiving messages
 """
 
-def create_connection(server: str, port: int = 4443, timeout: Optional[int] = 10) -> Socket:
+def create_connection(server: str, port: int = 4443, timeout: int | None = 10) -> Socket:
     """
     Create a new connection to the Mediator and return the socket
     See https://docs.python.org/library/socket.html#socket.socket.connect for
@@ -90,7 +89,7 @@ def recv_msg(sock: Socket, peek: bool = False) -> str:
 def recv_xml(sock: Socket, peek: bool = False) -> XmlEl:
     return ET.fromstring(recv_msg(sock, peek))
 
-def send(sock: Socket, msg: Union[str, bytes, XmlEl]) -> None:
+def send(sock: Socket, msg: str | bytes | XmlEl) -> None:
     if isinstance(msg, XmlEl):
         msg = ET.tostring(msg)
     if isinstance(msg, str):
@@ -105,13 +104,13 @@ def send(sock: Socket, msg: Union[str, bytes, XmlEl]) -> None:
 Higher level functions
 """
 
-def solve_challenge(challenge: Union[int, str]) -> int:
+def solve_challenge(challenge: int | str) -> int:
     if isinstance(challenge, str):
         challenge = int(challenge)
     return (challenge * 194510094) % 1999999943
 
 
-def do_auth(sock: Socket, auth: Optional[Auth], check_required: bool = True) -> bool:
+def do_auth(sock: Socket, auth: Auth | None, check_required: bool = True) -> bool:
     """
     If the mediator requires auth, authentication will be done, otherwise
     nothing.
@@ -149,30 +148,30 @@ def do_auth(sock: Socket, auth: Optional[Auth], check_required: bool = True) -> 
     auth_succ, token = get_authtoken(server, user, passw)
     if not auth_succ:
         logger.error(f'Error authenticating: "{token}"')
-        return False;
+        return False
 
-    logger.info(f"Got authentication. Sending.")
+    logger.info("Got authentication. Sending.")
     logger.debug(f"Token: {token}")
 
     send(sock, f'<auth token="{token}"/>')
     return True
 
 
-def get_authtoken(authserver: str, username: str, password: str) -> Tuple[bool, str]:
+def get_authtoken(authserver: str, username: str, password: str) -> tuple[bool, str]:
     """
     Not for mediator, connects to a ltauthserver with username and password to return a token.
     TODO WIP and should be used by mediatorInterface in the future
     Returns:
         Tuple containing a bool and string. If true, the string contains the token, otherwise an error message
     """
-    connector: Optional[Union[Type[httpc.HTTPSConnection], Type[httpc.HTTPConnection]]] = None
+    connector: type[httpc.HTTPSConnection | httpc.HTTPConnection] | None = None
     if authserver.startswith("https://"):
         connector = httpc.HTTPSConnection
     elif authserver.startswith("http://"):
         connector = httpc.HTTPConnection
     else:
         raise Exception(f"'{authserver}' is not a http(s) url")
-    authserver = re.sub('^https?://', '', authserver)
+    authserver = re.sub("^https?://", "", authserver)
     # authserver, url = authserver.split('/', maxsplit=1)
 
     payload = json.dumps({ "name": username, "password": password })
@@ -185,7 +184,7 @@ def get_authtoken(authserver: str, username: str, password: str) -> Tuple[bool, 
     else:
         connection = connector(authserver)
 
-    connection.request("POST" , '/auth/mediator/', payload, headers)
+    connection.request("POST" , "/auth/mediator/", payload, headers)
     with connection.getresponse() as resp:
         if resp.status // 100 != 2:
             return (False, f"Authserver '{authserver}' returned code {resp.status}: '{resp.reason}', '{resp.read().decode()}'")
@@ -196,7 +195,7 @@ def get_authtoken(authserver: str, username: str, password: str) -> Tuple[bool, 
 
 
 def get_worker_list(server: str, port: int,
-        auth: Optional[Auth]) -> Optional[str]:
+        auth: Auth | None) -> str | None:
     """
     Opens a new connection to the mediator and returns the json string
     containing all workers according to protocol.
@@ -210,17 +209,17 @@ def get_worker_list(server: str, port: int,
     resp = recv_xml(sock)
 
     # Do challenge
-    assert resp.tag == 'status' and ("type", "connect") in resp.items(), (
+    assert resp.tag == "status" and ("type", "connect") in resp.items(), (
             f"Expected 'status' tag with 'connect' type in response from Mediator. Got: '{resp}'"
     )
-    challenge = resp.attrib.get('description')
+    challenge = resp.attrib.get("description")
     assert challenge is not None, (
             "Expected 'description' attribute in response from Mediator."
     )
     solution = solve_challenge(challenge)
 
     # Request connected workers
-    send(sock, f"<availablequeues sessionid=\"{solution}\"/>")
+    send(sock, f'<availablequeues sessionid="{solution}"/>')
     workers = recv_msg(sock)
     sock.close()
 

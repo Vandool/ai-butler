@@ -1,0 +1,62 @@
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "setup.py",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+    "docs",
+]
+
+# Set to PyCharm's default. PEP8 has it as 80.
+line-length = 120
+indent-width = 4
+
+# Assume Python 3.11
+target-version = "py311"
+
+[format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+
+[lint]
+select = ["ALL"]
+extend-ignore = [
+    "TCH", # flake8-type-checkin
+    "FA", # flake8-future-annotations
+    "D", # pydocstyle
+    "S", # flake8-bandit
+    "DTZ", # flake8-datetimez
+    "EXE", # flake8-executable
+    "ANN", # flake8-annotations
+]
+ignore = [
+    "ANN101", # Missing type annotation for `self` in method
+    "ANN102", # Missing type annotation for `cls` in classmethod
+    "ANN201", # Missing return type annotation for public function
+    "ANN401", # Dynamically typed expressions
+    "ANN206", # Missing return type annotation for classmethod
+]

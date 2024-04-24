@@ -1,10 +1,11 @@
 
-from typing import Any, Dict, Optional, cast, List
-import threading
 import queue
+import threading
 
 import pyaudio
+
 from pythonrecordingclient.inputStreamAdapter import BaseAdapter
+
 
 def read_audio(stream, chunk_size, queue):
     while True:
@@ -13,9 +14,9 @@ def read_audio(stream, chunk_size, queue):
 
 class PortaudioStream(BaseAdapter):
     def __init__(self, **kwargs) -> None:
-        self.input_id: Optional[int]             = None
-        self._stream:  Optional[pyaudio.Stream]  = None
-        self._pyaudio: Optional[pyaudio.PyAudio] = None
+        self.input_id: int | None             = None
+        self._stream:  pyaudio.Stream | None  = None
+        self._pyaudio: pyaudio.PyAudio | None = None
         super().__init__(format=pyaudio.paInt16)
 
     def get_stream(self, **kwargs) -> pyaudio.Stream:
@@ -45,17 +46,17 @@ class PortaudioStream(BaseAdapter):
 
         size = max(self.queue.qsize(),1)
         chunks = [self.queue.get() for _ in range(size)]
-        
+
         if len(chunks) > 75:
             print("WARNING: Network is to slow. Having at least 5 seconds of delay!")
 
-        return b''.join(chunks)
+        return b"".join(chunks)
 
     def chunk_modify(self, chunk: bytes) -> bytes:
         if self.chosen_channel is not None and self.channel_count > 1:
             # filter out specific channel using numpy
             logging.info("Using numpy to filter out specific channel.")
-            data = np.fromstring(chunk, dtype='int16').reshape((-1, self.channel_count))
+            data = np.fromstring(chunk, dtype="int16").reshape((-1, self.channel_count))
             data = data[:, self.chosen_channel - 1]
             if watchdog:
                 watchdog.sent_audio(data)
@@ -75,33 +76,33 @@ class PortaudioStream(BaseAdapter):
         try:
             devName = devices[id]
             self.input_id = id
-        except (ValueError, KeyError) as e:
+        except (ValueError, KeyError):
             self.print_all_devices()
             sys.exit(1)
 
-    def get_audio_devices(self) -> Dict[int, str]:
+    def get_audio_devices(self) -> dict[int, str]:
         devices = {}
 
         p = self.pyaudio
         info = p.get_host_api_info_by_index(0)
-        deviceCount = info.get('deviceCount')
+        deviceCount = info.get("deviceCount")
 
-        for i in range(0, deviceCount):
-                if p.get_device_info_by_host_api_device_index(0, i).get('maxInputChannels') > 0:
-                        devices[i] = p.get_device_info_by_host_api_device_index(0, i).get('name')
+        for i in range(deviceCount):
+                if p.get_device_info_by_host_api_device_index(0, i).get("maxInputChannels") > 0:
+                        devices[i] = p.get_device_info_by_host_api_device_index(0, i).get("name")
         return devices
 
     def print_all_devices(self) -> None:
         """
         Special command, prints all audio devices available
         """
-        print('-- AUDIO devices:')
+        print("-- AUDIO devices:")
         devices = self.get_audio_devices()
         for key in devices:
             dev = devices[key]
             if isinstance(dev, bytes):
                 dev = dev.decode("ascii", "replace")
-            print('    id=%i - %s' % (key, dev))
+            print("    id=%i - %s" % (key, dev))
 
     @property
     def pyaudio(self) -> pyaudio.PyAudio:
@@ -114,7 +115,7 @@ class PortaudioStream(BaseAdapter):
         # so we record all channels instead and then filter out the wanted channel with numpy
         if self.input_id is None:
             raise BugException()
-        channelCount = self.pyaudio.get_device_info_by_host_api_device_index(0, self.input_id).get('maxInputChannels')
+        channelCount = self.pyaudio.get_device_info_by_host_api_device_index(0, self.input_id).get("maxInputChannels")
         self.channel_count = channelCount
         self.chosen_channel = channel
 

@@ -1,5 +1,6 @@
 import datetime
 import os.path
+import re
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -7,12 +8,10 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-import re
-
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
-meeting_id_pattern = r'Meeting ID: (\d{3}\s\d{4}\s\d{4})'
-passcode_pattern = r'Passcode:\s*([^\s]+)'
+meeting_id_pattern = r"Meeting ID: (\d{3}\s\d{4}\s\d{4})"
+passcode_pattern = r"Passcode:\s*([^\s]+)"
 
 def get_zoom_details():
   """Shows basic usage of the Google Calendar API.
@@ -30,7 +29,7 @@ def get_zoom_details():
       creds.refresh(Request())
     else:
       flow = InstalledAppFlow.from_client_secrets_file(
-          "credentials.json", SCOPES
+          "credentials.json", SCOPES,
       )
       creds = flow.run_local_server(port=0)
     # Save the credentials for the next run
@@ -55,7 +54,7 @@ def get_zoom_details():
         .execute()
     )
     events = events_result.get("items", [])
-    
+
     meeting_id = ""
     passcode = ""
 
@@ -67,8 +66,8 @@ def get_zoom_details():
     for event in events:
       start = event["start"].get("dateTime", event["start"].get("date"))
       #print(start, event["summary"])
-      curr_meeting_info = event['description']
-      
+      curr_meeting_info = event["description"]
+
 
 
     meeting_id_match = re.search(meeting_id_pattern, curr_meeting_info)

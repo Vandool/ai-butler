@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 
-from typing import Any, Dict, Optional, cast, List
 from abc import ABCMeta, abstractmethod
+from typing import Any
 
-from pythonrecordingclient.mediatorLib import MediatorAudioFormat
-from pythonrecordingclient.helper import BugException
 
 class BaseAdapter(metaclass=ABCMeta):
     def __init__(self, format: Any) -> None:
         self.rate = 16000
         self.format = format
         self.channel_count = 1
-        self.chosen_channel: Optional[int] = None
+        self.chosen_channel: int | None = None
 
     def available(self) -> bool:
         """
@@ -25,14 +23,12 @@ class BaseAdapter(metaclass=ABCMeta):
         """
         Should return the stream for reading
         """
-        pass
 
     @abstractmethod
     def read(self) -> bytes:
         """
         Should return a chunk of bytes from the audio device.
         """
-        pass
 
     def chunk_modify(self, chunk: bytes) -> bytes:
         """
@@ -45,12 +41,10 @@ class BaseAdapter(metaclass=ABCMeta):
         """
         Should be called after the session was closed
         """
-        pass
 
     @abstractmethod
     def set_input(self, input: Any) -> None:
         """
         Should be called to set an input, which can be for example an id, string etc
         """
-        pass
 

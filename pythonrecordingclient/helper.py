@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
-from builtins import str
 import subprocess as sp
+from builtins import str
 from datetime import datetime, timedelta
 from time import mktime
 
+
 class BugException(Exception):
-    def __init__(self, msg='You have found a bug. Please contact a developer with the command and all output.', *args, **kwargs):
+    def __init__(self, msg="You have found a bug. Please contact a developer with the command and all output.", *args, **kwargs):
         super().__init__(msg, *args, **kwargs)
 
 
 def extract_pcm_audio(video_file: str, out_file: str) -> None:
     cmd = [
         "ffmpeg", "-y", "-i", video_file, "-vn", "-c:a", "pcm_s16le",
-        "-ac", "1", "-ar", "16000", out_file
+        "-ac", "1", "-ar", "16000", out_file,
     ]
     p = sp.Popen(cmd)
     p.communicate()
@@ -42,7 +42,7 @@ def objToXml(oName, obj):
     lists = { key: obj[key] for key in obj if isinstance(obj[key], list)}
     res = "<" + oName
     for name, value in attributes.items():
-        res += " " + name + "=\"" + value + "\""
+        res += " " + name + '="' + value + '"'
     res += ">"
     for name, value in lists.items():
         for item in value:
