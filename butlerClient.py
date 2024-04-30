@@ -12,6 +12,7 @@ from threading import Thread
 import requests
 from sseclient import SSEClient
 
+from pythonrecordingclient.helper import BugException
 from webhandler import webutils
 from webhandler.ltweb import LTHandler
 from webhandler.zoomweb import ZoomHandler

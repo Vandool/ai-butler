@@ -3,6 +3,7 @@ import subprocess
 import time
 from typing import Any, cast
 
+from pythonrecordingclient.helper import BugException
 from pythonrecordingclient.inputStreamAdapter import BaseAdapter
 
 

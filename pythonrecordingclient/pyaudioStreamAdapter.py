@@ -1,9 +1,11 @@
-
+import logging
 import queue
+import sys
 import threading
-
 import pyaudio
+import numpy as np
 
+from pythonrecordingclient.helper import BugException
 from pythonrecordingclient.inputStreamAdapter import BaseAdapter
 
 
