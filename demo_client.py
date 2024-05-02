@@ -22,7 +22,7 @@ import socket
 import logging
 from butler import Butler
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 butler = None
 
 def verify_chunk_size(value: Union[str, int]) -> int:
@@ -239,7 +239,7 @@ def parse():
     
     args = parser.parse_args()
 
-    args.api = "ltapi"
+    args.api = "webapi"
 
     return args
 
