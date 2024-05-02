@@ -1,8 +1,12 @@
 # Dialogue Praktikum SS24
 
+## Lecture Timings
 
+Wednesdays, 3:45 p.m. - 5:15 p.m. Seminar Room 223  (We will begin from 24/04/2024)
 
 ## Requirements
+
+In the first lecture, we will provide the user ids and password that is necessary to access the hosted services. PLEASE DO NOT SHARE THEM. If we find the servers to be overloaded, we have to stop serving them.
 
 ### Installing Miniconda3
 
@@ -14,6 +18,7 @@ Using the butler.yaml, we now create a environment with the necessary dependenci
 
 ```
 conda env create --name butler --file=butler.yml
+conda activate butler
 ```
 
 This should create the environment with required dependencies to connect with the ASR and MT system hosted in the lecture translator.
@@ -47,3 +52,23 @@ client.text_generation(prompt="Write a code for snake game")
 ```
 
 For further information on how to generate with different decoding strategies, prompt formatting etc, refer to the documentation [here](https://huggingface.co/docs/text-generation-inference/en/basic_tutorials/consuming_tgi)
+
+## Authentication
+
+First, you need to login with KIT account by going here [Login Page](https://lt2srv-backup.iar.kit.edu/login)
+Once you login, then access your token by going here [Get Token](https://lt2srv-backup.iar.kit.edu/gettoken)
+
+You can use the token to test the starter code next.
+
+## Starter Code - Fun Fact Generator
+
+If everything is installed properly, then you can test the sample code that we provide. Every message that is recieved will be sent to the process function in butler.py 
+
+We did a simple implementation to detect if the user has said fun by keyword spotting and then generates a fun fact about germany. Try the demo_client.py with the following command
+
+```
+python demo_client.py -a {Your microphone id that you want to use} -u {The URL with id and password that we will provide} -llm {The LLM address for the hosted LLama2}
+python demo_client.py -a 1 --token Cn1mh=|wfwf|sai.koneru@kit.edu --llm https://awesomellama.com 
+```
+
+This should print the ASR transcript and give you a fun fact when ever you say fun.
