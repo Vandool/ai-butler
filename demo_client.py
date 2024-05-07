@@ -12,7 +12,7 @@ from sseclient import SSEClient
 from butler import Butler
 from pythonrecordingclient.helper import BugException
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 butler = None
 
 
@@ -273,7 +273,7 @@ def parse():
 
     args = parser.parse_args()
 
-    args.api = "ltapi"
+    args.api = "webapi"
 
     return args
 
