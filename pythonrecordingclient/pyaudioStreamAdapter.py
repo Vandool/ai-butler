@@ -15,10 +15,11 @@ def read_audio(stream, chunk_size, queue):
         chunk = stream.read(chunk_size, exception_on_overflow=False)
         queue.put(chunk)
 
+
 class PortaudioStream(BaseAdapter):
     def __init__(self, **kwargs) -> None:
-        self.input_id: int | None             = None
-        self._stream:  pyaudio.Stream | None  = None
+        self.input_id: int | None = None
+        self._stream: pyaudio.Stream | None = None
         self._pyaudio: pyaudio.PyAudio | None = None
         super().__init__(format=pyaudio.paInt16)
 
@@ -30,16 +31,17 @@ class PortaudioStream(BaseAdapter):
 
             p = self.pyaudio
             self._stream = p.open(
-                format              = self.format,
-                input_device_index  = self.input_id,
-                channels            = self.channel_count,
-                rate                = self.rate,
-                input               = True,
-                frames_per_buffer   = self.chunk_size)
+                format=self.format,
+                input_device_index=self.input_id,
+                channels=self.channel_count,
+                rate=self.rate,
+                input=True,
+                frames_per_buffer=self.chunk_size,
+            )
 
             self.queue = queue.Queue()
 
-            thread = threading.Thread(target=read_audio, args=(self._stream,self.chunk_size,self.queue))
+            thread = threading.Thread(target=read_audio, args=(self._stream, self.chunk_size, self.queue))
             thread.daemon = True
             thread.start()
         return self._stream
@@ -47,7 +49,7 @@ class PortaudioStream(BaseAdapter):
     def read(self) -> bytes:
         self.get_stream()
 
-        size = max(self.queue.qsize(),1)
+        size = max(self.queue.qsize(), 1)
         chunks = [self.queue.get() for _ in range(size)]
 
         if len(chunks) > 75:
@@ -91,8 +93,8 @@ class PortaudioStream(BaseAdapter):
         deviceCount = info.get("deviceCount")
 
         for i in range(deviceCount):
-                if p.get_device_info_by_host_api_device_index(0, i).get("maxInputChannels") > 0:
-                        devices[i] = p.get_device_info_by_host_api_device_index(0, i).get("name")
+            if p.get_device_info_by_host_api_device_index(0, i).get("maxInputChannels") > 0:
+                devices[i] = p.get_device_info_by_host_api_device_index(0, i).get("name")
         return devices
 
     def print_all_devices(self) -> None:
@@ -121,4 +123,3 @@ class PortaudioStream(BaseAdapter):
         channelCount = self.pyaudio.get_device_info_by_host_api_device_index(0, self.input_id).get("maxInputChannels")
         self.channel_count = channelCount
         self.chosen_channel = channel
-

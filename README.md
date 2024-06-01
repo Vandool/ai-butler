@@ -96,10 +96,13 @@ copy the code that we require into the `src` in an appropriate package.
 
 ```bash
 dialogue_praktikum/
-├── provided_code/      # Code and materials provided by the lecturer
-├── src/                # Our custom developed code
+├── <<provided_code>>/     # Code and materials provided by the lecturer
+├── reports /          # Test reports
+├── src/               # Our custom-developed code
+├── tests/             # Test suites
+│   ├── e2e/           # End-to-end tests
+│   └── unit-tests/    # Unit tests
 ├── README.md
-├── requirements.txt    # List of dependencies
 └── ...
 ```
 

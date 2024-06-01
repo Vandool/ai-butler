@@ -1,6 +1,7 @@
+import json
 import logging
 import os
-from pathlib import Path
+from typing import Any
 
 from sentence_transformers import SentenceTransformer, util
 
@@ -21,17 +22,22 @@ def calculate_similarity(text1: str, text2: str) -> float:
     return similarity.item()
 
 
-def get_logger(module_name: str) -> logging.Logger:
+class CustomLogger(logging.Logger):
+    def info_pretty(self, info: Any):
+        self.info(json.dumps(info, indent=2))
+
+
+def get_logger(module_name: str) -> CustomLogger:
+    logging.setLoggerClass(CustomLogger)  # Set CustomLogger as the logger class
     logger = logging.getLogger(module_name)
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter("[%(levelname)s] %(asctime)s [%(name)s]: %(message)s", datefmt="%H:%M:%S")
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    # You can change the log level globally using "LOG_LEVEL" env variable
-    logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
-    logger.propagate = False
+
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter("[%(levelname)s] %(asctime)s [%(name)s]: %(message)s", datefmt="%H:%M:%S")
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        # You can change the log level globally using "LOG_LEVEL" env variable
+        logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
+        logger.propagate = False
+
     return logger
-
-
-if __name__ == "__main__":
-    print(Path.cwd().parent / "models")
