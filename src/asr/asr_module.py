@@ -4,6 +4,7 @@ import argparse
 import base64
 import copy
 import datetime
+import inspect
 import json
 import re
 import socket
@@ -341,13 +342,16 @@ class ASRModule:
         return transcript.strip()
 
     def _check_and_send_to_classifier(self, transcript: str):
-        intent = self.classifier.get_closest_intent(
+        intent = self.classifier.get_closest_intent_using_similarity(
             input_text=transcript,
             prompt_type=PromptType.FEW_SHOT_DETAILED,
         )
         logger.info(f"Classification result: {intent.name}")
         if (intent_processor := get_intent_class(intent)) is not None:
-            intent_processor.process(transcript)
+            func_name = intent_processor.process(transcript)
+            func_ = getattr(intent_processor, func_name)
+            logger.info(func_)
+            logger.info(f"requires slot filling: {bool(inspect.signature(func_).parameters)}")
 
     @return_json
     @check_status_code

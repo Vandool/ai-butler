@@ -52,10 +52,16 @@ class IntentManager:
 
         return {i.name: i.examples[:num_shots] for i in self}
 
-    def get_closest_intent(self, message: str):
+    def get_closest_intent_similarity(self, message: str):
         similarity_scores = [utils.calculate_similarity(message, i.name) for i in self]
         self.logger.debug(f"Similarity scores: {list(zip(similarity_scores, self._intents, strict=False))}")
         return self._intents[np.argmax(similarity_scores)]
+
+    def get_closest_intent_simple(self, message: str) -> Intent | None:
+        for intent_ in self:
+            if intent_.name.lower() in message.lower():
+                return intent_
+        return None
 
     def __iter__(self) -> Iterator[Intent]:
         """Return an iterator over the intents."""

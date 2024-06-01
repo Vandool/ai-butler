@@ -35,7 +35,7 @@ class PromptGenerator:
         """Generate a simple classification prompt."""
         classes = create_or_list(self.intent_manager.list_intent_names())
         prompt = f"<s>[INST] Classify the text into one of the following classes: {classes}.\n"
-        prompt += f"Text: {input_text}\nClass: [/INST]</s>"
+        prompt += f"Text: {input_text} [/INST]</s> \nClass: "
         return prompt
 
     def _generate_zero_shot_detailed_prompt(self, input_text: str) -> str:
@@ -46,7 +46,7 @@ class PromptGenerator:
         for intent in self.intent_manager:
             prompt += f"- {intent.name}: {intent.description}\n"
 
-        prompt += f"Text: {input_text}\nClass: [/INST]</s>"
+        prompt += f"Text: {input_text} [/INST]</s> \nClass: "
         return prompt
 
     def _generate_one_shot_per_class_detailed_prompt(self, input_text: str) -> str:
@@ -62,7 +62,7 @@ class PromptGenerator:
             example = examples[0]  # Using the first example for one-shot
             prompt += f"Text: {example}\nClass: {intent}\n"
 
-        prompt += f"\nNow classify the following text:\nText: {input_text}\nClass: [/INST]</s>"
+        prompt += f"\nNow classify the following text:\nText: {input_text} [/INST]</s> \nClass: "
         return prompt
 
     def _generate_few_shot_per_class_detailed_prompt(self, input_text: str) -> str:
@@ -78,7 +78,7 @@ class PromptGenerator:
             for example in examples:
                 prompt += f"Text: {example}\nClass: {intent}\n"
 
-        prompt += f"\nNow classify the following text:\nText: {input_text}\nClass: [/INST]</s>"
+        prompt += f"\nNow classify the following text:\nText: {input_text} [/INST]</s>\nClass:"
         return prompt
 
     def _validate_func_names(self):

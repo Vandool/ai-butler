@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import datetime
-import json
 from typing import Any
 
+from dotenv import load_dotenv
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
+from intent.intent import extract_slots_from_function
 
 from src import utils
 from src.classifier.zero_shot_classifier import ZeroShotClassifier
@@ -19,6 +20,8 @@ from src.intent.web_handler.my_web_utils import catch_http_exception
 
 # Authentication and service creation
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
+
+load_dotenv()
 
 gc_config = google_api_config.get_google_api_config()
 
@@ -41,11 +44,11 @@ logger = utils.get_logger("CalendarAPI")
 
 def get_classifier():
     intent_manager_ = IntentManager()
-    for name_, docstring_ in intent.get_marked_functions_and_docstrings(module=CalendarAPI).items():
+    for name_, info in intent.get_marked_functions_and_docstrings(module=CalendarAPI).items():
         intent_manager_.add_intent(
             intent.Intent(
                 name=name_,
-                description=docstring_,
+                description=info[0],
             ),
         )
     return ZeroShotClassifier(model=AsrLlmConfig.zero_shot_model, intent_manager=intent_manager_)
@@ -58,7 +61,9 @@ class CalendarAPI(Processable):
 
     def process(self, the_input: str) -> Any:
         logger.info(f"Processing '{the_input}'")
-        logger.info(f"Intent found: {self.classifier.get_closest_intent(the_input)}")
+        intent = self.classifier.get_closest_intent_using_similarity(the_input)
+        logger.info(f"Intent found: {intent}")
+        return intent.name
 
     @staticmethod
     @catch_http_exception
@@ -259,21 +264,25 @@ if __name__ == "__main__":
             ),
         )
     print(intent_manager)
+    print("")
+    slots = extract_slots_from_function(CalendarAPI.create_new_appointment)
+    for slot in slots:
+        print(slot)
 
-    test_calendar = False
-    if test_calendar:
-        new_event = CalendarAPI.create_new_appointment(
-            summary="Team Meeting",
-            start_time=format_datetime(datetime.datetime.now(datetime.UTC)),
-            end_time=format_datetime(datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)),
-            description="Discuss project updates",
-            location="Conference Room",
-        )
-        print("New Event Created:", new_event)
-
-        next_appointment = CalendarAPI.get_next_appointment()
-        print("Next Appointment:", json.dumps(next_appointment, indent=2))
-
-        print(f"Am I free In the next 2 hours: {CalendarAPI.am_i_free_in_the_next()}")
-        print(f"Am I free Now: {CalendarAPI.am_i_free(time=format_datetime(datetime.datetime.now(datetime.UTC)))}")
-        print(f"Deleted next appointment: {CalendarAPI.delete_next_appointment()}")
+    # test_calendar = False
+    # if test_calendar:
+    #     new_event = CalendarAPI.create_new_appointment(
+    #         summary="Team Meeting",
+    #         start_time=format_datetime(datetime.datetime.now(datetime.UTC)),
+    #         end_time=format_datetime(datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)),
+    #         description="Discuss project updates",
+    #         location="Conference Room",
+    #     )
+    #     print("New Event Created:", new_event)
+    #
+    #     next_appointment = CalendarAPI.get_next_appointment()
+    #     print("Next Appointment:", json.dumps(next_appointment, indent=2))
+    #
+    #     print(f"Am I free In the next 2 hours: {CalendarAPI.am_i_free_in_the_next()}")
+    #     print(f"Am I free Now: {CalendarAPI.am_i_free(time=format_datetime(datetime.datetime.now(datetime.UTC)))}")
+    #     print(f"Deleted next appointment: {CalendarAPI.delete_next_appointment()}")

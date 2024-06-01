@@ -1,9 +1,10 @@
 # tests/unit-test/conftest.py
 import datetime
+import os
 from pathlib import Path
 
 import pytest
-from sklearn.metrics import f1_score, recall_score
+from dotenv import load_dotenv
 
 from src.classifier.few_shot_text_generation_classifier import FewShotTextGenerationClassifier
 from src.classifier.zero_shot_classifier import ZeroShotClassifier
@@ -11,6 +12,8 @@ from src.config.asr_llm_config import AsrLlmConfig
 from src.intent.intent_manager import CALENDAR, LECTURE, IntentManager
 
 # ----------------------------- Reusable Fixtures -----------------------------
+
+load_dotenv()
 
 
 @pytest.fixture(scope="session")
@@ -24,9 +27,10 @@ def intent_manager_with_unknown_intent() -> IntentManager:
 
 @pytest.fixture(scope="session")
 def few_shot_classifier(intent_manager_with_unknown_intent):
-    classifier = FewShotTextGenerationClassifier(llm_url=AsrLlmConfig.llm_url)
-    classifier.intent_manager = intent_manager_with_unknown_intent
-    return classifier
+    return FewShotTextGenerationClassifier(
+        llm_url=AsrLlmConfig.llm_url,
+        intent_manager=intent_manager_with_unknown_intent,
+    )
 
 
 @pytest.fixture(scope="session")
@@ -64,12 +68,13 @@ def pytest_runtest_makereport(item, call):  # noqa: ARG001
             "expected_output": item.funcargs.get("expected_output"),
             "outcome": report.outcome,
             "output": getattr(item, "_output", None),  # Retrieve the output_intent from the item
+            "llm_output": getattr(item, "_llm_output", None),  # Retrieve the output_intent from the item
         }
         test_results[test_func_name].append(result)
 
 
 def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
-    report_dir = Path.cwd() / "reports"
+    report_dir = Path(os.getenv("PROJECT_DIR")) / "reports"
     report_dir.mkdir(parents=True, exist_ok=True)
     report_file = report_dir / f"unit-test_{datetime.datetime.now()}.md"
 
@@ -77,20 +82,8 @@ def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
 
     for test_func_name, results in test_results.items():
         total = len(results)
-        correct = sum(1 for result in results if result["expected_output"] == result["output"])
+        correct = sum(1 for result in results if result["output"])
         accuracy = correct / total * 100 if total > 0 else 0
-
-        # Filter out results with None outputs
-        valid_results = [result for result in results if result["output"] is not None]
-        y_true = [result["expected_output"] for result in valid_results]
-        y_pred = [result["output"] for result in valid_results]
-
-        # Calculate F1 score and recall only if there are valid results
-        if y_true and y_pred:
-            f1 = f1_score(y_true, y_pred, average="macro")
-            recall = recall_score(y_true, y_pred, average="macro")
-        else:
-            f1 = recall = 0.0
 
         report_lines.extend(
             [
@@ -98,8 +91,6 @@ def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
                 f"**Total Tests:** {total}",
                 f"**Correct:** {correct}",
                 f"**Accuracy:** {accuracy:.2f}%",
-                f"**F1 Score:** {f1:.2f}",
-                f"**Recall:** {recall:.2f}",
                 "",
                 "### Detailed Results",
                 "",
@@ -112,6 +103,7 @@ def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
                     f"#### Test Nr. {i + 1}",
                     f"- **Test Name:** {result['test_name']}",
                     f"- **Input:** {result['input']}",
+                    f"- **LLM Output:** {result['llm_output']}",
                     f"- **Expected Intent:** {result['expected_output']}",
                     f"- **Output Intent:** {result['output']}",
                     f"- **Outcome:** {result['outcome']}",
@@ -125,8 +117,10 @@ def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
 
 @pytest.fixture()
 def capture_output_for_report(request):
-    def setter(output):
+    def setter(output, llm_output):
         request.node._output = output  # noqa: SLF001
+        request.node._llm_output = llm_output  # noqa: SLF001
 
     request.node._output = None  # noqa: SLF001
+    request.node._llm_output = None  # noqa: SLF001
     return setter

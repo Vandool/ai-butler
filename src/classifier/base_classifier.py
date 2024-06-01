@@ -37,13 +37,31 @@ class BaseClassifier(abc.ABC):
         self._intent_manager = intent_manager
         self.__initialize_prompt_generator()
 
-    def get_closest_intent(self, input_text: str, prompt_type: PromptType = PromptType.ZERO_SHOT) -> Intent:
+    def get_closest_intent_using_similarity(
+        self,
+        input_text: str,
+        prompt_type: PromptType = PromptType.ZERO_SHOT,
+    ) -> Intent:
         # TODO(Arvand): the one shot classifier doesn't need this. depending on what we choose in the end we can
         # delete this
-        return self.intent_manager.get_closest_intent(
+        return self.intent_manager.get_closest_intent_similarity(
             message=self.classify(input_text, prompt_type),
         )
 
+    def get_closest_intent_simple(
+        self,
+        input_text: str,
+        prompt_type: PromptType = PromptType.ZERO_SHOT,
+    ) -> (Intent, str):
+        # TODO(Arvand): the one shot classifier doesn't need this. depending on what we choose in the end we can
+        # delete this
+        llm_output = self.classify(input_text, prompt_type)
+        return self.intent_manager.get_closest_intent_simple(
+            message=llm_output,
+        ), llm_output
+
     def __initialize_prompt_generator(self):
         if self._intent_manager is not None:
+            # our PromptGenerator performs better
             self._prompt_generator = PromptGenerator(intent_manager=self._intent_manager)
+            # self._prompt_generator = Llama2PromptGenerator(intent_manager=self._intent_manager)

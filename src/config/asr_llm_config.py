@@ -3,7 +3,11 @@ from __future__ import annotations
 import argparse
 from dataclasses import dataclass
 
+from dotenv import load_dotenv
+
 from src.config import config_utils
+
+load_dotenv()
 
 
 @dataclass

@@ -17,11 +17,9 @@ def test_classifiers():
     intent_manager.add_intent(CALENDAR)
     intent_manager.add_intent(LECTURE)
 
-    zero_shot_classifier = ZeroShotClassifier(model=config.zero_shot_model)
-    zero_shot_classifier.intent_manager = intent_manager
+    zero_shot_classifier = ZeroShotClassifier(model=config.zero_shot_model, intent_manager=intent_manager)
 
-    few_shot_text_classifier = FewShotTextGenerationClassifier(llm_url=config.llm_url)
-    few_shot_text_classifier.intent_manager = intent_manager
+    few_shot_text_classifier = FewShotTextGenerationClassifier(llm_url=config.llm_url, intent_manager=intent_manager)
 
     while True:
         user_input = input("Enter your message (or type 'exit(e)' to quit(q)): ")
@@ -30,10 +28,10 @@ def test_classifiers():
 
         # intent_manager.use_unknown_intent = False
         # logger.info("ZeroShot=============")
-        # logger.info(f"{zero_shot_classifier.classify(user_input) =}")
+        logger.info(f"{zero_shot_classifier.classify(user_input) =}")
         # logger.info(f"{zero_shot_classifier.classify_with_details(user_input) =}")
         # logger.info(f"{zero_shot_classifier.get_closest_intent(user_input) =}")
-        logger.info(f"{few_shot_text_classifier.get_closest_intent(user_input) =}")
+        logger.info(f"{few_shot_text_classifier.get_closest_intent_using_similarity(user_input) =}")
         # for prompt_type in PromptType:
         #     logger.info(f"FewShotTextGeneration============={prompt_type.name.upper()}")
         #     logger.info(f"{ few_shot_text_classifier.classify(user_input) =}")

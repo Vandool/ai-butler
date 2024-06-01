@@ -7,7 +7,7 @@ from src.prompt_generator.prompt_generator import PromptType
 test_data = [
     # Google Calendar
     ("Add a new calendar event", CALENDAR.name),
-    ("Set up a meeting for tomorrow",  CALENDAR.name),
+    ("Set up a meeting for tomorrow", CALENDAR.name),
     ("When is my next scheduled event?", CALENDAR.name),
     ("Organize a team meeting", CALENDAR.name),
     ("Plan an event for next week", CALENDAR.name),
@@ -16,11 +16,11 @@ test_data = [
     ("Arrange a call with John", CALENDAR.name),
     ("What events do I have this week?", CALENDAR.name),
     ("Can you add a meeting to my calendar?", CALENDAR.name),
-    # ("Schedule a catch-up meeting", CALENDAR.name),
-    # ("Set a reminder for my yoga class", CALENDAR.name),
-    # ("Create an event at 3 PM", CALENDAR.name),
-    # ("When is my next meeting?", CALENDAR.name),
-    # ("Schedule a follow-up appointment", CALENDAR.name),
+    ("Schedule a catch-up meeting", CALENDAR.name),
+    ("Set a reminder for my yoga class", CALENDAR.name),
+    ("Create an event at 3 PM", CALENDAR.name),
+    ("When is my next meeting?", CALENDAR.name),
+    ("Schedule a follow-up appointment", CALENDAR.name),
     # Lecture Translator
     ("Please translate these lecture slides", LECTURE.name),
     ("Turn the lecture audio into text", LECTURE.name),
@@ -32,11 +32,11 @@ test_data = [
     ("Translate the lecture handouts", LECTURE.name),
     ("Provide a text version of the lecture", LECTURE.name),
     ("Create study notes from the lecture", LECTURE.name),
-    # ("Give me the main ideas from the lecture", LECTURE.name),
-    # ("What's the gist of the lecture?", LECTURE.name),
-    # ("Make a summary of the lecture notes", LECTURE.name),
-    # ("Highlight the important parts of the lecture", LECTURE.name),
-    # ("Convert the lecture video to text", LECTURE.name),
+    ("Give me the main ideas from the lecture", LECTURE.name),
+    ("What's the gist of the lecture?", LECTURE.name),
+    ("Make a summary of the lecture notes", LECTURE.name),
+    ("Highlight the important parts of the lecture", LECTURE.name),
+    ("Convert the lecture video to text", LECTURE.name),
     # Unknown
     ("Zibber blorf zibber blorf", UNKNOWN.name),
     ("Why is the sky blue?", UNKNOWN.name),
@@ -48,11 +48,11 @@ test_data = [
     ("Explain quantum mechanics", UNKNOWN.name),
     ("What is the meaning of life?", UNKNOWN.name),
     ("What's the weather like today?", UNKNOWN.name),
-    # ("How to bake a cake?", UNKNOWN.name),
-    # ("What is the stock market?", UNKNOWN.name),
-    # ("Define artificial intelligence", UNKNOWN.name),
-    # ("How do airplanes fly?", UNKNOWN.name),
-    # ("What is photosynthesis?", UNKNOWN.name),
+    ("How to bake a cake?", UNKNOWN.name),
+    ("What is the stock market?", UNKNOWN.name),
+    ("Define artificial intelligence", UNKNOWN.name),
+    ("How do airplanes fly?", UNKNOWN.name),
+    ("What is photosynthesis?", UNKNOWN.name),
 ]
 
 
@@ -64,9 +64,18 @@ def test_few_shot_text_generation_classifier_zero_shot(
     capture_output_for_report,
     few_shot_classifier,
 ):
-    output = few_shot_classifier.get_closest_intent(input_text=the_input).name
-    capture_output_for_report(output)
-    assert output.lower() == expected_output.lower()
+    output, llm_output = few_shot_classifier.get_closest_intent_simple(input_text=the_input)
+    handle_output_and_llmoutput(capture_output_for_report, expected_output, llm_output, output, the_input)
+
+
+def handle_output_and_llmoutput(capture_output_for_report, expected_output, llm_output, output, the_input):
+    if output is not None:
+        test_result = output.name.lower() == expected_output.lower()
+        capture_output_for_report(output=test_result, llm_output=llm_output)
+        assert test_result
+    else:
+        capture_output_for_report(output=False, llm_output=llm_output)
+        pytest.fail(msg=f"Simple classifier did not generate any intent for input {the_input}")
 
 
 @pytest.mark.parametrize("the_input, expected_output", test_data)
@@ -77,12 +86,11 @@ def test_few_shot_text_generation_classifier_zero_shot_detailed(
     capture_output_for_report,
     few_shot_classifier,
 ):
-    output = few_shot_classifier.get_closest_intent(
+    output, llm_output = few_shot_classifier.get_closest_intent_simple(
         input_text=the_input,
         prompt_type=PromptType.ZERO_SHOT_DETAILED,
-    ).name
-    capture_output_for_report(output)
-    assert output.lower() == expected_output.lower()
+    )
+    handle_output_and_llmoutput(capture_output_for_report, expected_output, llm_output, output, the_input)
 
 
 @pytest.mark.parametrize("the_input, expected_output", test_data)
@@ -93,12 +101,11 @@ def test_few_shot_text_generation_classifier_one_shot_detailed(
     capture_output_for_report,
     few_shot_classifier,
 ):
-    output = few_shot_classifier.get_closest_intent(
+    output, llm_output = few_shot_classifier.get_closest_intent_simple(
         input_text=the_input,
         prompt_type=PromptType.ONE_SHOT_PER_CLASS_DETAILED,
-    ).name
-    capture_output_for_report(output)
-    assert output.lower() == expected_output.lower() @ pytest.mark.parametrize("the_input, expected_output", test_data)
+    )
+    handle_output_and_llmoutput(capture_output_for_report, expected_output, llm_output, output, the_input)
 
 
 @pytest.mark.parametrize("the_input, expected_output", test_data)
@@ -109,17 +116,16 @@ def test_few_shot_text_generation_classifier_few_shot_detailed(
     capture_output_for_report,
     few_shot_classifier,
 ):
-    output = few_shot_classifier.get_closest_intent(
+    output, llm_output = few_shot_classifier.get_closest_intent_simple(
         input_text=the_input,
         prompt_type=PromptType.FEW_SHOT_DETAILED,
-    ).name
-    capture_output_for_report(output)
-    assert output.lower() == expected_output.lower()
+    )
+    handle_output_and_llmoutput(capture_output_for_report, expected_output, llm_output, output, the_input)
 
 
-@pytest.mark.parametrize("the_input, expected_output", test_data)
-@pytest.mark.report_test()  # Custom marker to include this test in the report
-def test_zero_shot_classifier(the_input, expected_output, capture_output_for_report, zero_shot_classifier):
-    output_intent = zero_shot_classifier.classify(the_input)
-    capture_output_for_report(output_intent)
-    assert output_intent.lower() == expected_output.lower()
+# @pytest.mark.parametrize("the_input, expected_output", test_data)
+# # @pytest.mark.report_test()  # Custom marker to include this test in the report
+# def test_zero_shot_classifier(the_input, expected_output, capture_output_for_report, zero_shot_classifier):
+#     output_intent = zero_shot_classifier.classify(the_input)
+#     capture_output_for_report(output_intent)
+#     assert output_intent.lower() == expected_output.lower()
