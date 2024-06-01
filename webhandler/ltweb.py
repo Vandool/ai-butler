@@ -9,7 +9,7 @@ from webhandler import webutils
 
 
 class LTHandler:
-    def __init__(self, in_session=False, driver=None):
+    def __init__(self, driver=None, in_session=False):
         self.in_session = in_session
         self.driver = driver
         self.handle = None
@@ -117,3 +117,31 @@ class LTHandler:
         self.driver.close()
         self.driver.switch_to.window(self.driver.window_handles[0])
         self.handle = None
+
+    def list_clickable_buttons(self):
+        """Lists all clickable buttons and button-like elements."""
+        buttons = self.driver.find_elements(By.XPATH, "//button | //input[@type='button'] | //input[@type='submit']")
+
+        clickable_elements = []
+        for button in buttons:
+            text = (
+                button.text.strip()
+                or button.get_attribute("value")
+                or button.get_attribute("id")
+                or button.get_attribute("name")
+            )
+            if text:
+                clickable_elements.append(text)
+
+        print("Available Clickable Buttons:")
+        for button_text in clickable_elements:
+            print(button_text)
+
+        return clickable_elements
+
+
+if __name__ == "__main__":
+    driver = webutils.create_driver()
+    driver.get("https://witeboard.com/")
+    handler = LTHandler(driver=driver)
+    handler.login_lt(username="ubppd", pwd="7+d`ZH!I%mK{*46M")
