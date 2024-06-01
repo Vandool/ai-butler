@@ -5,7 +5,6 @@ import abc
 from src import utils
 from src.intent.intent import Intent
 from src.intent.intent_manager import IntentManager
-from src.prompt_generator.Llama2PromptGenerator import Llama2PromptGenerator
 from src.prompt_generator.prompt_generator import PromptGenerator, PromptType
 
 
@@ -54,8 +53,7 @@ class BaseClassifier(abc.ABC):
         input_text: str,
         prompt_type: PromptType = PromptType.ZERO_SHOT,
     ) -> (Intent, str):
-        # TODO(Arvand): the one shot classifier doesn't need this. depending on what we choose in the end we can
-        # delete this
+        # TODO(Arvand): the one shot classifier doesn't need this. depending on what we choose in the end we can delete
         llm_output = self.classify(input_text, prompt_type)
         return self.intent_manager.get_closest_intent_simple(
             message=llm_output,
