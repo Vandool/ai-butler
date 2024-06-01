@@ -11,7 +11,7 @@ from src.intent.intent_manager import CALENDAR, LECTURE, IntentManager
 from src.prompt_generator.prompt_generator import PromptType, create_or_list
 
 load_dotenv()
-access_token = os.getenv("HUGGINGFACE_ACCESS_TOKEN")
+access_token = os.getenv("HUGGINGFACE_ACCESS_TOKEN", default="<TOKEN>")
 
 # Save the token to the Hugging Face cache
 HfFolder.save_token(access_token)
