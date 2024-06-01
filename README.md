@@ -111,8 +111,10 @@ dialogue_praktikum/
 Our code relies on several external libraries. The primary dependencies we have added are:
 
 - `sentence-transformers`: A library for state-of-the-art sentence embeddings.
-- `torch`: The PyTorch deep learning framework, which is required by `sentence-transformers`.
-
+- `pytorch`: The PyTorch deep learning framework, which is required by `sentence-transformers`.
+- `fuzzywuzzy`: A library for fuzzy string matching.
+- `python-Levenshtein`: A library for fast computation of Levenshtein distance.
+- 
 ### Installing Dependencies
 
 To install the dependencies, you can use the provided `requirements.txt` file. Here’s how you can set up your
