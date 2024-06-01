@@ -1,10 +1,12 @@
 import logging
 import os
+from pathlib import Path
 
 from sentence_transformers import SentenceTransformer, util
 
-# Load a pre-trained model from sentence-transformers
-model = SentenceTransformer("all-MiniLM-L6-v2")
+# Get the similarity model name from environment variable or use default
+similarity_model_name = os.getenv("BUTLER_SIMILARITY_MODEL", "all-MiniLM-L6-v2")
+model = SentenceTransformer(similarity_model_name)
 
 
 def calculate_similarity(text1: str, text2: str) -> float:
@@ -29,3 +31,7 @@ def get_logger(module_name: str) -> logging.Logger:
     logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
     logger.propagate = False
     return logger
+
+
+if __name__ == "__main__":
+    print(Path.cwd().parent / "models")

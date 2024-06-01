@@ -11,11 +11,12 @@ from sseclient import SSEClient
 
 from pythonrecordingclient.helper import BugException
 from src.butler import Butler
+from src.utils import get_logger
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
 butler = None
 
-logger = logger_utils.get_logger("DemoClient")
+logger = get_logger("DemoClient")
 
 
 def verify_chunk_size(value: str | int) -> int:

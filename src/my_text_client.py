@@ -4,7 +4,8 @@ from src import utils
 from src.classifier.few_shot_text_generation_classifier import FewShotTextGenerationClassifier
 from src.classifier.zero_shot_classifier import ZeroShotClassifier
 from src.config.config import get_config
-from src.intent.intent_manager import GOOGLE_CALENDAR, LECTURE_TRANSLATOR, IntentManager
+from src.intent.intent_manager import CALENDAR, LECTURE, IntentManager
+from src.prompt_generator.prompt_generator import PromptType
 
 logger = utils.get_logger("MyTextClient")
 
@@ -14,8 +15,8 @@ def test_classifiers():
     logger.info("%s: %s", config.__class__.__name__, json.dumps(config.__dict__, indent=2))
 
     intent_manager = IntentManager()
-    intent_manager.add_intent(GOOGLE_CALENDAR)
-    intent_manager.add_intent(LECTURE_TRANSLATOR)
+    intent_manager.add_intent(CALENDAR)
+    intent_manager.add_intent(LECTURE)
 
     zero_shot_classifier = ZeroShotClassifier(model=config.zero_shot_model)
     zero_shot_classifier.intent_manager = intent_manager
@@ -34,21 +35,23 @@ def test_classifiers():
         logger.info(f"{zero_shot_classifier.classify_with_details(user_input) =}")
         logger.info(f"{zero_shot_classifier.get_closest_intent(user_input) =}")
 
-        logger.info("FewShotTextGeneration=============")
-        logger.info(f"{few_shot_text_classifier.classify(user_input) =}")
-        logger.info(f"{few_shot_text_classifier.classify_with_details(user_input, prompt_type='contextual') =}")
-        logger.info(f"{few_shot_text_classifier.get_closest_intent(user_input, prompt_type='contextual') =}")
+        for prompt_type in PromptType:
+            logger.info(f"FewShotTextGeneration============={prompt_type.name.upper()}")
+            logger.info(f"{ few_shot_text_classifier.classify(user_input) =}")
+            logger.info(f"{few_shot_text_classifier.classify_with_details(user_input, prompt_type=prompt_type) =}")
+            logger.info(f"{few_shot_text_classifier.get_closest_intent(user_input, prompt_type=prompt_type) =}")
 
         intent_manager.use_unknown_intent = True
-        logger.info("ZeroShot=============UNKNOWN")
+        logger.info("ZeroShot=============")
         logger.info(f"{zero_shot_classifier.classify(user_input) =}")
         logger.info(f"{zero_shot_classifier.classify_with_details(user_input) =}")
         logger.info(f"{zero_shot_classifier.get_closest_intent(user_input) =}")
 
-        logger.info("FewShotTextGeneration=============UNKNOWN")
-        logger.info(f"{few_shot_text_classifier.classify(user_input) =}")
-        logger.info(f"{few_shot_text_classifier.classify_with_details(user_input, prompt_type='contextual') =}")
-        logger.info(f"{few_shot_text_classifier.get_closest_intent(user_input, prompt_type='contextual') =}")
+        for prompt_type in PromptType:
+            logger.info(f"FewShotTextGeneration============={prompt_type.name.upper()}")
+            logger.info(f"{ few_shot_text_classifier.classify(user_input) =}")
+            logger.info(f"{few_shot_text_classifier.classify_with_details(user_input, prompt_type=prompt_type) =}")
+            logger.info(f"{few_shot_text_classifier.get_closest_intent(user_input, prompt_type=prompt_type) =}")
 
 
 if __name__ == "__main__":

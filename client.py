@@ -13,9 +13,10 @@ import requests
 from sseclient import SSEClient
 
 from pythonrecordingclient.helper import BugException
+from src import utils
 from webhandler.webutils import check_status_code, return_json
 
-logger = logger_utils.get_logger("Client")
+logger = utils.get_logger("Client")
 
 
 def verify_chunk_size(value: str | int) -> int:

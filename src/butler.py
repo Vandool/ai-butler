@@ -1,6 +1,6 @@
 from huggingface_hub import InferenceClient
 
-import utils
+from src import utils
 
 
 class Butler:

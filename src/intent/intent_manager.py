@@ -68,39 +68,44 @@ class IntentManager:
         return "\n".join(f"{i.name}: {i.description}" for i in self)
 
 
-UNKNOWN: Intent = Intent(
-    name="Unknown",
+CALENDAR: Intent = Intent(
+    name="Calendar",
     examples=[
-        "Blorf zibber zquark",
-        "Gribble wibble flomp",
-        "Whizzle bizzle trorp?",
+        "Create an event",
+        "Schedule a meeting",
+        "What's my next event?",
     ],
-    description="This class deals with all the other activities that cannot be associated with an intent.",
+    description="Manages calendar-related activities such as creating, deleting, or listing events and tasks, "
+    "and answering schedule-related questions.",
 )
 
-GOOGLE_CALENDAR: Intent = Intent(
-    name="Google Calendar",
-    examples=["Create an event", "Schedule a meeting", "What's my next event?"],
-    description="This class deals with all the related activities around calendar events",
-)
-
-LECTURE_TRANSLATOR: Intent = Intent(
-    name="Lecture Translator Integration",
+LECTURE: Intent = Intent(
+    name="Lecture",
     examples=[
         "Translate the lecture notes",
         "Convert the lecture audio to text",
         "What's the lecture summary?",
     ],
-    description="This class deals with all the related activities around lecture notes, lecture summary and "
-    "translations.",
+    description="Handles tasks related to lectures, including translating notes, transcribing audio, summarizing "
+    "content, and creating study aids like Anki cards.",
+)
+
+UNKNOWN: Intent = Intent(
+    name="Unknown",
+    examples=[
+        "Blorf zibber zquark",
+        "Let's throw a stone at moond",
+        "Who won the last football match?",
+    ],
+    description="Handles activities that do not fit into any predefined classes.",
 )
 
 if __name__ == "__main__":
     manager = IntentManager()
 
     # Adding intents
-    manager.add_intent(GOOGLE_CALENDAR)
-    manager.add_intent(LECTURE_TRANSLATOR)
+    manager.add_intent(CALENDAR)
+    manager.add_intent(LECTURE)
 
     print(manager.list_intent_names())
 

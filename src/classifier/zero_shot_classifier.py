@@ -4,6 +4,7 @@ import numpy as np
 from transformers import pipeline
 
 from src.classifier.base_classifier import BaseIntentClassifier
+from src.prompt_generator.prompt_generator import PromptType
 
 
 @dataclass
@@ -17,15 +18,19 @@ class ZeroShotClassifierResponse:
 
 
 class ZeroShotClassifier(BaseIntentClassifier):
-    def __init__(self, model: str, num_shots: int = 0):
-        super().__init__(num_shots)
+    def __init__(self, model: str):
+        super().__init__()
         self.classifier = pipeline(self.name, model=model)
 
     @property
     def name(self) -> str:
         return "zero-shot-classification"
 
-    def classify_with_details(self, input_text: str, _: str = "simple") -> ZeroShotClassifierResponse:
+    def classify_with_details(
+        self,
+        input_text: str,
+        _: PromptType = PromptType.ZERO_SHOT,
+    ) -> ZeroShotClassifierResponse:
         response = ZeroShotClassifierResponse(**self.classifier(input_text, self.intent_manager.list_intent_names()))
         self.logger.debug("%s detailed response:\n%s", self.name, response)
         return response
