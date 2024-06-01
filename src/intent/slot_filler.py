@@ -86,10 +86,10 @@ AI:
 """
     _SLOT_INSTRUCTION_FMT = "If {name} is None with respect to the Current Slots 'value', ask a question about the {name} of the appointment."
 
-    def __init__(self, func: Callable, llm_url: str):
+    def __init__(self, func: Callable, client: InferenceClient):
         self.purpose: str = func.__name__
         self.slots: list[Slot] = extract_slots_from_function(func)
-        self.client = InferenceClient(model=llm_url)
+        self.client = client
         self.history: History = History()
         self.is_greeting: bool = True
 
@@ -170,7 +170,9 @@ def run_slot_filler():
     config = get_config()
     logger.info("%s: %s", config.__class__.__name__, json.dumps(config.__dict__, indent=2))
 
-    slot_filler = SlotFillerSimple(func=CalendarAPI.create_new_appointment, llm_url=config.llm_url)
+    slot_filler = SlotFillerSimple(
+        func=CalendarAPI.create_new_appointment, client=InferenceClient(model=config.llm_url)
+    )
     slot_filler.run_text_interface()
 
 
