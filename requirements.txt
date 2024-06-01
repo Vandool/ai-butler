@@ -41,3 +41,5 @@ uritemplate
 urllib3
 wheel
 wsproto
+pytorch
+sen
