@@ -12,7 +12,11 @@ from threading import Thread
 import requests
 from sseclient import SSEClient
 
+import logger_utils
 from pythonrecordingclient.helper import BugException
+from webhandler.webutils import check_status_code, return_json
+
+logger = logger_utils.get_logger("Client")
 
 
 def verify_chunk_size(value: str | int) -> int:
@@ -30,16 +34,16 @@ def get_audio_input(args):
     if args.input == "portaudio":
         from pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
 
-        print("Using portaudio as input. If you want to use ffmpeg specify '-i ffmpeg'.")
+        logger.info("Using portaudio as input. If you want to use ffmpeg specify '-i ffmpeg'.")
         stream_adapter = PortaudioStream()
         input = args.audiodevice
         if args.list:
             stream_adapter.print_all_devices()
         if args.audiodevice < 0:
-            print(
+            logger.info(
                 "The portaudio backend requires the '-a' parameter. Run python client.py -L to see the available audio devices.",
             )
-            exit(1)
+            sys.exit(1)
     elif args.input == "ffmpeg":
         from pythonrecordingclient.ffmpegStreamAdapter import FfmpegStream
 
@@ -52,11 +56,11 @@ def get_audio_input(args):
         )
         input = args.ffmpeg_input
         if input is None:
-            print("The ffmpeg backend requires an url/file via the '-f' parameter")
-            exit(1)
+            logger.info("The ffmpeg backend requires an url/file via the '-f' parameter")
+            sys.exit(1)
         elif not os.path.isfile(input) and not input.startswith("rtsp"):
-            print("File", input, "does not exist")
-            exit(1)
+            logger.info("File", input, "does not exist")
+            sys.exit(1)
     else:
         raise BugException()
 
@@ -72,7 +76,7 @@ def get_audio_input(args):
 
 
 def send_start(url, sessionID, streamID, show_on_website, save_path, website_title, meta, access, api, token):
-    print("Start sending audio")
+    logger.info("Start sending audio")
     data = {"controll": "START"}
     if show_on_website:
         data["type"] = "lecture"
@@ -89,8 +93,8 @@ def send_start(url, sessionID, streamID, show_on_website, save_path, website_tit
         cookies={"_forward_auth": token},
     )
     if info.status_code != 200:
-        print(info.status_code, info.text)
-        print("ERROR in starting session")
+        logger.error(info.status_code, info.text)
+        logger.error("ERROR in starting session")
         sys.exit(1)
 
 
@@ -121,12 +125,9 @@ def send_audio(
         cookies={"_forward_auth": token},
     )
     if res.status_code != 200:
-        print(res.status_code, res.text)
-        print("ERROR in sending audio")
+        logger.error(res.status_code, res.text)
+        logger.error("ERROR in sending audio")
         sys.exit(1)
-    # else:
-    # print(len(chunk))
-
     return e
 
 
@@ -139,10 +140,10 @@ def send_video(videopath, url, sessionID, streamID, api, token):
         cookies={"_forward_auth": token},
     )
     if res.status_code != 200:
-        print(res.status_code, res.text)
-        print("ERROR in sending video")
+        logger.error(res.status_code, res.text)
+        logger.error("ERROR in sending video")
         sys.exit(1)
-    print("Video successfully sent.")
+    logger.info("Video successfully sent.")
 
 
 def send_link(videopath, url, sessionID, streamID, api, token):
@@ -153,10 +154,10 @@ def send_link(videopath, url, sessionID, streamID, api, token):
         cookies={"_forward_auth": token},
     )
     if res.status_code != 200:
-        print(res.status_code, res.text)
-        print("ERROR in sending video")
+        logger.error(res.status_code, res.text)
+        logger.error("ERROR in sending video")
         sys.exit(1)
-    print("Video successfully sent.")
+    logger.info("Video successfully sent.")
 
 
 def send_memory(url, sessionID, streamID, api, token, memory_words):
@@ -167,14 +168,14 @@ def send_memory(url, sessionID, streamID, api, token, memory_words):
         cookies={"_forward_auth": token},
     )
     if res.status_code != 200:
-        print(res.status_code, res.text)
-        print("ERROR in sending memory")
+        logger.error(res.status_code, res.text)
+        logger.error("ERROR in sending memory")
         sys.exit(1)
-    print("Memory successfully sent.")
+    logger.info("Memory successfully sent.")
 
 
 def send_end(url, sessionID, streamID, api, token):
-    print("Sending END.")
+    logger.info("Sending END.")
     data = {"controll": "END"}
     res = requests.post(
         url + "/" + api + "/" + sessionID + "/" + streamID + "/append",
@@ -182,8 +183,8 @@ def send_end(url, sessionID, streamID, api, token):
         cookies={"_forward_auth": token},
     )
     if res.status_code != 200:
-        print(res.status_code, res.text)
-        print("ERROR in sending END message")
+        logger.error(res.status_code, res.text)
+        logger.error("ERROR in sending END message")
         sys.exit(1)
 
 
@@ -229,7 +230,7 @@ def send_session(
         else:
             send_video(audio_source.url, url, sessionID, streamID, api, token)
     except KeyboardInterrupt:
-        print("Caught KeyboardInterrupt")
+        logger.info("Caught KeyboardInterrupt")
 
     time.sleep(1)
     send_end(url, sessionID, streamID, api, token)
@@ -260,7 +261,7 @@ def read_text(
         with open(save_video, "wb") as f:
             f.write(header)
 
-    print("Starting SSEClient")
+    logger.info("Starting SSEClient")
     messages = SSEClient(url + "/" + api + "/stream?channel=" + sessionID)
     for msg in messages:
         if len(msg.data) == 0:
@@ -269,8 +270,8 @@ def read_text(
         try:
             data = json.loads(msg.data)
         except json.decoder.JSONDecodeError:
-            print(
-                "WARNING: json.decoder.JSONDecodeError (this may happend when running tts system but no video generation)",
+            logger.warning(
+                "json.decoder.JSONDecodeError (this may happend when running tts system but no video generation)",
             )
             continue
 
@@ -283,19 +284,19 @@ def read_text(
             if "controll" in data:
                 if data["controll"] == "INFORMATION":
                     s = "%s: PROPERTIES: %s" % (data["sender"], data[data["sender"]])
-                    print(s)
+                    logger.info(s)
                     if output_file is not None:
                         with open(output_file, "a") as f:
                             f.write(s + "\n")
                 elif data["controll"] == "START":
                     s = "%s: START" % data["sender"]
-                    print(s)
+                    logger.info(s)
                     if output_file is not None:
                         with open(output_file, "a") as f:
                             f.write(s + "\n")
                 elif data["controll"] == "END":
                     s = "%s: END" % data["sender"]
-                    print(s)
+                    logger.info(s)
                     if output_file is not None:
                         with open(output_file, "a") as f:
                             f.write(s + "\n")
@@ -327,35 +328,35 @@ def read_text(
                         float(data["end"]),
                         data["seq"],
                     )
-                    print(s)
+                    logger.info(s)
                 elif data.get("linkedData"):
                     for k, v in data.items():
                         if type(v) is str and v.startswith("/ltapi"):
                             if save_video is not None:
-                                print("Downloading", v, "...")
+                                logger.info("Downloading", v, "...")
                                 res = requests.get(url + v)
                                 if res.status_code == 200:
                                     with open(save_video, "ab") as f:
                                         f.write(base64.b64decode(res.json()))
-                                    print("Downloading finished.")
+                                    logger.info("Downloading finished.")
                                 else:
-                                    print("Error during download!")
+                                    logger.error("Error during download!")
                             else:
-                                print("Received video or audio:", v)
+                                logger.info("Received video or audio:", v)
                             break
                     s = None
                 if output_file is not None:
                     with open(output_file, "a") as f:
                         f.write(s + "\n")
         elif printing == 1:
-            print(data)
+            logger.info(data)
             if output_file is not None:
                 with open(output_file, "a") as f:
                     f.write(str(data) + "\n")
         elif printing == 2:
             end_time = time.monotonic()
             received_time = end_time - start_time
-            print(f"{received_time:.2f}▁{json.dumps(data)}")
+            logger.info(f"{received_time:.2f}▁{json.dumps(data)}")
             if output_file is not None:
                 with open(output_file, "a") as f:
                     f.write(f"{received_time:.2f}▁{json.dumps(data)}\n")
@@ -427,7 +428,7 @@ def set_graph(args):
     d["tts_prop"] = args.tts_properties
     d["lip_prop"] = args.video_properties
 
-    print("Requesting default graph for ASR")
+    logger.info("Requesting default graph for ASR")
     res = requests.post(
         args.url + "/" + args.api + "/get_default_asr",
         json=json.dumps(d),
@@ -435,18 +436,18 @@ def set_graph(args):
     )
     if res.status_code != 200:
         if res.status_code == 401:
-            print(
+            logger.info(
                 "You are not authorized. Either authenticate with --url https://$username:$password@$server or with --token $token where you get the token from "
                 + args.url
                 + "/gettoken",
             )
         else:
-            print(res.status_code, res.text)
-            print("ERROR in requesting default graph for ASR")
+            logger.error(res.status_code, res.text)
+            logger.error("ERROR in requesting default graph for ASR")
         sys.exit(1)
     sessionID, streamID = res.text.split()
 
-    print("SessionId", sessionID, "StreamID", streamID)
+    logger.info("SessionId", sessionID, "StreamID", streamID)
 
     graph = json.loads(
         requests.post(
@@ -454,7 +455,7 @@ def set_graph(args):
             cookies={"_forward_auth": args.token},
         ).text,
     )
-    print("Graph:", graph)
+    logger.info("Graph:", graph)
 
     return sessionID, streamID
 
@@ -485,7 +486,7 @@ def run_session(args, audio_source):
 
     time.sleep(1)  # To make sure the SSEClient is running before sending the INFORMATION request
 
-    print("Requesting worker informations")
+    logger.info("Requesting worker informations")
     data = {"controll": "INFORMATION"}
     info = requests.post(
         args.url + "/" + args.api + "/" + sessionID + "/" + streamID + "/append",
@@ -493,8 +494,8 @@ def run_session(args, audio_source):
         cookies={"_forward_auth": args.token},
     )
     if info.status_code != 200:
-        print(info.status_code, info.text)
-        print("ERROR in requesting worker information")
+        logger.error(info.status_code, info.text)
+        logger.error("ERROR in requesting worker information")
         sys.exit(1)
 
     send_session(
@@ -519,55 +520,55 @@ def run_session(args, audio_source):
     t.join()
 
 
-def get_available_languages(args):
-    info = requests.post(args.url + "/" + args.api + "/list_available_languages", cookies={"_forward_auth": args.token})
-    if info.status_code != 200:
-        print(info.status_code, info.text)
-        print("ERROR in listing languages")
-        sys.exit(1)
-    return info.json()
+@return_json
+@check_status_code
+def get_available_languages(args: argparse.Namespace) -> requests.Request:
+    """Fetches available languages from the provided API."""
+    return requests.post(url=f"{args.url}/{args.api}/list_available_languages", cookies={"_forward_auth": args.token})
 
 
-def print_active_sessions():
-    info = requests.get(args.url + "/" + args.api + "/get_active_sessions", cookies={"_forward_auth": args.token})
-    if info.status_code != 200:
-        print(info.status_code, info.text)
-        print("ERROR in listing active sessions")
-        sys.exit(1)
-    sessions = info.json()
-    if len(sessions) == 0:
-        print("No sessions found")
-    for s in sessions:
-        s = json.loads(s)
-        if "session" in s and "host" in s:
-            print("Session:", s["session"], "Host:", s["host"])
+@return_json
+@check_status_code
+def get_active_sessions(args: argparse.Namespace) -> requests.Request:
+    url = f"{args.url}/{args.api}/get_active_sessions"
+    return requests.get(url=url, cookies={"_forward_auth": args.token})
+
+
+def print_active_sessions(args: argparse.Namespace) -> None:
+    active_sessions: list[str] = get_active_sessions(args)
+    if len(active_sessions) == 0:
+        logger.info("No active_sessions found")
+    for session_string in active_sessions:
+        session_entry: dict[str, str] = json.loads(session_string)
+        if "session" in session_entry and "host" in session_entry:
+            logger.info("Session: %s, Host: %s", session_entry["session"], session_entry["host"])
         else:
-            print(s)
+            logger.info(json.dumps(session_entry, indent=2))
 
 
 def main(args):
     if args.list_available_languages:
-        print("Listing available languages of mediator")
-        print(get_available_languages(args))
+        logger.info("Listing available languages of mediator")
+        logger.info(get_available_languages(args))
         return
     if args.list_active_sessions:
-        print("Listing active sessions of mediator")
-        print_active_sessions()
+        logger.info("Listing active sessions of mediator")
+        print_active_sessions(args)
         return
     if args.upload_video:
         if args.input != "ffmpeg":
-            print("To upload a video you have to use ffmpeg input.")
+            logger.info("To upload a video you have to use ffmpeg input.")
             return
         if args.ffmpeg_input is None:
-            print("To upload a video you have to specify the video via ffmpeg_input")
+            logger.info("To upload a video you have to specify the video via ffmpeg_input")
             return
         if args.save_path == "" and args.generate_video is None and args.run_tts is None:
-            print(
+            logger.info(
                 "You have to specify the save-path (e.g. /logs/archive/lecture_name/semester/lecture_number), press c to ignore this.",
             )
             breakpoint()
         if "version" not in args.asr_properties or args.asr_properties["version"] != "offline":
-            print("To upload a video you have to use offline mode: --asr-kv version=offline")
+            logger.info("To upload a video you have to use offline mode: --asr-kv version=offline")
             return
 
     audio_source = get_audio_input(args)
@@ -771,25 +772,25 @@ def parse():
 
 
 if __name__ == "__main__":
-    args = parse()
+    arguments = parse()
 
-    if not args.run_scheduler:
-        print("args", args)
-        main(args)
+    if not arguments.run_scheduler:
+        logger.info(json.dumps(vars(arguments), indent=4))
+        main(arguments)
     else:
-        args.input = "ffmpeg"
-        args.asr_properties.update({"mode": "SendUnstable", "language": "en,de"})
-        args.mt_properties.update({"mode": "SendUnstable"})
-        args.run_mt = "en-fr,en-it,en-nl,en-es,en-pt"
-        args.show_on_website = True
+        arguments.input = "ffmpeg"
+        arguments.asr_properties.update({"mode": "SendUnstable", "language": "en,de"})
+        arguments.mt_properties.update({"mode": "SendUnstable"})
+        arguments.run_mt = "en-fr,en-it,en-nl,en-es,en-pt"
+        arguments.show_on_website = True
 
-        print("args", args)
+        logger.info(json.dumps(vars(arguments), indent=4))
 
         streams = {
             line.strip().split("\t")[1]: line.strip().split("\t")[4] for line in open("rtmp_list.txt")
         }  # id: rtmp_stream
         sessions = [line.strip().split() for line in open("sessions.txt") if line[0] != "D"]
-        print(sessions)
+        logger.info(sessions)
 
         threads = []
         for timestamp, minutes, room, title in sessions:
@@ -798,7 +799,7 @@ if __name__ == "__main__":
             if wait_seconds < 0:
                 continue
 
-            args_ = copy.deepcopy(args)
+            args_ = copy.deepcopy(arguments)
             args_.ffmpeg_input = streams[room]
             args_.website_title = title
             args_.timeout = 60 * float(minutes)
@@ -807,7 +808,7 @@ if __name__ == "__main__":
             t.daemon = True
             threads.append(t)
 
-        print(str(len(threads)) + " sessions are now scheduled.")
+        logger.info(str(len(threads)) + " sessions are now scheduled.")
 
         for t in threads:
             t.start()

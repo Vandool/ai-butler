@@ -9,11 +9,14 @@ from threading import Thread
 import requests
 from sseclient import SSEClient
 
-from butler import Butler
+import logger_utils
 from pythonrecordingclient.helper import BugException
+from src.butler import Butler
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
 butler = None
+
+logger = logger_utils.get_logger("DemoClient")
 
 
 def verify_chunk_size(value: str | int) -> int:
@@ -222,8 +225,9 @@ def print_active_sessions():
     sessions = info.json()
     if len(sessions) == 0:
         logging.debug("No sessions found")
-    for s in sessions:
-        s = json.loads(s)
+    print("Printing active sessions ...")
+    for k, v in sessions.items():
+        print(f"Key: {k}, Value: {v}")
 
 
 def main(args):
@@ -281,5 +285,5 @@ def parse():
 if __name__ == "__main__":
     args = parse()
 
-    print("args", args)
+    logger.info(json.dumps(vars(args), indent=4))
     main(args)
