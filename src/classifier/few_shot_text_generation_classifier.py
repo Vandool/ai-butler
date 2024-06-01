@@ -34,7 +34,7 @@ class FewShotTextGenerationClassifier(BaseIntentClassifier):
         self.logger.debug("Client Response Details:\n%s", json.dumps(vars(response), indent=2))
         return response
 
-    def get_closest_intent(self, input_text: str, prompt_type: str = "simple") -> Intent:
+    def get_closest_intent(self, input_text: str, prompt_type: PromptType = PromptType.ZERO_SHOT) -> Intent:
         return self.intent_manager.get_closest_intent(
             message=self.classify(input_text, prompt_type),
         )

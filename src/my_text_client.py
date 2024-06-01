@@ -5,7 +5,6 @@ from src.classifier.few_shot_text_generation_classifier import FewShotTextGenera
 from src.classifier.zero_shot_classifier import ZeroShotClassifier
 from src.config.config import get_config
 from src.intent.intent_manager import CALENDAR, LECTURE, IntentManager
-from src.prompt_generator.prompt_generator import PromptType
 
 logger = utils.get_logger("MyTextClient")
 
@@ -29,29 +28,29 @@ def test_classifiers():
         if user_input.lower() in {"exit", "quit", "e", "q"}:
             break
 
-        intent_manager.use_unknown_intent = False
-        logger.info("ZeroShot=============")
-        logger.info(f"{zero_shot_classifier.classify(user_input) =}")
-        logger.info(f"{zero_shot_classifier.classify_with_details(user_input) =}")
-        logger.info(f"{zero_shot_classifier.get_closest_intent(user_input) =}")
-
-        for prompt_type in PromptType:
-            logger.info(f"FewShotTextGeneration============={prompt_type.name.upper()}")
-            logger.info(f"{ few_shot_text_classifier.classify(user_input) =}")
-            logger.info(f"{few_shot_text_classifier.classify_with_details(user_input, prompt_type=prompt_type) =}")
-            logger.info(f"{few_shot_text_classifier.get_closest_intent(user_input, prompt_type=prompt_type) =}")
-
-        intent_manager.use_unknown_intent = True
-        logger.info("ZeroShot=============")
-        logger.info(f"{zero_shot_classifier.classify(user_input) =}")
-        logger.info(f"{zero_shot_classifier.classify_with_details(user_input) =}")
-        logger.info(f"{zero_shot_classifier.get_closest_intent(user_input) =}")
-
-        for prompt_type in PromptType:
-            logger.info(f"FewShotTextGeneration============={prompt_type.name.upper()}")
-            logger.info(f"{ few_shot_text_classifier.classify(user_input) =}")
-            logger.info(f"{few_shot_text_classifier.classify_with_details(user_input, prompt_type=prompt_type) =}")
-            logger.info(f"{few_shot_text_classifier.get_closest_intent(user_input, prompt_type=prompt_type) =}")
+        # intent_manager.use_unknown_intent = False
+        # logger.info("ZeroShot=============")
+        # logger.info(f"{zero_shot_classifier.classify(user_input) =}")
+        # logger.info(f"{zero_shot_classifier.classify_with_details(user_input) =}")
+        # logger.info(f"{zero_shot_classifier.get_closest_intent(user_input) =}")
+        logger.info(f"{few_shot_text_classifier.get_closest_intent(user_input) =}")
+        # for prompt_type in PromptType:
+        #     logger.info(f"FewShotTextGeneration============={prompt_type.name.upper()}")
+        #     logger.info(f"{ few_shot_text_classifier.classify(user_input) =}")
+        #     logger.info(f"{few_shot_text_classifier.classify_with_details(user_input, prompt_type=prompt_type) =}")
+        #     logger.info(f"{few_shot_text_classifier.get_closest_intent(user_input, prompt_type=prompt_type) =}")
+        #
+        # intent_manager.use_unknown_intent = True
+        # logger.info("ZeroShot=============")
+        # logger.info(f"{zero_shot_classifier.classify(user_input) =}")
+        # logger.info(f"{zero_shot_classifier.classify_with_details(user_input) =}")
+        # logger.info(f"{zero_shot_classifier.get_closest_intent(user_input) =}")
+        #
+        # for prompt_type in PromptType:
+        #     logger.info(f"FewShotTextGeneration============={prompt_type.name.upper()}")
+        #     logger.info(f"{ few_shot_text_classifier.classify(user_input) =}")
+        #     logger.info(f"{few_shot_text_classifier.classify_with_details(user_input, prompt_type=prompt_type) =}")
+        #     logger.info(f"{few_shot_text_classifier.get_closest_intent(user_input, prompt_type=prompt_type) =}")
 
 
 if __name__ == "__main__":
