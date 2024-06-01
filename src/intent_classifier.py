@@ -13,6 +13,7 @@ import logger_utils
 class Intent:
     name: str
     examples: list[str]
+    description: str | None = None
 
 
 class IntentClassifier:
@@ -38,7 +39,7 @@ class IntentClassifier:
 
         # Generate a prompt
         prompt = self._generate_prompt(input_text, examples)
-        self.logger.debug("prompt: %s\n", prompt)
+        self.logger.debug("prompt: %s\n\n", prompt)
 
         # Perform classification using the InferenceClient
         response = self.client.text_generation(
@@ -51,17 +52,34 @@ class IntentClassifier:
         return response
 
     def _generate_prompt(self, input_text: str, examples: dict) -> str:
+        """Generate a prompt for the given input text.
+
+        Meaning of the used symbols
+            <s> and </s>: Marks the start and end of the sequence.
+            [INST] and [/INST]: Indicate the instruction or task.
+        """
         if len(self.intents) == 2:
             classes = " or ".join([intent.name for intent in self.intents])
         else:
             classes = ", ".join([intent.name for intent in self.intents[: len(self.intents) - 1]])
             classes = classes + f" or {self.intents[-1].name}"
+        prompt = "<s>[INST] As a professional text classifier, you can classify any given text into given classes.\n"
+        prompt += "You only classify texts into 1 class and only use the name of class as answer.\n"
 
-        prompt = f"Classify the text into on of the following classes: {classes}.\n"
+        class_helper = ""
+        for i, intent in enumerate(self.intents, start=1):
+            class_helper += f"Class {1}:\n"
+            class_helper += f"\tName: {intent.name}\ndescription: {intent.description}\n"
+        prompt += f"You know only {len(self.intents)} classes, which have the following names and description.\n"
+        prompt += f"{class_helper}\n"
+        prompt += "I show some examples of a text and a correct class\n"
+
         for intent, example_texts in examples.items():
             for example in example_texts:
-                prompt += f"Example text: {example}\nExample Class: {intent}\n"
-        prompt += f"Real text: {input_text}\nReal class:\n"
+                prompt += f"Text: {example}\nClass: {intent}\n\n"
+
+        prompt += f"Please classify the text into one of the following classes: {classes}.\n\n"
+        prompt += f"Text: {input_text}\nClass: [/INST]</s>"
         return prompt
 
     @property

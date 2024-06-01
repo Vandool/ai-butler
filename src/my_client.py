@@ -29,6 +29,7 @@ def main():
         Intent(
             name="Google Calendar Integration",
             examples=["Create an event", "Schedule a meeting", "What's my next event?"],
+            description="This class deals with all the related activities around calendar events",
         ),
         Intent(
             name="Lecture Translator Integration",
@@ -37,6 +38,8 @@ def main():
                 "Convert the lecture audio to text",
                 "What's the lecture summary?",
             ],
+            description="This class deals with all the related activities around lecture notes, lecture summary and "
+            "translations.",
         ),
     ]
 
