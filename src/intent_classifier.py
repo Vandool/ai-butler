@@ -48,7 +48,7 @@ class IntentClassifier:
             max_new_tokens=max([len(c) for c in candidate_labels]),
         )
         self.logger.debug("Client Response:\n%s", response.generated_text)
-        self.logger.debug("Client Response Details:\n%s", json.dumps(vars(response), indent=4))
+        self.logger.debug("Client Response Details:\n%s", json.dumps(vars(response), indent=2))
         return response
 
     def _generate_prompt(self, input_text: str, examples: dict) -> str:

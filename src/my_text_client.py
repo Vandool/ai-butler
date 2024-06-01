@@ -1,30 +1,17 @@
-import os
-from dataclasses import dataclass
+import json
 
+import logger_utils
+from src.arguments.config import get_config
 from src.intent_classifier import Intent, IntentClassifier
 
-
-@dataclass
-class Args:
-    llm_url: str
-    token: str
-
-
-def get_env_variable(var_name: str) -> str:
-    value = os.getenv(var_name)
-    if not value:
-        msg = "The environment variable '%s' is missing. Set the '%s' with appropriate value and re-run."
-        raise OSError(msg, var_name, var_name)
-    return value
-
-
-def get_args() -> Args:
-    return Args(llm_url=get_env_variable("BUTLER_LLM_URL"), token=get_env_variable("BUTLER_USER_TOKEN"))
+logger = logger_utils.get_logger("MyTextClient")
 
 
 def main():
-    args = get_args()
-    classifier = IntentClassifier(llm_url=args.llm_url)
+    config = get_config()
+    logger.info("%s: %s", config.__class__.__name__, json.dumps(config.__dict__, indent=2))
+
+    classifier = IntentClassifier(llm_url=config.llm_url)
     classifier.intents = [
         Intent(
             name="Google Calendar Integration",
@@ -44,8 +31,8 @@ def main():
     ]
 
     while True:
-        user_input = input("Enter your message (or type 'exit' to quit): ")
-        if user_input.lower() in ["exit", "quit"]:
+        user_input = input("Enter your message (or type 'exit(e)' to quit(q)): ")
+        if user_input.lower() in {"exit", "quit", "e", "q"}:
             break
         classifier.classify(user_input)
         classifier.classify_intent(user_input)
