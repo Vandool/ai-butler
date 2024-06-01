@@ -1,42 +1,55 @@
 import json
 
-import logger_utils
-from src.arguments.config import get_config
-from src.intent_classifier import Intent, IntentClassifier
+from src import utils
+from src.classifier.few_shot_text_generation_classifier import FewShotTextGenerationClassifier
+from src.classifier.zero_shot_classifier import ZeroShotClassifier
+from src.config.config import get_config
+from src.intent.intent_manager import GOOGLE_CALENDAR, LECTURE_TRANSLATOR, IntentManager
 
-logger = logger_utils.get_logger("MyTextClient")
+logger = utils.get_logger("MyTextClient")
 
 
-def main():
+def test_classifiers():
     config = get_config()
     logger.info("%s: %s", config.__class__.__name__, json.dumps(config.__dict__, indent=2))
 
-    classifier = IntentClassifier(llm_url=config.llm_url)
-    classifier.intents = [
-        Intent(
-            name="Google Calendar Integration",
-            examples=["Create an event", "Schedule a meeting", "What's my next event?"],
-            description="This class deals with all the related activities around calendar events",
-        ),
-        Intent(
-            name="Lecture Translator Integration",
-            examples=[
-                "Translate the lecture notes",
-                "Convert the lecture audio to text",
-                "What's the lecture summary?",
-            ],
-            description="This class deals with all the related activities around lecture notes, lecture summary and "
-            "translations.",
-        ),
-    ]
+    intent_manager = IntentManager()
+    intent_manager.add_intent(GOOGLE_CALENDAR)
+    intent_manager.add_intent(LECTURE_TRANSLATOR)
+
+    zero_shot_classifier = ZeroShotClassifier(model=config.zero_shot_model)
+    zero_shot_classifier.intent_manager = intent_manager
+
+    few_shot_text_classifier = FewShotTextGenerationClassifier(llm_url=config.llm_url)
+    few_shot_text_classifier.intent_manager = intent_manager
 
     while True:
         user_input = input("Enter your message (or type 'exit(e)' to quit(q)): ")
         if user_input.lower() in {"exit", "quit", "e", "q"}:
             break
-        classifier.classify_zero_shot(user_input)
-        classifier.classify_few_shot_text_generation(user_input)
+
+        intent_manager.use_unknown_intent = False
+        logger.info("ZeroShot=============")
+        logger.info(f"{zero_shot_classifier.classify(user_input) =}")
+        logger.info(f"{zero_shot_classifier.classify_with_details(user_input) =}")
+        logger.info(f"{zero_shot_classifier.get_closest_intent(user_input) =}")
+
+        logger.info("FewShotTextGeneration=============")
+        logger.info(f"{few_shot_text_classifier.classify(user_input) =}")
+        logger.info(f"{few_shot_text_classifier.classify_with_details(user_input, prompt_type='contextual') =}")
+        logger.info(f"{few_shot_text_classifier.get_closest_intent(user_input, prompt_type='contextual') =}")
+
+        intent_manager.use_unknown_intent = True
+        logger.info("ZeroShot=============UNKNOWN")
+        logger.info(f"{zero_shot_classifier.classify(user_input) =}")
+        logger.info(f"{zero_shot_classifier.classify_with_details(user_input) =}")
+        logger.info(f"{zero_shot_classifier.get_closest_intent(user_input) =}")
+
+        logger.info("FewShotTextGeneration=============UNKNOWN")
+        logger.info(f"{few_shot_text_classifier.classify(user_input) =}")
+        logger.info(f"{few_shot_text_classifier.classify_with_details(user_input, prompt_type='contextual') =}")
+        logger.info(f"{few_shot_text_classifier.get_closest_intent(user_input, prompt_type='contextual') =}")
 
 
 if __name__ == "__main__":
-    main()
+    test_classifiers()

@@ -59,4 +59,5 @@ ignore = [
     "ANN201", # Missing return type annotation for public function
     "ANN401", # Dynamically typed expressions
     "ANN206", # Missing return type annotation for classmethod
+    "G004", # Logging statement uses f-string
 ]

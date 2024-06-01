@@ -1,13 +1,13 @@
 from huggingface_hub import InferenceClient
 
-import logger_utils
+import utils
 
 
 class Butler:
     def __init__(self, llm_url):
         self.history = ""  # Initialize Conversation with empty string
         self.client = InferenceClient(model=llm_url)
-        self.logger = logger_utils.get_logger(self.__class__.__name__)
+        self.logger = utils.get_logger(self.__class__.__name__)
 
     def process(self, new_message, max_new_tokens=64):
         self.logger.info(new_message)

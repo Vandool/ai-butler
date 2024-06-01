@@ -8,12 +8,16 @@ from dataclasses import dataclass
 class Config:
     token: str  # Your personal token
     llm_url: str = "https://8cc9-141-3-25-29.ngrok-free.app"
+    zero_shot_model: str = "facebook/bart-large-mnli"
 
 
 def get_config() -> Config:
     return Config(
-        llm_url=get_env_variable_with_default(var_name="BUTLER_LLM_URL", default=Config.llm_url),
         token=get_mandatory_env_variable("BUTLER_USER_TOKEN"),
+        llm_url=get_env_variable_with_default(var_name="BUTLER_LLM_URL", default=Config.llm_url),
+        zero_shot_model=get_env_variable_with_default(
+            var_name="BUTLER_ZERO_SHOT_MODEL", default=Config.zero_shot_model
+        ),
     )
 
 

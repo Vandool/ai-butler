@@ -9,7 +9,6 @@ from threading import Thread
 import requests
 from sseclient import SSEClient
 
-import logger_utils
 from pythonrecordingclient.helper import BugException
 from src.butler import Butler
 

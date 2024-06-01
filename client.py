@@ -12,7 +12,6 @@ from threading import Thread
 import requests
 from sseclient import SSEClient
 
-import logger_utils
 from pythonrecordingclient.helper import BugException
 from webhandler.webutils import check_status_code, return_json
 
