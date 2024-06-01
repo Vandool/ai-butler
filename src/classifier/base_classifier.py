@@ -63,6 +63,5 @@ class BaseClassifier(abc.ABC):
 
     def __initialize_prompt_generator(self):
         if self._intent_manager is not None:
-            # our PromptGenerator performs better
-            # self._prompt_generator = PromptGenerator(intent_manager=self._intent_manager)
-            self._prompt_generator = Llama2PromptGenerator(intent_manager=self._intent_manager)
+            self._prompt_generator = PromptGenerator(intent_manager=self._intent_manager)
+            # self._prompt_generator = Llama2PromptGenerator(intent_manager=self._intent_manager)
