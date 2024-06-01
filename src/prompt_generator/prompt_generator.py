@@ -84,7 +84,9 @@ class PromptGenerator:
     def _validate_func_names(self):
         for prompt_type in PromptType:
             if getattr(self, prompt_type.func_name) is None:
-                err_msg = f"PromptGenerator should implement {prompt_type} with the exact name {prompt_type.func_name}."
+                err_msg = (
+                    f"PromptGenerator should implement {prompt_type} with the exact name '{prompt_type.func_name}'."
+                )
                 raise ValueError(err_msg)
 
 
