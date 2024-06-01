@@ -13,8 +13,8 @@ class Args:
 def get_env_variable(var_name: str) -> str:
     value = os.getenv(var_name)
     if not value:
-        msg = "The environment variable %s is missing."
-        raise OSError(msg, var_name)
+        msg = "The environment variable '%s' is missing. Set the '%s' with appropriate value and re-run."
+        raise OSError(msg, var_name, var_name)
     return value
 
 
