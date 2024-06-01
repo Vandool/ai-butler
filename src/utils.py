@@ -23,8 +23,8 @@ def calculate_similarity(text1: str, text2: str) -> float:
 
 
 class CustomLogger(logging.Logger):
-    def info_pretty(self, info: Any):
-        self.info(json.dumps(info, indent=2))
+    def info_pretty(self, info: Any, indent: int = 2):
+        self.info(json.dumps(info, indent=indent))
 
 
 def get_logger(module_name: str) -> CustomLogger:

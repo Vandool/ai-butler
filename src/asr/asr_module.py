@@ -4,6 +4,7 @@ import argparse
 import base64
 import copy
 import json
+import re
 import socket
 import sys
 import time
@@ -19,7 +20,10 @@ from pythonrecordingclient.helper import BugException
 from pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
 from src import utils
 from src.classifier.base_classifier import BaseClassifier
+from src.classifier.few_shot_text_generation_classifier import FewShotTextGenerationClassifier
 from src.config.config import get_config
+from src.intent.intent_manager import IntentManagerFactory
+from src.prompt_generator.prompt_generator import PromptType
 from webhandler.webutils import check_status_code, return_json
 
 logger = utils.get_logger("ASRModule")
@@ -34,7 +38,7 @@ class ASRModule:
         self.session_id = None
         self.stream_id = None
         self._classifier: BaseClassifier | None = classifier
-
+        self.transcript_buffer = ""
         if self.args.output_file:
             output_path = Path(self.args.output_file)
             output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -220,21 +224,7 @@ class ASRModule:
 
             if self.args.print_level == 0:
                 if "controll" in data:
-                    if data["controll"] == "INFORMATION":
-                        asr_output = {
-                            "sender": data["sender"],
-                            "properties": data[data["sender"]],
-                        }
-                        logger.info(json.dumps(asr_output))
-                        self._save_json_output(asr_output)
-                    elif data["controll"] == "START":
-                        asr_output = {"sender": data["sender"], "status": "START"}
-                        logger.info_pretty(asr_output)
-                        self._save_json_output(asr_output)
-                    elif data["controll"] == "END":
-                        asr_output = {"sender": data["sender"], "status": "END"}
-                        logger.info_pretty(asr_output)
-                        self._save_json_output(asr_output)
+                    self._process_controll_data(data)
                 else:
                     if (
                         client is not None
@@ -252,20 +242,26 @@ class ASRModule:
                         client.sendto(res, server_port)
 
                     if "seq" in data:
-                        asr_output = {
-                            "sender": data["sender"],
-                            "output": {
-                                "start": float(data["start"]),
-                                "end": float(data["end"]),
-                                "sequence": data["seq"],
-                            },
-                        }
-                        logger.info_pretty(asr_output)
-                        if self.classifier is not None:
-                            self.process_command(data["seq"])
+                        self.transcript_buffer += data["seq"]
+
+                        asr_output = "{}: OUTPUT {:.2f}-{:.2f}: {}".format(
+                            data["sender"],
+                            float(data["start"]),
+                            float(data["end"]),
+                            data["seq"],
+                        )
+                        logger.info(asr_output)
+                        self._save_str_output(asr_output)
+
+                        if self._is_sentence_complete(self.transcript_buffer):
+                            full_sentence = self.transcript_buffer.strip()
+                            self.transcript_buffer = ""
+                            logger.info("full sentence: %s", full_sentence)
+                            if self.classifier is not None:
+                                self.process_command(full_sentence)
 
                     elif data.get("linkedData"):
-                        for k, v in data.items():
+                        for v in data.values():
                             if isinstance(v, str) and v.startswith("/ltapi"):
                                 if self.args.save_video is not None:
                                     logger.info(f"Downloading {v}...")
@@ -279,10 +275,8 @@ class ASRModule:
                                 else:
                                     logger.info(f"Received video or audio: {v}")
                                 break
-                        asr_output = None
-                    self._save_json_output(asr_output)
             elif self.args.print_level == 1:
-                logger.info(data)
+                logger.info_pretty(data)
                 self._save_json_output(data)
             elif self.args.print_level == 2:
                 end_time = time.monotonic()
@@ -293,6 +287,25 @@ class ASRModule:
                 }
                 logger.info_pretty(asr_output)
                 self._save_json_output(asr_output)
+
+    def _process_controll_data(self, data: dict) -> None:
+        asr_output = (
+            {
+                "sender": data["sender"],
+                "properties": data[data["sender"]],
+            }
+            if data["controll"] == "INFORMATION"
+            else {
+                "sender": data["sender"],
+                "status": data["controll"],
+            }
+        )
+        logger.info_pretty(asr_output)
+        self._save_json_output(asr_output)
+
+    @staticmethod
+    def _is_sentence_complete(text: str) -> bool:
+        return re.search(r"[.!?]$", text.strip()) is not None
 
     def _save_json_output(self, data: dict):
         self._save_str_output(json.dumps(data, indent=2))
@@ -327,7 +340,10 @@ class ASRModule:
         return transcript.strip()
 
     def _check_and_send_to_classifier(self, transcript: str):
-        classification_result = self.classifier.get_closest_intent(transcript).name
+        classification_result = self.classifier.get_closest_intent(
+            input_text=transcript,
+            prompt_type=PromptType.FEW_SHOT_DETAILED,
+        ).name
         logger.info(f"Classification result: {classification_result}")
 
     @return_json
@@ -443,10 +459,10 @@ class ASRModule:
 def main(args):
     asr_module = ASRModule(
         args=args,
-        # classifier=FewShotTextGenerationClassifier(
-        #     llm_url=args.llm_url,
-        #     intent_manager=IntentManagerFactory.get_intent_manager_with_unknown_intent(),
-        # ),
+        classifier=FewShotTextGenerationClassifier(
+            llm_url=args.llm_url,
+            intent_manager=IntentManagerFactory.get_intent_manager_with_unknown_intent(),
+        ),
     )
 
     if args.list_available_languages:
@@ -481,10 +497,10 @@ def main(args):
 def run_immediate_session(args):
     asr_module = ASRModule(
         args=args,
-        # classifier=FewShotTextGenerationClassifier(
-        #     llm_url=args.llm_url,
-        #     intent_manager=IntentManagerFactory.get_intent_manager_with_unknown_intent(),
-        # ),
+        classifier=FewShotTextGenerationClassifier(
+            llm_url=args.llm_url,
+            intent_manager=IntentManagerFactory.get_intent_manager_with_unknown_intent(),
+        ),
     )
 
     if args.list_available_languages:
