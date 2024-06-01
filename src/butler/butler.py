@@ -1,13 +1,15 @@
 from huggingface_hub import InferenceClient
 
 from src import utils
+from src.asr.asr_module import ASRModule
 
 
 class Butler:
-    def __init__(self, llm_url):
+    def __init__(self, llm_url: str, asr_module: ASRModule) -> None:
         self.history = ""  # Initialize Conversation with empty string
         self.client = InferenceClient(model=llm_url)
         self.logger = utils.get_logger(self.__class__.__name__)
+        self.asr_module: ASRModule = asr_module
 
     def process(self, new_message, max_new_tokens=64):
         self.logger.info(new_message)

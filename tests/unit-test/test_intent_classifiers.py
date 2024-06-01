@@ -7,7 +7,7 @@ from src.prompt_generator.prompt_generator import PromptType
 test_data = [
     # Google Calendar
     ("Add a new calendar event", CALENDAR.name),
-    ("Set up a meeting for tomorrow", CALENDAR.name),
+    ("Set up a meeting for tomorrow",  CALENDAR.name),
     ("When is my next scheduled event?", CALENDAR.name),
     ("Organize a team meeting", CALENDAR.name),
     ("Plan an event for next week", CALENDAR.name),

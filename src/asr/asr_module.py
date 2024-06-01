@@ -21,11 +21,11 @@ from src.classifier.base_classifier import BaseClassifier
 from src.classifier.few_shot_text_generation_classifier import FewShotTextGenerationClassifier
 from src.config.asr_llm_config import get_config
 from src.intent.intent_manager import IntentManagerFactory
+from src.intent.intent_mapper import get_intent_class
+from src.intent.web_handler.my_web_utils import check_status_code, return_json
 from src.prompt_generator.prompt_generator import PromptType
 from src.pythonrecordingclient.helper import BugException
 from src.pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
-from src.web_handler.calendar_api import CalendarAPI, format_datetime
-from webhandler.webutils import check_status_code, return_json
 
 logger = utils.get_logger("ASRModule")
 
@@ -44,11 +44,10 @@ class ASRModule:
             output_path = Path(self.args.output_file)
             output_path.parent.mkdir(parents=True, exist_ok=True)
 
+        logger.labeled_info_pretty(label="Available Languages", info=self.get_available_languages())
+        logger.labeled_info_pretty(label="Active Sessions", info=self.get_active_sessions())
         if args.audio_device < 0:
             self.list_and_select_audio_device()
-
-        self.get_available_languages()
-        self.get_active_sessions()
 
     @property
     def classifier(self) -> BaseClassifier:
@@ -81,7 +80,7 @@ class ASRModule:
             from src.pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
 
             logger.info("Using portaudio as input_. If you want to use ffmpeg specify '-i ffmpeg'.")
-            # (Arvand): Added the chunk_size to controll the chunk size while playing around
+            # (Arvand): Added the chunk_size to control the chunk size while playing around
             stream_adapter = PortaudioStream(chunk_size=arguments.chunk_size)
             input_ = self.args.audio_device
             if self.args.audio_device < 0:
@@ -319,7 +318,8 @@ class ASRModule:
 
     @staticmethod
     def keyword_spotting(transcript: str) -> bool:
-        keywords = ["ok butler", "okay butler", "hey butler", "butler"]
+        # TODO: maybe we can use a classifier here? as improvement?
+        keywords = ["ok butler", "okay butler", "hey butler", "butler", "bottler"]
         transcript = transcript.lower()
         return any(fuzz.partial_ratio(transcript, keyword) > 80 for keyword in keywords)
 
@@ -341,21 +341,13 @@ class ASRModule:
         return transcript.strip()
 
     def _check_and_send_to_classifier(self, transcript: str):
-        classification_result = self.classifier.get_closest_intent(
+        intent = self.classifier.get_closest_intent(
             input_text=transcript,
             prompt_type=PromptType.FEW_SHOT_DETAILED,
-        ).name
-        logger.info(f"Classification result: {classification_result}")
-        if "calendar" in classification_result.lower():
-            new_event = CalendarAPI.create_new_appointment(
-                summary="Team Meeting",
-                start_time=format_datetime(datetime.datetime.now(datetime.UTC)),
-                end_time=format_datetime(datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)),
-                description="Discuss project updates",
-                location="Conference Room",
-            )
-
-            logger.info(f"New Event Created:{json.dumps(new_event, indent=2)}")
+        )
+        logger.info(f"Classification result: {intent.name}")
+        if (intent_processor := get_intent_class(intent)) is not None:
+            intent_processor.process(transcript)
 
     @return_json
     @check_status_code

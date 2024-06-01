@@ -26,6 +26,9 @@ class CustomLogger(logging.Logger):
     def info_pretty(self, info: Any, indent: int = 2):
         self.info(json.dumps(info, indent=indent))
 
+    def labeled_info_pretty(self, label: str, info: Any, indent: int = 2):
+        self.info(f"{label}: {json.dumps(info, indent=indent)}")
+
 
 def get_logger(module_name: str) -> CustomLogger:
     logging.setLoggerClass(CustomLogger)  # Set CustomLogger as the logger class

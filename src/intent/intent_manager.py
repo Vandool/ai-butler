@@ -3,16 +3,14 @@ from __future__ import annotations
 from collections.abc import Iterator
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
 
 from src import utils
 from src.intent.intent import Intent
-from src.utils import calculate_similarity
+
+# Design Decision: How to classify hierarchical classes?
 
 
 class IntentManager:
-    _MODEL = SentenceTransformer("all-MiniLM-L6-v2")
-
     def __init__(self):
         self._intents: list[Intent] = []
         self.logger = utils.get_logger(self.__class__.__name__)
@@ -55,7 +53,7 @@ class IntentManager:
         return {i.name: i.examples[:num_shots] for i in self}
 
     def get_closest_intent(self, message: str):
-        similarity_scores = [calculate_similarity(message, i.name) for i in self]
+        similarity_scores = [utils.calculate_similarity(message, i.name) for i in self]
         self.logger.debug(f"Similarity scores: {list(zip(similarity_scores, self._intents, strict=False))}")
         return self._intents[np.argmax(similarity_scores)]
 
