@@ -1,18 +1,36 @@
 from __future__ import annotations
 
+import datetime
 import inspect
 import json
 from collections.abc import Callable
 
 from huggingface_hub import InferenceClient
 
-import utils
-from config.asr_llm_config import get_config
-from history.history import History
-from intent.intent import Slot
-from intent.web_handler.calendar_api import CalendarAPI
+from src import utils
+from src.config.asr_llm_config import get_config
+from src.history.history import History
+from src.intent.intent import Slot
+from src.intent.web_handler.calendar_api import CalendarAPI
 
 logger = utils.get_logger("SlotFiller")
+
+_GREETING_PROMPT_FMT = """
+<s>[INST] <<SYS>>
+You are a professional python developer specialised in the package datetime.
+You can convert natural language dates into datetime functions
+
+Example:
+text: today at 9 o'clock
+answer: Alright, let's create an appointment.
+
+Greet them with one very short sentence.
+Do not ask user any question! I repeat, do not ask any questions.
+
+Text: {purpose}
+<</SYS>> [/INST]
+AI:
+"""
 
 
 def extract_slots_from_function(func) -> list[Slot]:
@@ -43,10 +61,6 @@ Do not output the Current Slots!
 Do not tell the user why you are asking a question about the appointment.
 Do not suggest the user how they should reply.
 
-
-Begin!
-Information check:
-{check}
 Current conversation:
 {history}
 Current Slots:
@@ -55,7 +69,7 @@ Human: {input}
 <</SYS>> [/INST]
 AI:
 """
-    GREETING_PROMPT_FMT = """
+    _GREETING_PROMPT_FMT = """
 <s>[INST] <<SYS>>
 You are an AI assistant and welcome the human to the conversation and greet them very briefly.
 
@@ -70,7 +84,7 @@ Text: {purpose}
 <</SYS>> [/INST]
 AI:
 """
-    SLOT_INSTRUCTION_FMT = "If {name} is None with respect to the Current Slots 'value', ask a question about the {name} of the appointment."
+    _SLOT_INSTRUCTION_FMT = "If {name} is None with respect to the Current Slots 'value', ask a question about the {name} of the appointment."
 
     def __init__(self, func: Callable, llm_url: str):
         self.purpose: str = func.__name__
@@ -91,14 +105,13 @@ AI:
         return None
 
     def generate_prompt(self, user_input: str) -> str:
-        slot_instructions = self.SLOT_INSTRUCTION_FMT.format(name=self.next_slot.name)
+        slot_instructions = self._SLOT_INSTRUCTION_FMT.format(name=self.next_slot.name)
         current_slots_str = self.next_slot.get_name_value()
         history_str = self.history.get_history()
 
         return self._DEFAULT_TEMPLATE_FMT.format(
             purpose=self.purpose,
             slot_instructions=slot_instructions,
-            check=str(self.is_done),
             history=history_str,
             slots=current_slots_str,
             input=user_input,
@@ -111,9 +124,8 @@ AI:
             return "LLM: Sending confirmation ..."
 
         self.history.add_human_message(user_input)
-        logger.info(f"Handling user input {user_input} ...")
+        logger.info(f"Handling user input '{user_input}' ...")
         prompt = self.generate_prompt(user_input)
-        # logger.info(prompt)
         response = self.generate_response(prompt)
         self.history.add_ai_message(response)
         return response
@@ -131,7 +143,18 @@ AI:
             greetings = self.generate_response(prompt=self.generate_prompt(initial_message))
             self.history.add_ai_message(greetings)
             return input(greetings + "\nUser: ")
-        return input("\nUser: ")
+        return input("User: ")
+
+    def fill_slot(self, user_input: str) -> None:
+        if "time" in self.next_slot.name:
+            user_input = clean(string=self.generate_response(prompt=datetime_prompt(user_input)))
+        self.next_slot.set_value(value=user_input)
+
+    def get_kwargs(self) -> dict:
+        kwargs = {}
+        for slot in self.slots:
+            kwargs.update(slot.get_kwarg())
+        return kwargs
 
     def run_text_interface(self):
         logger.info(f"All Slots: {self.slots}")
@@ -140,9 +163,7 @@ AI:
             logger.info(self.handle_user_input(user_input))
         logger.info(f"All Slots: {self.slots}")
         logger.info(f"History: {self.history.get_history()}")
-
-    def fill_slot(self, user_input: str) -> None:
-        self.next_slot.set_value(value=user_input)
+        logger.info(self.get_kwargs())
 
 
 def run_slot_filler():
@@ -151,6 +172,34 @@ def run_slot_filler():
 
     slot_filler = SlotFillerSimple(func=CalendarAPI.create_new_appointment, llm_url=config.llm_url)
     slot_filler.run_text_interface()
+
+
+def clean(string: str) -> str:
+    return string.replace("\n", "").replace("\t", "").replace(" ", "")
+
+
+def datetime_prompt(user_input: str) -> str:
+    now = datetime.datetime.now(datetime.UTC).isoformat()
+    prompt_fmt = """
+<s>[INST]
+You specialise into converting spoken date and time into ISO 8601 formatted string output in UTC.
+When you can't answer correctly, you simply answer "None"
+
+Example:
+input: today at 8 o'clock
+now: 2024-06-01T18:56:15.900521+00:00
+output: Given the current time "2024-06-01T18:56:15.900521+00:00" and the input "tomorrow at 8 o'clock pm", the ISO 8601 formatted string output in UTC would be: 2024-06-02T20:00:00+00:00
+
+input: yesterday at 8 o'clock
+now: 2024-06-01T18:56:15.900521+00:00
+output: Given the current time "2024-06-01T18:56:15.900521+00:00" and the input "tomorrow at 8 o'clock pm", the ISO 8601 formatted string output in UTC would be: None
+
+input: {user_input}
+now: {now}
+<</SYS>> [/INST]
+output: Given the current time "{now}" and the input "{user_input}", the ISO 8601 formatted string output in UTC would be: 
+"""
+    return prompt_fmt.format(now=now, user_input=user_input)
 
 
 if __name__ == "__main__":

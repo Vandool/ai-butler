@@ -2,7 +2,11 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 from src.config import config_utils
+
+load_dotenv()
 
 
 @dataclass

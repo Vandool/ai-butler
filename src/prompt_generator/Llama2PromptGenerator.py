@@ -4,7 +4,7 @@ import os
 
 from dotenv import load_dotenv
 from huggingface_hub import HfFolder
-from transformers import AutoTokenizer
+from transformers import LlamaTokenizer
 
 from src import utils
 from src.intent.intent_manager import CALENDAR, LECTURE, IntentManager
@@ -21,7 +21,7 @@ class Llama2PromptGenerator:
     def __init__(self, intent_manager: IntentManager, num_shots: int = 1):
         self.intent_manager = intent_manager
         self.num_shots = num_shots
-        self.tokenizer = AutoTokenizer.from_pretrained(
+        self.tokenizer = LlamaTokenizer.from_pretrained(
             "meta-llama/Llama-2-7b-chat-hf",
             token=access_token,
         )
@@ -36,7 +36,7 @@ class Llama2PromptGenerator:
         classes = create_or_list(self.intent_manager.list_intent_names())
         messages = [
             {"role": "system", "content": f"Classify the text into one of the following classes: {classes}"},
-            {"role": "user", "content": input_text},
+            {"role": "user", "content": f"{input_text} Class:"},
         ]
         return self.apply_chat_template(messages)
 
@@ -45,7 +45,7 @@ class Llama2PromptGenerator:
         classes = "\n".join(f"{intent.name}: {intent.description}" for intent in self.intent_manager)
         messages = [
             {"role": "system", "content": f"Classify the text into one of the following classes:\n{classes}"},
-            {"role": "user", "content": input_text},
+            {"role": "user", "content": f"{input_text} Class:"},
         ]
         return self.apply_chat_template(messages)
 
@@ -80,7 +80,7 @@ class Llama2PromptGenerator:
 
     def apply_chat_template(self, messages):
         """Use Hugging Face's apply_chat_template method to format messages."""
-        return self.tokenizer.apply_chat_template(messages, tokenize=False)
+        return self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
 
 if __name__ == "__main__":

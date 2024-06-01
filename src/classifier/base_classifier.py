@@ -5,6 +5,7 @@ import abc
 from src import utils
 from src.intent.intent import Intent
 from src.intent.intent_manager import IntentManager
+from src.prompt_generator.Llama2PromptGenerator import Llama2PromptGenerator
 from src.prompt_generator.prompt_generator import PromptGenerator, PromptType
 
 
@@ -63,5 +64,5 @@ class BaseClassifier(abc.ABC):
     def __initialize_prompt_generator(self):
         if self._intent_manager is not None:
             # our PromptGenerator performs better
-            self._prompt_generator = PromptGenerator(intent_manager=self._intent_manager)
-            # self._prompt_generator = Llama2PromptGenerator(intent_manager=self._intent_manager)
+            # self._prompt_generator = PromptGenerator(intent_manager=self._intent_manager)
+            self._prompt_generator = Llama2PromptGenerator(intent_manager=self._intent_manager)

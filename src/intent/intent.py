@@ -61,6 +61,9 @@ class Slot:
     def get_name_value(self):
         return {"name": self.name, "value": self.value}
 
+    def get_kwarg(self) -> dict:
+        return {self.name: self.value}
+
     def __str__(self):
         return str(json.dumps(self.__dict__, indent=2))
 

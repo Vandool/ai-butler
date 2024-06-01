@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import datetime
+import json
 from typing import Any
 
 from dotenv import load_dotenv
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from intent.intent import extract_slots_from_function
 
 from src import utils
 from src.classifier.zero_shot_classifier import ZeroShotClassifier
@@ -255,34 +255,36 @@ def format_datetime(dt: datetime) -> str:
 
 
 if __name__ == "__main__":
-    intent_manager = IntentManager()
-    for name, docstring in intent.get_marked_functions_and_docstrings(module=CalendarAPI).items():
-        intent_manager.add_intent(
-            intent.Intent(
-                name=name,
-                description=docstring,
-            ),
-        )
-    print(intent_manager)
-    print("")
-    slots = extract_slots_from_function(CalendarAPI.create_new_appointment)
-    for slot in slots:
-        print(slot)
-
-    # test_calendar = False
-    # if test_calendar:
-    #     new_event = CalendarAPI.create_new_appointment(
-    #         summary="Team Meeting",
-    #         start_time=format_datetime(datetime.datetime.now(datetime.UTC)),
-    #         end_time=format_datetime(datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)),
-    #         description="Discuss project updates",
-    #         location="Conference Room",
+    # intent_manager = IntentManager()
+    # for name, docstring in intent.get_marked_functions_and_docstrings(module=CalendarAPI).items():
+    #     intent_manager.add_intent(
+    #         intent.Intent(
+    #             name=name,
+    #             description=docstring,
+    #         ),
     #     )
-    #     print("New Event Created:", new_event)
-    #
-    #     next_appointment = CalendarAPI.get_next_appointment()
-    #     print("Next Appointment:", json.dumps(next_appointment, indent=2))
-    #
-    #     print(f"Am I free In the next 2 hours: {CalendarAPI.am_i_free_in_the_next()}")
-    #     print(f"Am I free Now: {CalendarAPI.am_i_free(time=format_datetime(datetime.datetime.now(datetime.UTC)))}")
-    #     print(f"Deleted next appointment: {CalendarAPI.delete_next_appointment()}")
+    # print(intent_manager)
+    # print("")
+    # slots = extract_slots_from_function(CalendarAPI.create_new_appointment)
+    # for slot in slots:
+    #     print(slot)
+
+    test_calendar = True
+    if test_calendar:
+        new_event = CalendarAPI.create_new_appointment(
+            summary="Team Meeting",
+            start_time=format_datetime(datetime.datetime.now(datetime.UTC)),
+            end_time=format_datetime(datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)),
+            description="Discuss project updates",
+            location="Conference Room",
+        )
+        print("New Event Created:", new_event)
+
+        next_appointment = CalendarAPI.get_next_appointment()
+        print("Next Appointment:", json.dumps(next_appointment, indent=2))
+
+        # print(f"Am I free In the next 2 hours: {CalendarAPI.am_i_free_in_the_next()}")
+        # print(f"Am I free Now: {CalendarAPI.am_i_free(time=format_datetime(datetime.datetime.now(datetime.UTC)))}")
+        # print(f"Deleted next appointment: {CalendarAPI.delete_next_appointment()}")
+
+    print(datetime.datetime.now(datetime.UTC).isoformat())
