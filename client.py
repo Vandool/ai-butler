@@ -37,7 +37,7 @@ def get_audio_input(args):
             stream_adapter.print_all_devices()
         if args.audiodevice < 0:
             print(
-                "The portaudio backend requires the '-a' parameter. Run python client.py -L to see the available audio devices."
+                "The portaudio backend requires the '-a' parameter. Run python client.py -L to see the available audio devices.",
             )
             exit(1)
     elif args.input == "ffmpeg":
@@ -95,7 +95,15 @@ def send_start(url, sessionID, streamID, show_on_website, save_path, website_tit
 
 
 def send_audio(
-    last_end, audio_source, url, sessionID, streamID, api, token, raise_interrupt=True, absolute_timestamps=False
+    last_end,
+    audio_source,
+    url,
+    sessionID,
+    streamID,
+    api,
+    token,
+    raise_interrupt=True,
+    absolute_timestamps=False,
 ):
     chunk = audio_source.read()
     chunk = audio_source.chunk_modify(chunk)
@@ -228,7 +236,17 @@ def send_session(
 
 
 def read_text(
-    url, sessionID, streamID, printing, output_file, start_time, api, token, titanic_ip, generate_video, save_video
+    url,
+    sessionID,
+    streamID,
+    printing,
+    output_file,
+    start_time,
+    api,
+    token,
+    titanic_ip,
+    generate_video,
+    save_video,
 ):
     send_from = None
     if titanic_ip is not None:
@@ -252,7 +270,7 @@ def read_text(
             data = json.loads(msg.data)
         except json.decoder.JSONDecodeError:
             print(
-                "WARNING: json.decoder.JSONDecodeError (this may happend when running tts system but no video generation)"
+                "WARNING: json.decoder.JSONDecodeError (this may happend when running tts system but no video generation)",
             )
             continue
 
@@ -411,14 +429,16 @@ def set_graph(args):
 
     print("Requesting default graph for ASR")
     res = requests.post(
-        args.url + "/" + args.api + "/get_default_asr", json=json.dumps(d), cookies={"_forward_auth": args.token}
+        args.url + "/" + args.api + "/get_default_asr",
+        json=json.dumps(d),
+        cookies={"_forward_auth": args.token},
     )
     if res.status_code != 200:
         if res.status_code == 401:
             print(
                 "You are not authorized. Either authenticate with --url https://$username:$password@$server or with --token $token where you get the token from "
                 + args.url
-                + "/gettoken"
+                + "/gettoken",
             )
         else:
             print(res.status_code, res.text)
@@ -430,8 +450,9 @@ def set_graph(args):
 
     graph = json.loads(
         requests.post(
-            args.url + "/" + args.api + "/" + sessionID + "/getgraph", cookies={"_forward_auth": args.token}
-        ).text
+            args.url + "/" + args.api + "/" + sessionID + "/getgraph",
+            cookies={"_forward_auth": args.token},
+        ).text,
     )
     print("Graph:", graph)
 
@@ -542,7 +563,7 @@ def main(args):
             return
         if args.save_path == "" and args.generate_video is None and args.run_tts is None:
             print(
-                "You have to specify the save-path (e.g. /logs/archive/lecture_name/semester/lecture_number), press c to ignore this."
+                "You have to specify the save-path (e.g. /logs/archive/lecture_name/semester/lecture_number), press c to ignore this.",
             )
             breakpoint()
         if "version" not in args.asr_properties or args.asr_properties["version"] != "offline":
@@ -584,7 +605,10 @@ def parse():
     parser.add_argument("--list-available-languages", help="List available languages of mediator", action="store_true")
     parser.add_argument("--list-active-sessions", help="List active session on mediator", action="store_true")
     parser.add_argument(
-        "--output-file", help="Path to the file to save the output translations", type=str, default=None
+        "--output-file",
+        help="Path to the file to save the output translations",
+        type=str,
+        default=None,
     )
 
     """
@@ -594,7 +618,11 @@ def parse():
     parser.add_argument("-a", "--audiodevice", help="Pyaudio. Index of audio device to use", default=-1, type=int)
 
     parser.add_argument(
-        "-ch", "--audiochannel", help="index of audio channel to use (first channel = 1)", type=int, default=None
+        "-ch",
+        "--audiochannel",
+        help="index of audio channel to use (first channel = 1)",
+        type=int,
+        default=None,
     )
 
     """
@@ -617,7 +645,10 @@ def parse():
     )
     parser.add_argument("--volume", help="Adjust the volume via ffmpeg", type=float, default=1.0)
     parser.add_argument(
-        "--ffmpeg-speed", help="set ffmpeg sending speed, -1 is infinite speed", type=float, default=1.0
+        "--ffmpeg-speed",
+        help="set ffmpeg sending speed, -1 is infinite speed",
+        type=float,
+        default=1.0,
     )
 
     parser.add_argument("--upload-video", help="Wether to upload the full ffmpeg input video", action="store_true")
@@ -656,16 +687,26 @@ def parse():
     )
 
     parser.add_argument(
-        "--use-prep", help="Run a preprocessing model (e.g. noise filtering) before ASR", action="store_true"
+        "--use-prep",
+        help="Run a preprocessing model (e.g. noise filtering) before ASR",
+        action="store_true",
     )
     parser.add_argument("--use-summarize", help="Use summarization", action="store_true")
     parser.add_argument("--use-postproduction", help="Use postproduction", action="store_true")
     parser.add_argument(
-        "--prep-kv", action="append", type=lambda kv: kv.split("="), dest="prep_properties", help="Used prep properties"
+        "--prep-kv",
+        action="append",
+        type=lambda kv: kv.split("="),
+        dest="prep_properties",
+        help="Used prep properties",
     )
 
     parser.add_argument(
-        "--tts-kv", action="append", type=lambda kv: kv.split("="), dest="tts_properties", help="Used tts properties"
+        "--tts-kv",
+        action="append",
+        type=lambda kv: kv.split("="),
+        dest="tts_properties",
+        help="Used tts properties",
     )
     parser.add_argument(
         "--video-kv",
@@ -691,7 +732,9 @@ def parse():
     parser.add_argument("--titanic-ip", default=None)
 
     parser.add_argument(
-        "--run-tts", help='Run a TTS model, comma separated string of output languages, e.g. "en,de"', default=None
+        "--run-tts",
+        help='Run a TTS model, comma separated string of output languages, e.g. "en,de"',
+        default=None,
     )
     parser.add_argument(
         "--generate-video",
@@ -699,7 +742,10 @@ def parse():
         default=None,
     )
     parser.add_argument(
-        "--save-video", help="File to save the generated video locally on this pc to", default=None, type=str
+        "--save-video",
+        help="File to save the generated video locally on this pc to",
+        default=None,
+        type=str,
     )
 
     parser.add_argument("--summarize", help="Adds a summarizer after text segmentation.", action="store_true")

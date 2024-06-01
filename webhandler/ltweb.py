@@ -10,15 +10,26 @@ from webhandler import webutils
 
 class LTHandler:
     def __init__(self, in_session=False, driver=None):
-        self.in_session = False
+        self.in_session = in_session
         self.driver = driver
         self.handle = None
         self.logged_in = False
 
     def handle_command(self, command):
-        '''
-        Input: {"function":"controll_zoom","parameter":{"command":"join","link":"https://kit-lecture.zoom-x.de/j/61573381905?pwd=YkE3aUNYSnhXSnJnREMrV2VSMy85Zz09"}}', 'markup': 'command', 'session': '1182', 'sender': 'kitmeetingbutler:0', 'message_id': 2, 'num_subscribers': '1'}
-        '''
+        """
+        Input: {
+          "function": "controll_zoom",
+          "parameter": {
+            "command": "join",
+            "link": "https://kit-lecture.zoom-x.de/j/61573381905?pwd=YkE3aUNYSnhXSnJnREMrV2VSMy85Zz09"
+          },
+          "markup": "command",
+          "session": "1182",
+          "sender": "kitmeetingbutler:0",
+          "message_id": 2,
+          "num_subscribers": "1"
+        }
+        """
         assert "function" in command  ## It should not be called otherwise or the format changed
         command_data = json.loads(command)
 
@@ -31,7 +42,6 @@ class LTHandler:
                 print(str(e))
                 self.in_session = False
 
-
         if command_data["parameter"]["command"] == "end":
             if self.in_session:
                 self.end_lt()
@@ -42,22 +52,19 @@ class LTHandler:
                     self.driver.close()
                 except:
                     logging.debug("No browser available")
-            self.handle=None
-            self.in_session=False
+            self.handle = None
+            self.in_session = False
         logging.debug(command_data)
 
-
-    def login_lt(self,username,pwd):
-
+    def login_lt(self, username, pwd):
         if self.handle == None:
             self.driver.switch_to.window(self.driver.window_handles[0])
             self.driver.execute_script("""window.open("https://lt2srv-backup.iar.kit.edu/login","_blank");""")
             self.handle = self.driver.window_handles[-1]
             self.driver.switch_to.window(self.handle)
 
-
-        sign_in_buttons  = WebDriverWait(self.driver, 10).until(
-        EC.presence_of_all_elements_located((By.CSS_SELECTOR, "button.dex-btn.theme-btn-provider")),
+        sign_in_buttons = WebDriverWait(self.driver, 10).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, "button.dex-btn.theme-btn-provider")),
         )
 
         # Click the button
@@ -72,12 +79,9 @@ class LTHandler:
 
         self.logged_in = True
 
-
-
     def start_lt(self):
-
         if not self.logged_in:
-            #self.login_lt("admin@kit.edu","!pwd!")
+            # self.login_lt("admin@kit.edu","!pwd!")
             self.driver.get("https://lt2srv-backup.iar.kit.edu/index/live")
 
         else:
@@ -103,10 +107,9 @@ class LTHandler:
 
         self.in_session = True
 
-
     def end_lt(self):
         self.driver.switch_to.window(self.handle)
-        self.driver = webutils.click_id_button("login", self.driver) ## Bad Name, should ask to change
+        self.driver = webutils.click_id_button("login", self.driver)  ## Bad Name, should ask to change
         alert = WebDriverWait(self.driver, 1).until(EC.alert_is_present())
         alert = self.driver.switch_to.alert
         alert.accept()
@@ -114,4 +117,3 @@ class LTHandler:
         self.driver.close()
         self.driver.switch_to.window(self.driver.window_handles[0])
         self.handle = None
-
