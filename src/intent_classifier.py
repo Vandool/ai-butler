@@ -70,6 +70,7 @@ class IntentClassifier:
         for i, intent in enumerate(self.intents, start=1):
             class_helper += f"Class {1}:\n"
             class_helper += f"\tName: {intent.name}\ndescription: {intent.description}\n"
+
         prompt += f"You know only {len(self.intents)} classes, which have the following names and description.\n"
         prompt += f"{class_helper}\n"
         prompt += "I show some examples of a text and a correct class\n"
