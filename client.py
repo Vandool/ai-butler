@@ -12,7 +12,7 @@ from threading import Thread
 import requests
 from sseclient import SSEClient
 
-from pythonrecordingclient.helper import BugException
+from src.pythonrecordingclient import BugException
 from src import utils
 from webhandler.webutils import check_status_code, return_json
 
@@ -32,7 +32,7 @@ def get_audio_input(args):
     if args.input == "link":
         return args.ffmpeg_input
     if args.input == "portaudio":
-        from pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
+        from src.pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
 
         logger.info("Using portaudio as input. If you want to use ffmpeg specify '-i ffmpeg'.")
         stream_adapter = PortaudioStream()
@@ -45,7 +45,7 @@ def get_audio_input(args):
             )
             sys.exit(1)
     elif args.input == "ffmpeg":
-        from pythonrecordingclient.ffmpegStreamAdapter import FfmpegStream
+        from src.pythonrecordingclient.ffmpegStreamAdapter import FfmpegStream
 
         stream_adapter = FfmpegStream(
             pre_input=args.ffmpeg_pre,

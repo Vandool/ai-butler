@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import subprocess
 import time
 from typing import Any, cast
 
-from pythonrecordingclient.helper import BugException
-from pythonrecordingclient.inputStreamAdapter import BaseAdapter
+from src.pythonrecordingclient.helper import BugException
+from src.pythonrecordingclient.inputStreamAdapter import BaseAdapter
 
 
 class FfmpegStream(BaseAdapter):
@@ -12,6 +14,8 @@ class FfmpegStream(BaseAdapter):
         Requires named parameter pre_input and post_output,
         volume, repeat_input
         """
+        self.seconds_returned = None
+        self.start_time = None
         if "pre_input" not in kwargs or kwargs["pre_input"] is None:
             kwargs["pre_input"] = ""
         if "post_input" not in kwargs or kwargs["post_input"] is None:
@@ -24,20 +28,20 @@ class FfmpegStream(BaseAdapter):
         self.repeat_input: bool = kwargs["repeat_input"]
         super().__init__(format=None)
 
-        self.speed = kwargs["ffmpeg_speed"] if "ffmpeg_speed" in kwargs else -1.0
+        self.speed = kwargs.get("ffmpeg_speed", -1.0)
+        self.chunk_size = 8000 if self.speed != -1.0 else 320000
 
     def available(self) -> bool:
         import shutil
 
         return shutil.which("ffmpeg") is not None
 
-    def get_stream(self, **kwargs) -> Any:
+    def get_stream(self, _) -> Any:
         if self.url is None:
-            raise BugException("Input file/url cannot be None")
+            raise BugException(msg="Input file/url cannot be None")
         if self._process is None:
             self.start_time = time.time()
             self.seconds_returned = 0
-            self.chunk_size = 8000 if self.speed != -1.0 else 320000
 
             args: list[str] = [
                 "ffmpeg",

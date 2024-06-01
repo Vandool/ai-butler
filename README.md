@@ -114,7 +114,8 @@ Our code relies on several external libraries. The primary dependencies we have 
 - `pytorch`: The PyTorch deep learning framework, which is required by `sentence-transformers`.
 - `fuzzywuzzy`: A library for fuzzy string matching.
 - `python-Levenshtein`: A library for fast computation of Levenshtein distance.
-- 
+-
+
 ### Installing Dependencies
 
 To install the dependencies, you can use the provided `requirements.txt` file. Here’s how you can set up your
@@ -129,3 +130,79 @@ environment:
    # for speedy fuzzy word detection
    pip install fuzzywuzzy
    pip install python-Levenshtein
+
+# Google Calendar API Integration
+
+This guide provides step-by-step instructions to set up and use the Google Calendar API with a service account. Follow
+these steps to create a Google Cloud account, set up credentials, and configure the environment for API usage.
+
+## Table of Contents
+
+1. [Google Cloud Setup](#google-cloud-setup)
+2. [Calendar Sharing](#calendar-sharing)
+3. [Retrieving Calendar ID](#retrieving-calendar-id)
+4. [Environment Variables](#environment-variables)
+
+## Google Cloud Setup
+
+1. **Create Google Cloud Account**:
+    - Go to [Google Cloud Console](https://console.cloud.google.com/) and sign in or create a new account.
+
+2. **Create a New Project**:
+    - Navigate to the project selector and click "New Project".
+    - Enter your project name and click "Create".
+
+3. **Enable APIs**:
+    - Go to the "API & Services" > "Library".
+    - Search for "Google Calendar API" and click "Enable".
+
+4. **Create Service Account Credentials**:
+    - Go to "API & Services" > "Credentials".
+    - Click "Create Credentials" and select "Service Account".
+    - Fill in the service account details and click "Done".
+    - Navigate to the service account you just created, click on it, and go to the "Keys" tab.
+    - Click "Add Key" > "Create New Key" and select JSON. Save the JSON file.
+
+## Calendar Sharing
+
+1. **Share the Calendar**:
+    - Go to [Google Calendar](https://calendar.google.com) and sign in with your Google account.
+    - On the left sidebar under "My calendars," find the calendar you want to share.
+    - Click on the three dots next to the calendar name and select "Settings and sharing".
+    - Scroll down to the "Share with specific people" section.
+    - Click "Add people" and enter the service account email (found in the JSON file under the `client_email` field).
+    - Set the permissions to "Make changes to events".
+    - Click "Send" to share the calendar.
+
+## Retrieving Calendar ID
+
+To retrieve your Google Calendar ID:
+
+1. **Open Google Calendar**:
+    - Go to [Google Calendar](https://calendar.google.com) and sign in with your Google account.
+
+2. **Access Calendar Settings**:
+    - On the left sidebar under "My calendars," find the calendar you want to use.
+    - Click on the three dots next to the calendar name and select "Settings and sharing".
+
+3. **Find Calendar ID**:
+    - Scroll down to the "Integrate calendar" section.
+    - The "Calendar ID" will be listed there. It usually looks like `your-email@gmail.com`
+      or `your-calendar-id@group.calendar.google.com`.
+
+## Environment Variables
+
+Create a `.env` file in your project root directory and add the following environment variables:
+
+```ini
+GC_PRIVATE_KEY = YOUR_PRIVATE_KEY
+GC_CLIENT_EMAIL = YOUR_CLIENT_EMAIL
+GC_PROJECT_ID = YOUR_PROJECT_ID
+GC_PRIVATE_KEY_ID = YOUR_PRIVATE_KEY_ID
+GC_CLIENT_ID = YOUR_CLIENT_ID
+GC_CALENDAR_ID = YOUR_CALENDAR_ID
+```
+
+Replace the placeholders with values extracted from the service account JSON file and the Google Calendar ID.
+
+*When running the application make sure you have specified the location of the `.env` to the runner.*

@@ -3,12 +3,12 @@ from __future__ import annotations
 import argparse
 import base64
 import copy
+import datetime
 import json
 import re
 import socket
 import sys
 import time
-from datetime import datetime
 from pathlib import Path
 from threading import Thread
 
@@ -16,14 +16,15 @@ import requests
 from fuzzywuzzy import fuzz
 from sseclient import SSEClient
 
-from pythonrecordingclient.helper import BugException
-from pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
 from src import utils
 from src.classifier.base_classifier import BaseClassifier
 from src.classifier.few_shot_text_generation_classifier import FewShotTextGenerationClassifier
-from src.config.config import get_config
+from src.config.asr_llm_config import get_config
 from src.intent.intent_manager import IntentManagerFactory
 from src.prompt_generator.prompt_generator import PromptType
+from src.pythonrecordingclient.helper import BugException
+from src.pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
+from src.web_handler.calendar_api import CalendarAPI, format_datetime
 from webhandler.webutils import check_status_code, return_json
 
 logger = utils.get_logger("ASRModule")
@@ -77,7 +78,7 @@ class ASRModule:
         if self.args.input == "link":
             return self.args.ffmpeg_input
         if self.args.input == "portaudio":
-            from pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
+            from src.pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
 
             logger.info("Using portaudio as input_. If you want to use ffmpeg specify '-i ffmpeg'.")
             # (Arvand): Added the chunk_size to controll the chunk size while playing around
@@ -89,7 +90,7 @@ class ASRModule:
                 )
                 sys.exit(1)
         elif self.args.input == "ffmpeg":
-            from pythonrecordingclient.ffmpegStreamAdapter import FfmpegStream
+            from src.pythonrecordingclient.ffmpegStreamAdapter import FfmpegStream
 
             stream_adapter = FfmpegStream(
                 pre_input=self.args.ffmpeg_pre,
@@ -106,7 +107,7 @@ class ASRModule:
                 logger.info(f"File {input_} does not exist")
                 sys.exit(1)
         else:
-            raise BugException()
+            raise BugException
 
         stream_adapter.set_input(input_)
         return stream_adapter
@@ -345,6 +346,16 @@ class ASRModule:
             prompt_type=PromptType.FEW_SHOT_DETAILED,
         ).name
         logger.info(f"Classification result: {classification_result}")
+        if "calendar" in classification_result.lower():
+            new_event = CalendarAPI.create_new_appointment(
+                summary="Team Meeting",
+                start_time=format_datetime(datetime.datetime.now(datetime.UTC)),
+                end_time=format_datetime(datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)),
+                description="Discuss project updates",
+                location="Conference Room",
+            )
+
+            logger.info(f"New Event Created:{json.dumps(new_event, indent=2)}")
 
     @return_json
     @check_status_code
@@ -549,8 +560,8 @@ def schedule_sessions(arguments):
 
     threads = []
     for timestamp, minutes, room, title in sessions:
-        start_time = datetime.strptime(timestamp, "%d.%m.%Y-%H:%M")
-        wait_seconds = (start_time - datetime.now()).total_seconds()
+        start_time = datetime.datetime.strptime(timestamp, "%d.%m.%Y-%H:%M")
+        wait_seconds = (start_time - datetime.datetime.now()).total_seconds()
         if wait_seconds < 0:
             continue
 

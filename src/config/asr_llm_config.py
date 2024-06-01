@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import argparse
-import os
 from dataclasses import dataclass
+
+from src.config import config_utils
 
 
 @dataclass
-class Config:
+class AsrLlmConfig:
     token: str
     llm_url: str = "https://8cc9-141-3-25-29.ngrok-free.app"
     zero_shot_model: str = "facebook/bart-large-mnli"
@@ -57,15 +58,15 @@ class Config:
     chunk_size: int = 1024  # Default chunk size
 
 
-def get_config() -> Config:
+def get_config() -> AsrLlmConfig:
     args = parse_arguments()
 
-    token_ = args.token or get_mandatory_env_variable("BUTLER_USER_TOKEN")
-    return Config(
+    token_ = args.token or config_utils.get_mandatory_env_variable("BUTLER_USER_TOKEN")
+    return AsrLlmConfig(
         token=token_,
-        llm_url=args.llm_url or get_env_variable_with_default("BUTLER_LLM_URL", Config.llm_url),
+        llm_url=args.llm_url or config_utils.get_env_variable_with_default("BUTLER_LLM_URL", AsrLlmConfig.llm_url),
         zero_shot_model=args.zero_shot_model
-        or get_env_variable_with_default("BUTLER_ZERO_SHOT_MODEL", Config.zero_shot_model),
+        or config_utils.get_env_variable_with_default("BUTLER_ZERO_SHOT_MODEL", AsrLlmConfig.zero_shot_model),
         url=args.url,
         input=args.input,
         print_level=args.print_level,
@@ -165,12 +166,14 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("-f", "--ffmpeg-input", help="Input file/address that will be given to ffmpeg", type=str)
     parser.add_argument(
         "--ffmpeg-pre",
-        help="Ffmpeg options inserted before input parameter (-f). Don't forget to escape via string so this will be one single parameter.",
+        help="Ffmpeg options inserted before input parameter (-f). Don't forget to escape via string so this will be "
+        "one single parameter.",
         type=str,
     )
     parser.add_argument(
         "--ffmpeg-post",
-        help="Ffmpeg options inserted after input parameter (-f). Don't forget to escape via string so this will be one single parameter.",
+        help="Ffmpeg options inserted after input parameter (-f). Don't forget to escape via string so this will be "
+        "one single parameter.",
         type=str,
     )
     parser.add_argument("--volume", help="Adjust the volume via ffmpeg", type=float, default=1.0)
@@ -197,7 +200,8 @@ def parse_arguments() -> argparse.Namespace:
         action="append",
         type=lambda kv: kv.split("="),
         dest="asr_properties",
-        help="Used ASR properties, e.g. --asr-kv version=online --asr-kv segmenter=VAD --asr-kv stability_detection=False for online or --asr-kv version=offline --asr-kv segmenter=None for offline",
+        help="Used ASR properties, e.g. --asr-kv version=online --asr-kv segmenter=VAD --asr-kv "
+        "stability_detection=False for online or --asr-kv version=offline --asr-kv segmenter=None for offline",
     )
     parser.add_argument("--no-textsegmenter", help="Set this to not use a textsegmenter", action="store_true")
     parser.add_argument("--textseg-kv", action="append", type=lambda kv: kv.split("="), dest="textseg_properties")
@@ -271,15 +275,3 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--memory-words", help="Words used in the memory-enhanced ASR model", nargs="+", default=None)
 
     return parser.parse_args()
-
-
-def get_mandatory_env_variable(var_name: str) -> str:
-    value = os.getenv(var_name)
-    if not value:
-        msg = "The environment variable '%s' is missing. Set the '%s' with appropriate value and re-run."
-        raise OSError(msg, var_name, var_name)
-    return value
-
-
-def get_env_variable_with_default(var_name: str, default: str) -> str:
-    return os.getenv(var_name, default)

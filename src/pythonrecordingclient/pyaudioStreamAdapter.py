@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import queue
 import sys
@@ -7,8 +9,8 @@ import numpy as np
 import pyaudio
 import watchdog
 
-from pythonrecordingclient.helper import BugException
-from pythonrecordingclient.inputStreamAdapter import BaseAdapter
+from src.pythonrecordingclient.helper import BugException
+from src.pythonrecordingclient.inputStreamAdapter import BaseAdapter
 
 
 def read_audio(stream, chunk_size, queue):
@@ -18,16 +20,16 @@ def read_audio(stream, chunk_size, queue):
 
 
 class PortaudioStream(BaseAdapter):
-    def __init__(self, chunk_size: int = 1024, **kwargs) -> None:
+    def __init__(self, chunk_size: int = 1024) -> None:
         self.chunk_size = chunk_size
         self.input_id: int | None = None
         self._stream: pyaudio.Stream | None = None
         self._pyaudio: pyaudio.PyAudio | None = None
         super().__init__(format=pyaudio.paInt16)
 
-    def get_stream(self, **kwargs) -> pyaudio.Stream:
+    def get_stream(self) -> pyaudio.Stream:
         if self.input_id is None:
-            raise BugException()
+            raise BugException
         if self._stream is None:
             p = self.pyaudio
             self._stream = p.open(
@@ -111,7 +113,7 @@ class PortaudioStream(BaseAdapter):
 
     @property
     def pyaudio(self) -> pyaudio.PyAudio:
-        if self._pyaudio == None:
+        if self._pyaudio is None:
             self._pyaudio = pyaudio.PyAudio()
         return self._pyaudio
 

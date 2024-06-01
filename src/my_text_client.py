@@ -3,7 +3,7 @@ import json
 from src import utils
 from src.classifier.few_shot_text_generation_classifier import FewShotTextGenerationClassifier
 from src.classifier.zero_shot_classifier import ZeroShotClassifier
-from src.config.config import get_config
+from src.config.asr_llm_config import get_config
 from src.intent.intent_manager import CALENDAR, LECTURE, IntentManager
 
 logger = utils.get_logger("MyTextClient")

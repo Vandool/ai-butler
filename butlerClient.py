@@ -11,7 +11,7 @@ from threading import Thread
 import requests
 from sseclient import SSEClient
 
-from pythonrecordingclient.helper import BugException
+from src.pythonrecordingclient import BugException
 from webhandler import webutils
 from webhandler.lt_handler import LTHandler
 from webhandler.zoomweb import ZoomHandler
@@ -107,7 +107,7 @@ def get_audio_input(args):
     if args.input == "link":
         return args.ffmpeg_input
     if args.input == "portaudio":
-        from pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
+        from src.pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
 
         print("Using portaudio as input. If you want to use ffmpeg specify '-i ffmpeg'.")
         stream_adapter = PortaudioStream()

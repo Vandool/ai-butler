@@ -7,7 +7,7 @@ from sklearn.metrics import f1_score, recall_score
 
 from src.classifier.few_shot_text_generation_classifier import FewShotTextGenerationClassifier
 from src.classifier.zero_shot_classifier import ZeroShotClassifier
-from src.config.config import Config
+from src.config.asr_llm_config import AsrLlmConfig
 from src.intent.intent_manager import CALENDAR, LECTURE, IntentManager
 
 # ----------------------------- Reusable Fixtures -----------------------------
@@ -24,14 +24,14 @@ def intent_manager_with_unknown_intent() -> IntentManager:
 
 @pytest.fixture(scope="session")
 def few_shot_classifier(intent_manager_with_unknown_intent):
-    classifier = FewShotTextGenerationClassifier(llm_url=Config.llm_url)
+    classifier = FewShotTextGenerationClassifier(llm_url=AsrLlmConfig.llm_url)
     classifier.intent_manager = intent_manager_with_unknown_intent
     return classifier
 
 
 @pytest.fixture(scope="session")
 def zero_shot_classifier(intent_manager_with_unknown_intent):
-    classifier = ZeroShotClassifier(model=Config.zero_shot_model)
+    classifier = ZeroShotClassifier(model=AsrLlmConfig.zero_shot_model)
     classifier.intent_manager = intent_manager_with_unknown_intent
     return classifier
 
