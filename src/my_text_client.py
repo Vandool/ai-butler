@@ -34,8 +34,8 @@ def main():
         user_input = input("Enter your message (or type 'exit(e)' to quit(q)): ")
         if user_input.lower() in {"exit", "quit", "e", "q"}:
             break
-        classifier.classify(user_input)
-        classifier.classify_intent(user_input)
+        classifier.classify_zero_shot(user_input)
+        classifier.classify_few_shot_text_generation(user_input)
 
 
 if __name__ == "__main__":

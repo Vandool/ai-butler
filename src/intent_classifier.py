@@ -24,13 +24,13 @@ class IntentClassifier:
         self._intents: list[Intent] | None = None
         self.classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
-    def classify(self, text: str) -> list[Intent]:
+    def classify_zero_shot(self, text: str) -> list[Intent]:
         # Perform classification using the Zero-shot-Classifier as baseline
         response = self.classifier(text, [intent.name for intent in self.intents])
         self.logger.debug(f"Zero-shot-Classifier response:\n{response}")  # noqa: G004
         return response
 
-    def classify_intent(self, input_text: str) -> str:
+    def classify_few_shot_text_generation(self, input_text: str) -> str:
         candidate_labels = [intent.name for intent in self.intents]
         self.logger.debug("candidate_labels: %s", str(candidate_labels))
 
