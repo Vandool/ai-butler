@@ -12,7 +12,7 @@ from sseclient import SSEClient
 from butler import Butler
 from pythonrecordingclient.helper import BugException
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
 butler = None
 
 

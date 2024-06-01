@@ -108,7 +108,7 @@ class ZoomHandler:
         while True:
             try:
                 exit_button = WebDriverWait(self.driver, 10).until(
-                    EC.element_to_be_clickable((By.ID, "leave-btn"))
+                    EC.element_to_be_clickable((By.ID, "leave-btn")),
                 )  # If it exists we are in waiting room, we need to keep waiting :)
             except:
                 break
@@ -125,7 +125,7 @@ class ZoomHandler:
         self.driver.switch_to.frame("webclient")
         leave_button = WebDriverWait(self.driver, 10).until(
             EC.element_to_be_clickable(
-                (By.CLASS_NAME, "zmu-btn.footer__leave-btn.ax-outline.ellipsis.zmu-btn--danger.zmu-btn__outline--blue")
+                (By.CLASS_NAME, "zmu-btn.footer__leave-btn.ax-outline.ellipsis.zmu-btn--danger.zmu-btn__outline--blue"),
             ),
         )
 
@@ -136,7 +136,7 @@ class ZoomHandler:
                 (
                     By.CLASS_NAME,
                     "zmu-btn.leave-meeting-options__btn.leave-meeting-options__btn--default.leave-meeting-options__btn--danger.zmu-btn--default.zmu-btn__outline--white",
-                )
+                ),
             ),
         )
 

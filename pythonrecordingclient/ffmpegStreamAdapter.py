@@ -1,4 +1,3 @@
-
 import subprocess
 import time
 from typing import Any, cast
@@ -10,8 +9,8 @@ from pythonrecordingclient.inputStreamAdapter import BaseAdapter
 class FfmpegStream(BaseAdapter):
     def __init__(self, **kwargs) -> None:
         """
-            Requires named parameter pre_input and post_output,
-            volume, repeat_input
+        Requires named parameter pre_input and post_output,
+        volume, repeat_input
         """
         if "pre_input" not in kwargs or kwargs["pre_input"] is None:
             kwargs["pre_input"] = ""
@@ -29,10 +28,8 @@ class FfmpegStream(BaseAdapter):
 
     def available(self) -> bool:
         import shutil
-        if shutil.which("ffmpeg") is None:
-            return False
-        else:
-            return True
+
+        return shutil.which("ffmpeg") is not None
 
     def get_stream(self, **kwargs) -> Any:
         if self.url is None:
@@ -45,38 +42,48 @@ class FfmpegStream(BaseAdapter):
             args: list[str] = [
                 "ffmpeg",
                 # be less verbose (but still show stats)
-                "-hide_banner", "-loglevel", "warning", #"-stats",
+                "-hide_banner",
+                "-loglevel",
+                "warning",  # "-stats",
             ]
             if len(self.pre_opt) > 0:
                 args += self.pre_opt
             args += [
                 # ignore video tracks
-                #"-re",
-                #"-rtsp_transport", "tcp",
+                # "-re",
+                # "-rtsp_transport", "tcp",
                 "-vn",
-                "-i", self.url,
+                "-i",
+                self.url,
                 *self.post_opt,
             ]
             if len(self.post_opt) > 0:
-                args+= self.post_opt
+                args += self.post_opt
             args += [
                 # use the first audio channel
-                "-map", "0:a",
-                "-ac", "1",
+                "-map",
+                "0:a",
+                "-ac",
+                "1",
                 # adjust volume
-                "-filter:a", f"volume={self.volume}",
+                "-filter:a",
+                f"volume={self.volume}",
                 # convert to 16kHz signed little endian, one audio channel only
-                "-f", "s16le",  "-ar", str(self.rate), "-c:a",  "pcm_s16le",
+                "-f",
+                "s16le",
+                "-ar",
+                str(self.rate),
+                "-c:a",
+                "pcm_s16le",
                 "-",
             ]
-            self._process = subprocess.Popen(args, stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE)
+            self._process = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         return self._process.stdout
 
     def read(self) -> bytes:
         stream = self.get_stream()
         if self.speed != -1.0:
-            sleep = self.seconds_returned-(time.time()-self.start_time)
+            sleep = self.seconds_returned - (time.time() - self.start_time)
             if sleep > 0:
                 time.sleep(sleep)
                 if self.chunk_size > 1000:
@@ -91,8 +98,8 @@ class FfmpegStream(BaseAdapter):
                 self._process = None
                 return self.read(self.chunk_size)
             elif not self.repeat_input and self._process.returncode == 0:
-                pass # first finish returning the rest of chunks and then an empty chunk is send. After the empty chunk the file is over
-        self.seconds_returned += len(chunk)/2/self.rate/self.speed
+                pass  # first finish returning the rest of chunks and then an empty chunk is send. After the empty chunk the file is over
+        self.seconds_returned += len(chunk) / 2 / self.rate / self.speed
         return chunk
 
     def chunk_modify(self, chunk: bytes) -> bytes:
@@ -109,4 +116,3 @@ class FfmpegStream(BaseAdapter):
 
     def set_input(self, input: str) -> None:
         self.url = input
-
