@@ -123,3 +123,7 @@ environment:
    conda activate butler
    pip install transformers -U
    pip install sentence-transformers
+   
+   # for speedy fuzzy word detection
+   pip install fuzzywuzzy
+   pip install python-Levenshtein

@@ -53,6 +53,8 @@ class Config:
     api: str = None
     list_available_languages: bool = False
     list_active_sessions: bool = False
+    buffer_size: int = 4096  # Default buffer size
+    chunk_size: int = 1024  # Default chunk size
 
 
 def get_config() -> Config:
@@ -107,6 +109,8 @@ def get_config() -> Config:
         api="webapi" if token_ is not None else "ltapi",
         list_available_languages=args.list_available_languages,
         list_active_sessions=args.list_active_sessions,
+        buffer_size=args.buffer_size,
+        chunk_size=args.chunk_size,
     )
 
 
@@ -144,7 +148,7 @@ def parse_arguments() -> argparse.Namespace:
         default=None,
     )
 
-    # PyAudio/Portaudio
+    # ===================== PyAudio/Portaudio =====================
     parser.add_argument("-L", "--list", help="Pyaudio. List audio available audio devices", action="store_true")
     parser.add_argument("-a", "--audio_device", help="Pyaudio. Index of audio device to use", default=-1, type=int)
     parser.add_argument(
@@ -154,8 +158,10 @@ def parse_arguments() -> argparse.Namespace:
         type=int,
         default=None,
     )
+    parser.add_argument("--chunk_size", help="Chunk size for audio input", type=int, default=1024)
+    parser.add_argument("--buffer_size", help="Buffer size for audio input", type=int, default=4096)
 
-    # Ffmpeg
+    # ===================== Ffmpeg =====================
     parser.add_argument("-f", "--ffmpeg-input", help="Input file/address that will be given to ffmpeg", type=str)
     parser.add_argument(
         "--ffmpeg-pre",
@@ -179,7 +185,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--translate_link", help="Whether to translate a link", action="store_true")
     parser.add_argument("--save-path", help="Where to store the session in the archive", type=str, default="")
 
-    # Properties
+    # ===================== Properties =====================
     parser.add_argument("--no-logging", help="Do not log the session on the server", action="store_true")
     parser.add_argument(
         "--run-mt",

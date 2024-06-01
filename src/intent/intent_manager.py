@@ -100,6 +100,17 @@ UNKNOWN: Intent = Intent(
     description="Handles activities that do not fit into any predefined classes.",
 )
 
+
+class IntentManagerFactory:
+    @staticmethod
+    def get_intent_manager_with_unknown_intent() -> IntentManager:
+        intent_manager = IntentManager()
+        intent_manager.add_intent(CALENDAR)
+        intent_manager.add_intent(LECTURE)
+        intent_manager.use_unknown_intent = True
+        return intent_manager
+
+
 if __name__ == "__main__":
     manager = IntentManager()
 

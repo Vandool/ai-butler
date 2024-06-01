@@ -1,17 +1,21 @@
+from __future__ import annotations
+
 import json
 from typing import Any
 
 from huggingface_hub import InferenceClient
 
-from src.classifier.base_classifier import BaseIntentClassifier
+from src.classifier.base_classifier import BaseClassifier
 from src.intent.intent import Intent
+from src.intent.intent_manager import IntentManager
 from src.prompt_generator.prompt_generator import PromptType
 
 
-class FewShotTextGenerationClassifier(BaseIntentClassifier):
-    def __init__(self, llm_url: str):
+class FewShotTextGenerationClassifier(BaseClassifier):
+    def __init__(self, llm_url: str, intent_manager: IntentManager | None = None):
         super().__init__()
         self.client = InferenceClient(model=llm_url)
+        self.intent_manager = intent_manager
 
     @property
     def name(self) -> str:

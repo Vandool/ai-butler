@@ -12,11 +12,13 @@ from pathlib import Path
 from threading import Thread
 
 import requests
+from fuzzywuzzy import fuzz
 from sseclient import SSEClient
 
 from pythonrecordingclient.helper import BugException
 from pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
 from src import utils
+from src.classifier.base_classifier import BaseClassifier
 from src.config.config import get_config
 from webhandler.webutils import check_status_code, return_json
 
@@ -24,13 +26,14 @@ logger = utils.get_logger("ASRModule")
 
 
 class ASRModule:
-    def __init__(self, args: argparse.Namespace):
+    def __init__(self, args: argparse.Namespace, classifier: BaseClassifier | None = None):
         self.args = args
         self.api = args.api
         self.token = args.token
         self.url = args.url
         self.session_id = None
         self.stream_id = None
+        self._classifier: BaseClassifier | None = classifier
 
         if self.args.output_file:
             output_path = Path(self.args.output_file)
@@ -41,6 +44,14 @@ class ASRModule:
 
         self.get_available_languages()
         self.get_active_sessions()
+
+    @property
+    def classifier(self) -> BaseClassifier:
+        return self._classifier
+
+    @classifier.setter
+    def classifier(self, classifier: BaseClassifier):
+        self._classifier = classifier
 
     def list_and_select_audio_device(self):
         stream_adapter = PortaudioStream()
@@ -65,7 +76,8 @@ class ASRModule:
             from pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
 
             logger.info("Using portaudio as input_. If you want to use ffmpeg specify '-i ffmpeg'.")
-            stream_adapter = PortaudioStream()
+            # (Arvand): Added the chunk_size to controll the chunk size while playing around
+            stream_adapter = PortaudioStream(chunk_size=arguments.chunk_size)
             input_ = self.args.audio_device
             if self.args.audio_device < 0:
                 logger.info(
@@ -213,7 +225,7 @@ class ASRModule:
                             "sender": data["sender"],
                             "properties": data[data["sender"]],
                         }
-                        logger.info_pretty(asr_output)
+                        logger.info(json.dumps(asr_output))
                         self._save_json_output(asr_output)
                     elif data["controll"] == "START":
                         asr_output = {"sender": data["sender"], "status": "START"}
@@ -249,6 +261,9 @@ class ASRModule:
                             },
                         }
                         logger.info_pretty(asr_output)
+                        if self.classifier is not None:
+                            self.process_command(data["seq"])
+
                     elif data.get("linkedData"):
                         for k, v in data.items():
                             if isinstance(v, str) and v.startswith("/ltapi"):
@@ -287,6 +302,33 @@ class ASRModule:
             output_path = Path(self.args.output_file)
             with output_path.open("a") as f:
                 f.write(data + "\n")
+
+    @staticmethod
+    def keyword_spotting(transcript: str) -> bool:
+        keywords = ["ok butler", "okay butler", "hey butler", "butler"]
+        transcript = transcript.lower()
+        return any(fuzz.partial_ratio(transcript, keyword) > 80 for keyword in keywords)
+
+    def process_command(self, transcript: str):
+        if self.keyword_spotting(transcript):
+            logger.info("Keyword spotted, sending to classifier.")
+            trimmed_transcript = self._trim_transcript(transcript)
+            logger.info(f"Trimmed sequence: {trimmed_transcript}")
+            self._check_and_send_to_classifier(trimmed_transcript)
+        else:
+            logger.info("No keyword detected.")
+
+    @staticmethod
+    def _trim_transcript(transcript: str) -> str:
+        keywords = ["ok butler", "okay butler", "hey butler", "butler"]
+        for keyword in keywords:
+            if keyword in transcript.lower():
+                return transcript.lower().split(keyword, 1)[-1].strip()
+        return transcript.strip()
+
+    def _check_and_send_to_classifier(self, transcript: str):
+        classification_result = self.classifier.get_closest_intent(transcript).name
+        logger.info(f"Classification result: {classification_result}")
 
     @return_json
     @check_status_code
@@ -399,7 +441,13 @@ class ASRModule:
 
 
 def main(args):
-    asr_module = ASRModule(args)
+    asr_module = ASRModule(
+        args=args,
+        # classifier=FewShotTextGenerationClassifier(
+        #     llm_url=args.llm_url,
+        #     intent_manager=IntentManagerFactory.get_intent_manager_with_unknown_intent(),
+        # ),
+    )
 
     if args.list_available_languages:
         logger.info("Listing available languages of mediator")
@@ -431,7 +479,13 @@ def main(args):
 
 
 def run_immediate_session(args):
-    asr_module = ASRModule(args)
+    asr_module = ASRModule(
+        args=args,
+        # classifier=FewShotTextGenerationClassifier(
+        #     llm_url=args.llm_url,
+        #     intent_manager=IntentManagerFactory.get_intent_manager_with_unknown_intent(),
+        # ),
+    )
 
     if args.list_available_languages:
         logger.info("Listing available languages of mediator")

@@ -5,6 +5,7 @@ import threading
 
 import numpy as np
 import pyaudio
+import watchdog
 
 from pythonrecordingclient.helper import BugException
 from pythonrecordingclient.inputStreamAdapter import BaseAdapter
@@ -17,7 +18,8 @@ def read_audio(stream, chunk_size, queue):
 
 
 class PortaudioStream(BaseAdapter):
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, chunk_size: int = 1024, **kwargs) -> None:
+        self.chunk_size = chunk_size
         self.input_id: int | None = None
         self._stream: pyaudio.Stream | None = None
         self._pyaudio: pyaudio.PyAudio | None = None
@@ -27,8 +29,6 @@ class PortaudioStream(BaseAdapter):
         if self.input_id is None:
             raise BugException()
         if self._stream is None:
-            self.chunk_size = 1024
-
             p = self.pyaudio
             self._stream = p.open(
                 format=self.format,

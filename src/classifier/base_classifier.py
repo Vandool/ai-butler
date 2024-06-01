@@ -8,7 +8,7 @@ from src.intent.intent_manager import IntentManager
 from src.prompt_generator.prompt_generator import PromptGenerator, PromptType
 
 
-class BaseIntentClassifier(abc.ABC):
+class BaseClassifier(abc.ABC):
     def __init__(self):
         self.logger = utils.get_logger(self.__class__.__name__)
         self._intent_manager: IntentManager | None = None
@@ -31,18 +31,18 @@ class BaseIntentClassifier(abc.ABC):
     def intent_manager(self) -> IntentManager | None:
         return self._intent_manager
 
+    @intent_manager.setter
+    def intent_manager(self, intent_manager: IntentManager) -> None:
+        assert intent_manager.get_intent_length() > 1
+        self._intent_manager = intent_manager
+        self.__initialize_prompt_generator()
+
     def get_closest_intent(self, input_text: str, prompt_type: PromptType = PromptType.ZERO_SHOT) -> Intent:
         # TODO(Arvand): the one shot classifier doesn't need this. depending on what we choose in the end we can
         # delete this
         return self.intent_manager.get_closest_intent(
             message=self.classify(input_text, prompt_type),
         )
-
-    @intent_manager.setter
-    def intent_manager(self, intent_manager: IntentManager) -> None:
-        assert intent_manager.get_intent_length() > 1
-        self._intent_manager = intent_manager
-        self.__initialize_prompt_generator()
 
     def __initialize_prompt_generator(self):
         if self._intent_manager is not None:
