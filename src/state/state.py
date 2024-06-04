@@ -129,9 +129,11 @@ class CalendarState(State):
                 self.logger.info(f"Calling '{intended_fn.__name__}' function:")
                 fn_response = intended_fn()
                 self.logger.info(fn_response)
+                if fn_response:
+                    fn_response = _add_time_now_to(fn_response)
                 llm_prompt = respond_prompts.get_calendar_api_respond_prompts(fn_name).format(
                     last_utterance=user_input,
-                    function_response=_add_time_now_to(fn_response),
+                    function_response=fn_response,
                 )
                 self.logger.info(llm_prompt)
                 llm_respond = self.llm_client.get_response(prompt=llm_prompt)

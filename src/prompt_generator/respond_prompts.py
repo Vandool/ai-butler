@@ -42,7 +42,7 @@ data: {{
   "eventType": "default"
   "now": "2024-06-04T14:00:00+02:00"
 }}
-answer: You should meet your mom at her house at 17 o'clock (roughly in 3 hours). You're going to plan a party with her. 
+answer: You should meet your mom at her house at 17 o'clock (roughly in 3 hours). You're going to plan a party with her.
 
 Example1:
 user: What's my next appointment?
@@ -81,7 +81,7 @@ data: {{
   "eventType": "default"
   "now": "2024-06-04T14:00:00+02:00"
 }}
-answer: You should meet your mom at her house at 17 o'clock (roughly in 3 hours). You're going to plan a party with her. 
+answer: You should meet your mom at her house at 17 o'clock (roughly in 3 hours). You're going to plan a party with her.
 
 Example2:
 user: What's my next appointment?
@@ -178,7 +178,7 @@ data: {{
   "eventType": "default"
   "now": "2024-06-04T14:00:00+02:00"
 }}
-answer: You should meet your mom at her house at 17 o'clock (roughly in 3 hours). You're going to plan a party with her. 
+answer: You should meet your mom at her house at 17 o'clock (roughly in 3 hours). You're going to plan a party with her.
 
 Example2:
 user: What's my next appointment?
@@ -191,6 +191,18 @@ Be creative with your response, but keep it short.
 user: {last_utterance}
 data: {function_response}
 [/INST]
+answer:
+"""
+
+CLARIFY = """
+[INST] <>
+You are a help desk client.
+You ask the user to repeat what they have said.
+Do not give any reason why.
+Be short and precise.
+
+user: Can you make anki cards for me?
+<> [/INST]
 answer:
 """
 
