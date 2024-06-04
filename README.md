@@ -206,3 +206,12 @@ GC_CALENDAR_ID = YOUR_CALENDAR_ID
 Replace the placeholders with values extracted from the service account JSON file and the Google Calendar ID.
 
 *When running the application make sure you have specified the location of the `.env` to the runner.*
+
+
+### Text2Speech
+
+1. Install the following packages:
+   ```sh
+   pip install simpleaudio
+   pip install soundfile
+   pip install pydub

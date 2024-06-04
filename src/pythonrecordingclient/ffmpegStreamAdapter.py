@@ -36,7 +36,7 @@ class FfmpegStream(BaseAdapter):
 
         return shutil.which("ffmpeg") is not None
 
-    def get_stream(self, _) -> Any:
+    def get_stream(self) -> Any:
         if self.url is None:
             raise BugException(msg="Input file/url cannot be None")
         if self._process is None:

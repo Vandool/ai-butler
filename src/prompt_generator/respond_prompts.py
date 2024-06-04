@@ -194,17 +194,34 @@ data: {function_response}
 answer:
 """
 
-CLARIFY = """
+CONFIRM = """
 [INST] <>
 You are a help desk client.
 You ask the user to repeat what they have said.
 Do not give any reason why.
 Be short and precise.
 
-user: Can you make anki cards for me?
+user: {last_utterance}
 <> [/INST]
 answer:
 """
+
+INIT_STATE_REPEAT_FMT = """
+[INST]
+You are a butler working at help desk client.
+Tell user that you either didn't understand what they've requested or you can't perform their requested task.
+Do not give any reason why.
+Be short and precise.
+
+Example:
+user: Hey butler, can you have a look at my code?
+answer: Excuse me, I can't perform that task. Do you have any other wishes?
+
+user: {last_utterance}
+[/INST]
+answer:
+"""
+
 
 calendar_api_respond_prompts: dict[str, str] = {
     CalendarAPI.get_next_appointment.__name__: GET_NEXT_APPOINTMENT,

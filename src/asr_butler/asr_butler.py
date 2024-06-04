@@ -5,6 +5,7 @@ import base64
 import copy
 import datetime
 import json
+import os
 import socket
 import sys
 import time
@@ -23,22 +24,25 @@ from src.pythonrecordingclient.ffmpegStreamAdapter import FfmpegStream
 from src.pythonrecordingclient.helper import BugException
 from src.pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
 from src.state.state import InitialState, State
+from src.text2speech.microsoft_speecht5_tts import MicrosoftSpeechT5TTS, TextToSpeech
 from src.web_handler.my_web_utils import check_status_code, return_json
 
 logger = utils.get_logger("ASRModule")
 
 
 class ASRModule:
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         args: argparse.Namespace,
         history: History | None,
         llm_client: LLMClient | None,
         start_state: State | None = None,
+        tts_client: TextToSpeech | None = None,
     ):
         self.history = history
         self.llm_client = llm_client
         self.state = start_state
+        self.text_to_speech = tts_client
         self.args = args
         self.api = args.api
         self.token = args.token
@@ -97,7 +101,7 @@ class ASRModule:
             if input_ is None:
                 logger.info("The ffmpeg backend requires an url/file via the '-f' parameter")
                 sys.exit(1)
-            elif not Path.is_file(input_) and not input_.startswith("rtsp"):
+            elif not os.path.isfile(input_) and not input_.startswith("rtsp"):
                 logger.info(f"File {input_} does not exist")
                 sys.exit(1)
         else:
@@ -513,10 +517,12 @@ class TheButler(ASRModule):
 if __name__ == "__main__":
     arguments = get_asr_llm_config()
     llm_client_ = LLMClient(client=InferenceClient(arguments.llm_url))
+    tts = MicrosoftSpeechT5TTS(model_path=Path.cwd() / "models" / "speecht5_tts.pt")
     asr_module = TheButler(
         args=arguments,
         history=History(),
         llm_client=llm_client_,
-        start_state=InitialState(llm_client=llm_client_),
+        start_state=InitialState(llm_client=llm_client_, tts_client=tts),
+        tts_client=tts,
     )
     asr_module.run_session()

@@ -13,9 +13,8 @@ from src import utils
 from src.config.asr_llm_config import get_asr_llm_config
 from src.history.history import History
 from src.llm_client.llm_client import LLMClient
+from src.text2speech.microsoft_speecht5_tts import TextToSpeech
 from src.web_handler.calendar_api import CalendarAPI
-
-logger = utils.get_logger("SlotFiller")
 
 
 @dataclass
@@ -115,27 +114,30 @@ AI:
 """
     _SLOT_INSTRUCTION_FMT = "If {name} is None with respect to the Current Slots 'value', ask a question about the {name} of the appointment."
 
-    def __init__(self, func: Callable, llm_client: LLMClient):
+    def __init__(self, func: Callable, llm_client: LLMClient, text_to_speech: TextToSpeech | None = None):
         self.purpose: str = func.__name__
         self.slots: list[Slot] = extract_slots_from_function(func)
-        self.llm_client = llm_client
         self.history: History = History()
+        self.logger = utils.get_logger("SlotFiller")
         self.is_greeting: bool = True
+        self.llm_client = llm_client
+        self.tts = text_to_speech
+        self.is_just_started = True
 
     @property
     def is_done(self) -> bool:
         return all(slot.is_set for slot in self.slots)
 
     @property
-    def next_slot(self) -> Slot | None:
+    def _next_slot(self) -> Slot | None:
         for slot in self.slots:
             if not slot.is_set:
                 return slot
         return None
 
-    def generate_prompt(self, user_input: str) -> str:
-        slot_instructions = self._SLOT_INSTRUCTION_FMT.format(name=self.next_slot.name)
-        current_slots_str = self.next_slot.get_name_value()
+    def _generate_prompt(self, user_input: str) -> str:
+        slot_instructions = self._SLOT_INSTRUCTION_FMT.format(name=self._next_slot.name)
+        current_slots_str = self._next_slot.get_name_value()
         history_str = self.history.get_history()
 
         return self._DEFAULT_TEMPLATE_FMT.format(
@@ -146,38 +148,51 @@ AI:
             input=user_input,
         )
 
-    def handle_user_input(self, user_input: str) -> str:
+    def process(self, user_input: str) -> str:
+        if not self.is_just_started:
+            self.fill_slot(user_input=user_input)
+        else:
+            self.is_just_started = True
+
+        self.history.add_human_message(user_input)
+        self.logger.info(f"Handling user input '{user_input}' ...")
+        llm_response = self.llm_client.get_response(prompt=self._generate_prompt(user_input))
+        self.history.add_ai_message(llm_response)
+        self.logger.info(llm_response)
+        # self.tts.text_to_speech(llm_response)
+
+    def handle_user_input_from_text_interface(self, user_input: str) -> str:
         self.fill_slot(user_input)
 
         if self.is_done:
             return "LLM: Sending confirmation ..."
 
         self.history.add_human_message(user_input)
-        logger.info(f"Handling user input '{user_input}' ...")
-        prompt = self.generate_prompt(user_input)
+        self.logger.info(f"Handling user input '{user_input}' ...")
+        prompt = self._generate_prompt(user_input)
         llm_response = self.llm_client.get_response(prompt=prompt)
         self.history.add_ai_message(llm_response)
         return llm_response
+
+    def fill_slot(self, user_input: str) -> None:
+        if "time" in self._next_slot.name:
+            prompt = datetime_prompt(user_input)
+            user_input = clean(
+                string=self.llm_client.get_response(prompt=prompt),
+            )
+        self._next_slot.set_value(value=user_input)
 
     def get_user_input(self) -> str:
         if self.history.is_empty:
             initial_message = "I would like to create an appointment"
             self.history.add_human_message("")
-            prompt = self.generate_prompt(initial_message)
+            prompt = self._generate_prompt(initial_message)
             greetings_response = self.llm_client.get_response(
                 prompt=prompt,
             )
             self.history.add_ai_message(greetings_response)
             return input(greetings_response + "\nUser: ")
         return input("User: ")
-
-    def fill_slot(self, user_input: str) -> None:
-        if "time" in self.next_slot.name:
-            prompt = datetime_prompt(user_input)
-            user_input = clean(
-                string=self.llm_client.get_response(prompt=prompt),
-            )
-        self.next_slot.set_value(value=user_input)
 
     def get_kwargs(self) -> dict:
         kwargs = {}
@@ -186,13 +201,16 @@ AI:
         return kwargs
 
     def run_text_interface(self):
-        logger.info(f"All Slots: {self.slots}")
+        self.logger.info(f"All Slots: {self.slots}")
         while not self.is_done:
             user_input = self.get_user_input()
-            logger.info(self.handle_user_input(user_input))
-        logger.info(f"All Slots: {self.slots}")
-        logger.info(f"History: {self.history.get_history()}")
-        logger.info(self.get_kwargs())
+            self.logger.info(self.handle_user_input_from_text_interface(user_input))
+        self.logger.info(f"All Slots: {self.slots}")
+        self.logger.info(f"History: {self.history.get_history()}")
+        self.logger.info(self.get_kwargs())
+
+
+logger = utils.get_logger("SlotFiller")
 
 
 def run_slot_filler():
