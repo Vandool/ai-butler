@@ -1,12 +1,13 @@
-# List of test utterances for each intent
+
 from __future__ import annotations
 
 import pytest
 
-from src.intent.intent_manager import CALENDAR, LECTURE, UNKNOWN
+from src.intent.intent import CALENDAR, LECTURE, UNKNOWN
 from src.prompt_generator.prompt_generator import PromptType
 
 test_data = [
+    # "the_input, expected_output"
     # Google Calendar
     ("Add a new calendar event", CALENDAR.name),
     ("Set up a meeting for tomorrow", CALENDAR.name),
