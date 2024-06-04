@@ -109,6 +109,8 @@ class InitialState(State):
             input_text=user_input,
             prompt_type=PromptType.FEW_SHOT_DETAILED,
         )
+        self.logger.info(f"\tLLM Output: {classifier_response.llm_response}")
+        self.logger.info(f"\tIntention Class: {classifier_response.intent.name}")
 
         if classifier_response.intent == intent.CALENDAR:
             return CalendarState(llm_client=self.llm_client, tts_client=self.tts_client).process(user_input)
@@ -158,24 +160,28 @@ class CalendarState(State):
             return self
 
         self._call_intended_function(user_input)
-        return InitialState(llm_client=self.llm_client)
+        return InitialState(llm_client=self.llm_client, tts_client=self.tts_client)
 
     def _process_intent_classification(self, user_input: str) -> State:
         classifier_response = self.classifier.classify(
             input_text=user_input,
             prompt_type=PromptType.FEW_SHOT_DETAILED,
         )
-        self.logger.debug(f"Classifier textual response: {classifier_response.llm_response}")
+        self.logger.info(f"\tLLM Output: {classifier_response.llm_response}")
+        self.logger.info(f"\tIntention Class: {classifier_response.intent.name}")
 
         if self.found_no_intent(current_intent=classifier_response.intent):
             self.clarify(last_input=user_input)
             return self
 
         self.current_intent = classifier_response.intent
+
         if self._slot_filling_required(fn_name=self.current_intent.name):
             self._start_slot_filling(user_input)
+            return self
 
-        return self
+        self._call_intended_function(user_input)
+        return InitialState(llm_client=self.llm_client, tts_client=self.tts_client)
 
     def _start_slot_filling(self, user_input: str) -> None:
         self.slot_filler = SlotFillerSimple(

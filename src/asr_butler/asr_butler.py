@@ -59,6 +59,29 @@ class ASRModule:
         if args.audio_device < 0:
             self.list_and_select_audio_device()
         self.audio_source = self.set_audio_input()
+        self.processing = True  # Flag to control SSEClient processing
+
+    def start_audio(self):
+        logger.info("Starting audio")
+        if hasattr(self.audio_source, "start"):
+            self.audio_source.start()
+        else:
+            logger.error("Audio source does not support start operation")
+
+    def stop_audio(self):
+        logger.info("Stopping audio")
+        if hasattr(self.audio_source, "stop"):
+            self.audio_source.stop()
+        else:
+            logger.error("Audio source does not support stop operation")
+
+    def start_processing_messages(self):
+        logger.info("Starting SSEClient processing")
+        self.processing = True
+
+    def stop_processing_messages(self):
+        logger.info("Stopping SSEClient processing")
+        self.processing = False
 
     def list_and_select_audio_device(self):
         stream_adapter = PortaudioStream()
@@ -218,6 +241,9 @@ class ASRModule:
         logger.info("Starting SSEClient")
         messages = SSEClient(f"{self.url}/{self.api}/stream?channel={self.session_id}")
         for msg in messages:
+            if not self.processing:  # Check if processing should continue
+                continue
+
             if len(msg.data) == 0:
                 break
 
@@ -269,7 +295,11 @@ class ASRModule:
                             full_sentence = self.transcript_buffer.strip()
                             self.transcript_buffer = ""
                             logger.info("full sentence: %s", full_sentence)
-                            self.process_command(full_sentence)
+                            self.stop_processing_messages()
+                            self.stop_audio()
+                            self.process_command(user_input=full_sentence)
+                            self.start_audio()
+                            self.start_processing_messages()
 
                     elif data.get("linkedData"):
                         for v in data.values():
@@ -299,6 +329,10 @@ class ASRModule:
                 logger.info_pretty(asr_output)
                 self._save_json_output(asr_output)
 
+    def process_command(self, user_input: str):
+        if self.state:
+            self.state = self.state.process(user_input)
+
     def _process_controll_data(self, data: dict) -> None:
         asr_output = (
             {
@@ -327,10 +361,6 @@ class ASRModule:
             output_path = Path(self.args.output_file)
             with output_path.open("a") as f:
                 f.write(data + "\n")
-
-    def process_command(self, user_input: str):
-        if self.state:
-            self.state = self.state.process(user_input)
 
     @return_json
     @check_status_code

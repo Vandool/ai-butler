@@ -25,6 +25,9 @@ class PortaudioStream(BaseAdapter):
         self.input_id: int | None = None
         self._stream: pyaudio.Stream | None = None
         self._pyaudio: pyaudio.PyAudio | None = None
+        self.queue = queue.Queue()
+        self.read_thread: threading.Thread | None = None
+        self.running = False
         super().__init__(format=pyaudio.paInt16)
 
     def get_stream(self) -> pyaudio.Stream:
@@ -40,8 +43,6 @@ class PortaudioStream(BaseAdapter):
                 input=True,
                 frames_per_buffer=self.chunk_size,
             )
-
-            self.queue = queue.Queue()
 
             thread = threading.Thread(target=read_audio, args=(self._stream, self.chunk_size, self.queue))
             thread.daemon = True
@@ -71,12 +72,15 @@ class PortaudioStream(BaseAdapter):
         return chunk
 
     def cleanup(self) -> None:
+        self.stop()
         if self._stream is not None:
             self._stream.stop_stream()
             self._stream.close()
+            self._stream = None
 
         if self._pyaudio is not None:
             self._pyaudio.terminate()
+            self._pyaudio = None
 
     def set_input(self, id: int) -> None:
         devices = self.get_audio_devices()
@@ -125,3 +129,24 @@ class PortaudioStream(BaseAdapter):
         channelCount = self.pyaudio.get_device_info_by_host_api_device_index(0, self.input_id).get("maxInputChannels")
         self.channel_count = channelCount
         self.chosen_channel = channel
+
+    def start(self) -> None:
+        """Start the audio stream."""
+        self.running = True
+        self.get_stream()
+        if self.read_thread is None:
+            self.read_thread = threading.Thread(target=self._read_audio)
+            self.read_thread.daemon = True
+            self.read_thread.start()
+
+    def stop(self) -> None:
+        """Stop the audio stream."""
+        self.running = False
+        if self.read_thread is not None:
+            self.read_thread.join()
+            self.read_thread = None
+
+    def _read_audio(self) -> None:
+        while self.running:
+            chunk = self._stream.read(self.chunk_size, exception_on_overflow=False)
+            self.queue.put(chunk)
