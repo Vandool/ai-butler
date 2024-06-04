@@ -316,7 +316,8 @@ class ASRModule:
 
     @staticmethod
     def _is_sentence_complete(data: dict) -> bool:
-        return data["speech_segment_ends"]
+        segment_end_key = "speech_segment_ends"
+        return segment_end_key in data and data["speech_segment_ends"]
 
     def _save_json_output(self, data: dict):
         self._save_str_output(json.dumps(data, indent=2))

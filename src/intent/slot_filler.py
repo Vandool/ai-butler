@@ -159,7 +159,7 @@ AI:
         llm_response = self.llm_client.get_response(prompt=self._generate_prompt(user_input))
         self.history.add_ai_message(llm_response)
         self.logger.info(llm_response)
-        # self.tts.text_to_speech(llm_response)
+        self.tts.text_to_speech(llm_response)
 
     def handle_user_input_from_text_interface(self, user_input: str) -> str:
         self.fill_slot(user_input)
