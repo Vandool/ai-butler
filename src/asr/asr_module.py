@@ -4,9 +4,7 @@ import argparse
 import base64
 import copy
 import datetime
-import inspect
 import json
-import re
 import socket
 import sys
 import time
@@ -14,32 +12,39 @@ from pathlib import Path
 from threading import Thread
 
 import requests
-from fuzzywuzzy import fuzz
+from huggingface_hub import InferenceClient
 from sseclient import SSEClient
 
 from src import utils
-from src.classifier.base_classifier import BaseClassifier
-from src.classifier.few_shot_text_generation_classifier import FewShotTextGenerationClassifier
-from src.config.asr_llm_config import get_config
-from src.intent.intent_manager import IntentManagerFactory
-from src.intent.intent_mapper import get_intent_class
-from src.intent.web_handler.my_web_utils import check_status_code, return_json
-from src.prompt_generator.prompt_generator import PromptType
+from src.config.asr_llm_config import get_asr_llm_config
+from src.history.history import History
+from src.llm_client.llm_client import LLMClient
+from src.pythonrecordingclient.ffmpegStreamAdapter import FfmpegStream
 from src.pythonrecordingclient.helper import BugException
 from src.pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
+from src.state.state import InitialState, State
+from src.web_handler.my_web_utils import check_status_code, return_json
 
 logger = utils.get_logger("ASRModule")
 
 
 class ASRModule:
-    def __init__(self, args: argparse.Namespace, classifier: BaseClassifier | None = None):
+    def __init__(
+        self,
+        args: argparse.Namespace,
+        history: History | None,
+        llm_client: LLMClient | None,
+        start_state: State | None = None,
+    ):
+        self.history = history
+        self.llm_client = llm_client
+        self.state = start_state
         self.args = args
         self.api = args.api
         self.token = args.token
         self.url = args.url
         self.session_id = None
         self.stream_id = None
-        self._classifier: BaseClassifier | None = classifier
         self.transcript_buffer = ""
         if self.args.output_file:
             output_path = Path(self.args.output_file)
@@ -49,14 +54,7 @@ class ASRModule:
         logger.labeled_info_pretty(label="Active Sessions", info=self.get_active_sessions())
         if args.audio_device < 0:
             self.list_and_select_audio_device()
-
-    @property
-    def classifier(self) -> BaseClassifier:
-        return self._classifier
-
-    @classifier.setter
-    def classifier(self, classifier: BaseClassifier):
-        self._classifier = classifier
+        self.audio_source = self.set_audio_input()
 
     def list_and_select_audio_device(self):
         stream_adapter = PortaudioStream()
@@ -74,15 +72,13 @@ class ASRModule:
             except ValueError:
                 logger.exception("Invalid input. Please enter a number.")
 
-    def get_audio_input(self):
+    def set_audio_input(self):
         if self.args.input == "link":
             return self.args.ffmpeg_input
         if self.args.input == "portaudio":
-            from src.pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
-
             logger.info("Using portaudio as input_. If you want to use ffmpeg specify '-i ffmpeg'.")
             # (Arvand): Added the chunk_size to control the chunk size while playing around
-            stream_adapter = PortaudioStream(chunk_size=arguments.chunk_size)
+            stream_adapter = PortaudioStream(chunk_size=self.args.chunk_size)
             input_ = self.args.audio_device
             if self.args.audio_device < 0:
                 logger.info(
@@ -90,8 +86,6 @@ class ASRModule:
                 )
                 sys.exit(1)
         elif self.args.input == "ffmpeg":
-            from src.pythonrecordingclient.ffmpegStreamAdapter import FfmpegStream
-
             stream_adapter = FfmpegStream(
                 pre_input=self.args.ffmpeg_pre,
                 post_input=self.args.ffmpeg_post,
@@ -134,9 +128,9 @@ class ASRModule:
             logger.error("ERROR in starting session")
             sys.exit(1)
 
-    def send_audio(self, last_end, audio_source, raise_interrupt=True, absolute_timestamps=False):
-        chunk = audio_source.read()
-        chunk = audio_source.chunk_modify(chunk)
+    def send_audio(self, last_end, raise_interrupt=True, absolute_timestamps=False):
+        chunk = self.audio_source.read()
+        chunk = self.audio_source.chunk_modify(chunk)
         if raise_interrupt and len(chunk) == 0:
             raise KeyboardInterrupt
         s = last_end if not absolute_timestamps else time.time()
@@ -166,25 +160,38 @@ class ASRModule:
             logger.error("ERROR in sending END message")
             sys.exit(1)
 
-    def send_session(self, audio_source):
+    @check_status_code
+    def send_link(self):
+        data = {"url": self.url}
+        res = requests.post(
+            self.audio_source.url + "/" + self.args.api + "/" + self.session_id + "/" + self.stream_id + "/append",
+            json=json.dumps(data),
+            cookies={"_forward_auth": self.args.token},
+        )
+        if res.status_code != 200:
+            logger.error(res.status_code, res.text)
+            logger.error("ERROR in sending video")
+            sys.exit(1)
+        logger.info("Video successfully sent.")
+
+    def send_session(self):
         try:
             start_time = time.time()
             self.send_start()
             if self.args.memory_words is not None:
                 self.send_memory(self.args.memory_words)
             if self.args.translate_link:
-                self.send_link(audio_source)
+                self.send_link()
             elif not self.args.upload_video:
                 last_end = 0
                 while self.args.timeout is None or time.time() - start_time < self.args.timeout:
                     last_end = self.send_audio(
                         last_end,
-                        audio_source,
                         raise_interrupt=self.args.timeout is None,
                         absolute_timestamps=self.args.absolute_timestamps,
                     )
             else:
-                self.send_video(audio_source.url)
+                self.send_video(self.audio_source.url)
         except KeyboardInterrupt:
             logger.info("Caught KeyboardInterrupt")
 
@@ -254,12 +261,11 @@ class ASRModule:
                         logger.info(asr_output)
                         self._save_str_output(asr_output)
 
-                        if self._is_sentence_complete(self.transcript_buffer):
+                        if self._is_sentence_complete(data):
                             full_sentence = self.transcript_buffer.strip()
                             self.transcript_buffer = ""
                             logger.info("full sentence: %s", full_sentence)
-                            if self.classifier is not None:
-                                self.process_command(full_sentence)
+                            self.process_command(full_sentence)
 
                     elif data.get("linkedData"):
                         for v in data.values():
@@ -305,8 +311,8 @@ class ASRModule:
         self._save_json_output(asr_output)
 
     @staticmethod
-    def _is_sentence_complete(text: str) -> bool:
-        return re.search(r"[.!?]$", text.strip()) is not None
+    def _is_sentence_complete(data: dict) -> bool:
+        return data["speech_segment_ends"]
 
     def _save_json_output(self, data: dict):
         self._save_str_output(json.dumps(data, indent=2))
@@ -317,41 +323,9 @@ class ASRModule:
             with output_path.open("a") as f:
                 f.write(data + "\n")
 
-    @staticmethod
-    def keyword_spotting(transcript: str) -> bool:
-        # TODO: maybe we can use a classifier here? as improvement?
-        keywords = ["ok butler", "okay butler", "hey butler", "butler", "bottler"]
-        transcript = transcript.lower()
-        return any(fuzz.partial_ratio(transcript, keyword) > 80 for keyword in keywords)
-
-    def process_command(self, transcript: str):
-        if self.keyword_spotting(transcript):
-            logger.info("Keyword spotted, sending to classifier.")
-            trimmed_transcript = self._trim_transcript(transcript)
-            logger.info(f"Trimmed sequence: {trimmed_transcript}")
-            self._check_and_send_to_classifier(trimmed_transcript)
-        else:
-            logger.info("No keyword detected.")
-
-    @staticmethod
-    def _trim_transcript(transcript: str) -> str:
-        keywords = ["ok butler", "okay butler", "hey butler", "butler"]
-        for keyword in keywords:
-            if keyword in transcript.lower():
-                return transcript.lower().split(keyword, 1)[-1].strip()
-        return transcript.strip()
-
-    def _check_and_send_to_classifier(self, transcript: str):
-        intent = self.classifier.get_closest_intent_using_similarity(
-            input_text=transcript,
-            prompt_type=PromptType.FEW_SHOT_DETAILED,
-        )
-        logger.info(f"Classification result: {intent.name}")
-        if (intent_processor := get_intent_class(intent)) is not None:
-            func_name = intent_processor.process(transcript)
-            func_ = getattr(intent_processor, func_name)
-            logger.info(func_)
-            logger.info(f"requires slot filling: {bool(inspect.signature(func_).parameters)}")
+    def process_command(self, user_input: str):
+        if self.state:
+            self.state = self.state.process(user_input)
 
     @return_json
     @check_status_code
@@ -424,15 +398,7 @@ class ASRModule:
 
         logger.info("SessionId %s, StreamID %s", self.session_id, self.stream_id)
 
-        graph = json.loads(
-            requests.post(
-                f"{self.args.url}/{self.args.api}/{self.session_id}/getgraph",
-                cookies={"_forward_auth": self.args.token},
-            ).text,
-        )
-        logger.info("Graph: %s", graph)
-
-    def run_session(self, audio_source):
+    def run_session(self):
         self.set_graph()
 
         start_time = time.monotonic()
@@ -458,140 +424,99 @@ class ASRModule:
             logger.error("ERROR in requesting worker information")
             sys.exit(1)
 
-        self.send_session(audio_source)
+        self.send_session()
 
         t.join()
 
-
-def main(args):
-    asr_module = ASRModule(
-        args=args,
-        classifier=FewShotTextGenerationClassifier(
-            llm_url=args.llm_url,
-            intent_manager=IntentManagerFactory.get_intent_manager_with_unknown_intent(),
-        ),
-    )
-
-    if args.list_available_languages:
-        logger.info("Listing available languages of mediator")
-        logger.info(asr_module.get_available_languages())
-        return
-    if args.list_active_sessions:
-        logger.info("Listing active sessions of mediator")
-        asr_module.print_active_sessions()
-        return
-    if args.upload_video:
-        if args.input != "ffmpeg":
-            logger.info("To upload a video you have to use ffmpeg input.")
+    def run_immediate_session(self):
+        if self.args.list_available_languages:
+            logger.info("Listing available languages of mediator")
+            logger.info(self.get_available_languages())
             return
-        if args.ffmpeg_input is None:
-            logger.info("To upload a video you have to specify the video via ffmpeg_input")
+        if self.args.list_active_sessions:
+            logger.info("Listing active sessions of mediator")
+            self.print_active_sessions()
             return
-        if args.save_path == "" and args.generate_video is None and args.run_tts is None:
-            logger.info(
-                "You have to specify the save-path (e.g. /logs/archive/lecture_name/semester/lecture_number), press c to ignore this.",
-            )
-            breakpoint()
-        if "version" not in args.asr_properties or args.asr_properties["version"] != "offline":
-            logger.info("To upload a video you have to use offline mode: --asr-kv version=offline")
-            return
+        if self.args.upload_video:
+            if self.args.input != "ffmpeg":
+                logger.info("To upload a video you have to use ffmpeg input.")
+                return
+            if self.args.ffmpeg_input is None:
+                logger.info("To upload a video you have to specify the video via ffmpeg_input")
+                return
+            if self.args.save_path == "" and self.args.generate_video is None and self.args.run_tts is None:
+                logger.info(
+                    "You have to specify the save-path (e.g. /logs/archive/lecture_name/semester/lecture_number), press c to ignore this.",
+                )
+                breakpoint()
+            if "version" not in self.args.asr_properties or self.args.asr_properties["version"] != "offline":
+                logger.info("To upload a video you have to use offline mode: --asr-kv version=offline")
+                return
 
-    audio_source = asr_module.get_audio_input()
+        self.run_session()
 
-    asr_module.run_session(audio_source)
+    def schedule_sessions(self):
+        self.args.input = "ffmpeg"
+        self.args.asr_properties.update({"mode": "SendUnstable", "language": "en,de"})
+        self.args.mt_properties.update({"mode": "SendUnstable"})
+        self.args.run_mt = "en-fr,en-it,en-nl,en-es,en-pt"
+        self.args.show_on_website = True
 
+        logger.info(json.dumps(vars(self.args), indent=4))
 
-def run_immediate_session(args):
-    asr_module = ASRModule(
-        args=args,
-        classifier=FewShotTextGenerationClassifier(
-            llm_url=args.llm_url,
-            intent_manager=IntentManagerFactory.get_intent_manager_with_unknown_intent(),
-        ),
-    )
+        streams = {
+            line.strip().split("\t")[1]: line.strip().split("\t")[4] for line in open("rtmp_list.txt")
+        }  # id: rtmp_stream
+        sessions = [line.strip().split() for line in open("sessions.txt") if line[0] != "D"]
+        logger.info(sessions)
 
-    if args.list_available_languages:
-        logger.info("Listing available languages of mediator")
-        logger.info(asr_module.get_available_languages())
-        return
-    if args.list_active_sessions:
-        logger.info("Listing active sessions of mediator")
-        asr_module.print_active_sessions()
-        return
-    if args.upload_video:
-        if args.input != "ffmpeg":
-            logger.info("To upload a video you have to use ffmpeg input.")
-            return
-        if args.ffmpeg_input is None:
-            logger.info("To upload a video you have to specify the video via ffmpeg_input")
-            return
-        if args.save_path == "" and args.generate_video is None and args.run_tts is None:
-            logger.info(
-                "You have to specify the save-path (e.g. /logs/archive/lecture_name/semester/lecture_number), press c to ignore this.",
-            )
-            breakpoint()
-        if "version" not in args.asr_properties or args.asr_properties["version"] != "offline":
-            logger.info("To upload a video you have to use offline mode: --asr-kv version=offline")
-            return
+        threads = []
+        for timestamp, minutes, room, title in sessions:
+            start_time = datetime.datetime.strptime(timestamp, "%d.%m.%Y-%H:%M")
+            wait_seconds = (start_time - datetime.datetime.now()).total_seconds()
+            if wait_seconds < 0:
+                continue
 
-    audio_source = asr_module.get_audio_input()
+            args_ = copy.deepcopy(self.args)
+            args_.ffmpeg_input = streams[room]
+            args_.website_title = title
+            args_.timeout = 60 * float(minutes)
 
-    asr_module.run_session(audio_source)
+            t = Thread(target=self.main_prewait, args=(args_, wait_seconds))
+            t.daemon = True
+            threads.append(t)
 
+        logger.info(f"{len(threads)!s} sessions are now scheduled.")
 
-def schedule_sessions(arguments):
-    arguments.input = "ffmpeg"
-    arguments.asr_properties.update({"mode": "SendUnstable", "language": "en,de"})
-    arguments.mt_properties.update({"mode": "SendUnstable"})
-    arguments.run_mt = "en-fr,en-it,en-nl,en-es,en-pt"
-    arguments.show_on_website = True
+        for t in threads:
+            t.start()
 
-    logger.info(json.dumps(vars(arguments), indent=4))
+        for t in threads:
+            t.join()
 
-    streams = {
-        line.strip().split("\t")[1]: line.strip().split("\t")[4] for line in open("rtmp_list.txt")
-    }  # id: rtmp_stream
-    sessions = [line.strip().split() for line in open("sessions.txt") if line[0] != "D"]
-    logger.info(sessions)
+    def main_prewait(self, seconds=0):
+        time.sleep(seconds)
+        self.run_immediate_session()
 
-    threads = []
-    for timestamp, minutes, room, title in sessions:
-        start_time = datetime.datetime.strptime(timestamp, "%d.%m.%Y-%H:%M")
-        wait_seconds = (start_time - datetime.datetime.now()).total_seconds()
-        if wait_seconds < 0:
-            continue
-
-        args_ = copy.deepcopy(arguments)
-        args_.ffmpeg_input = streams[room]
-        args_.website_title = title
-        args_.timeout = 60 * float(minutes)
-
-        t = Thread(target=main_prewait, args=(args_, wait_seconds))
-        t.daemon = True
-        threads.append(t)
-
-    logger.info(f"{len(threads)!s} sessions are now scheduled.")
-
-    for t in threads:
-        t.start()
-
-    for t in threads:
-        t.join()
+    def run_asr_module(self):
+        if not self.args.run_scheduler:
+            logger.info(json.dumps(vars(self.args), indent=4))
+            self.run_immediate_session()
+        else:
+            self.schedule_sessions()
 
 
-def main_prewait(args, seconds=0):
-    time.sleep(seconds)
-    run_immediate_session(args)
-
-
-def run_asr_module():
-    if not arguments.run_scheduler:
-        logger.info(json.dumps(vars(arguments), indent=4))
-        run_immediate_session(arguments)
-    else:
-        schedule_sessions(arguments)
+class TheButler(ASRModule):
+    """ASRModule is the butler, the butler is ASR"""
 
 
 if __name__ == "__main__":
-    arguments = get_config()
-    run_asr_module()
+    arguments = get_asr_llm_config()
+    llm_client_ = LLMClient(client=InferenceClient(arguments.llm_url))
+    asr_module = TheButler(
+        args=arguments,
+        history=History(),
+        llm_client=llm_client_,
+        start_state=InitialState(llm_client=llm_client_),
+    )
+    asr_module.run_session()

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from dotenv import load_dotenv
 
@@ -30,18 +30,18 @@ class AsrLlmConfig:
     save_path: str = ""
     no_logging: bool = False
     run_mt: str = None
-    asr_properties: dict = None
+    asr_properties: dict = field(default_factory=dict)
     no_textsegmenter: bool = False
-    textseg_properties: dict = None
+    textseg_properties: dict = field(default_factory=dict)
     use_error_correction: bool = False
-    mt_properties: dict = None
+    mt_properties: dict = field(default_factory=dict)
     use_prep: bool = False
     use_summarize: bool = False
     use_postproduction: bool = False
-    prep_properties: dict = None
-    tts_properties: dict = None
-    video_properties: dict = None
-    show_on_website: bool = False
+    prep_properties: dict = field(default_factory=dict)
+    tts_properties: dict = field(default_factory=dict)
+    video_properties: dict = field(default_factory=dict)
+    show_on_website: bool = field(default_factory=dict)
     website_title: str = "Audioclient"
     meta: str = ""
     access: str = ""
@@ -62,7 +62,7 @@ class AsrLlmConfig:
     chunk_size: int = 1024  # Default chunk size
 
 
-def get_config() -> AsrLlmConfig:
+def get_asr_llm_config() -> AsrLlmConfig:
     args = parse_arguments()
 
     token_ = args.token or config_utils.get_mandatory_env_variable("BUTLER_USER_TOKEN")

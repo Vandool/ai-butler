@@ -3,7 +3,8 @@ from __future__ import annotations
 import enum
 
 from src import utils
-from src.intent.intent_manager import CALENDAR, LECTURE, IntentManager
+from src.intent.intent import CALENDAR, LECTURE
+from src.intent.intent_manager import IntentManager
 
 
 class PromptType(enum.Enum):

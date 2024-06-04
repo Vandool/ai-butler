@@ -2,17 +2,16 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 
-import numpy as np
+from src import intent, utils
+from src.intent import intent
 
-from src import utils
-from src.intent.intent import Intent
 
 # Design Decision: How to classify hierarchical classes?
 
 
 class IntentManager:
     def __init__(self):
-        self._intents: list[Intent] = []
+        self._intents: list[intent.Intent] = []
         self.logger = utils.get_logger(self.__class__.__name__)
         self._use_unknown_intent: bool = False
 
@@ -25,7 +24,7 @@ class IntentManager:
         if self._use_unknown_intent != value:
             self._use_unknown_intent = value
             if value:
-                self.add_intent(UNKNOWN)
+                self.add_intent(intent.UNKNOWN)
             else:
                 self._intents = [i for i in self if i.name != "Unknown"]
 
@@ -35,7 +34,7 @@ class IntentManager:
     def get_max_name_length(self) -> int:
         return max([len(i.name) for i in self])
 
-    def add_intent(self, the_intent: Intent) -> None:
+    def add_intent(self, the_intent: intent.Intent) -> None:
         """Add a new intent to the collection."""
         self._intents.append(the_intent)
 
@@ -52,18 +51,17 @@ class IntentManager:
 
         return {i.name: i.examples[:num_shots] for i in self}
 
-    def get_closest_intent_similarity(self, message: str):
-        similarity_scores = [utils.calculate_similarity(message, i.name) for i in self]
-        self.logger.debug(f"Similarity scores: {list(zip(similarity_scores, self._intents, strict=False))}")
-        return self._intents[np.argmax(similarity_scores)]
-
-    def get_closest_intent_simple(self, message: str) -> Intent | None:
+    def get_closest_intent_simple(self, message: str) -> intent.Intent | None:
+        message_lower = message.lower()
         for intent_ in self:
-            if intent_.name.lower() in message.lower():
+            if intent_.name.lower() in message_lower:
                 return intent_
+
+        if self.use_unknown_intent:
+            return intent.UNKNOWN
         return None
 
-    def __iter__(self) -> Iterator[Intent]:
+    def __iter__(self) -> Iterator[intent.Intent]:
         """Return an iterator over the intents."""
         return iter(self._intents)
 
@@ -72,45 +70,12 @@ class IntentManager:
         return "\n".join(f"{i.name}: {i.description}" for i in self)
 
 
-CALENDAR: Intent = Intent(
-    name="Calendar",
-    examples=[
-        "Create an event",
-        "Schedule a meeting",
-        "What's my next event?",
-    ],
-    description="Manages calendar-related activities such as creating, deleting, or listing events and tasks, "
-    "and answering schedule-related questions.",
-)
-
-LECTURE: Intent = Intent(
-    name="Lecture",
-    examples=[
-        "Translate the lecture notes",
-        "Convert the lecture audio to text",
-        "What's the lecture summary?",
-    ],
-    description="Handles tasks related to lectures, including translating notes, transcribing audio, summarizing "
-    "content, and creating study aids like Anki cards.",
-)
-
-UNKNOWN: Intent = Intent(
-    name="Unknown",
-    examples=[
-        "Blorf zibber zquark",
-        "Let's throw a stone at moond",
-        "Who won the last football match?",
-    ],
-    description="Handles activities that do not fit into any predefined classes.",
-)
-
-
 class IntentManagerFactory:
     @staticmethod
     def get_intent_manager_with_unknown_intent() -> IntentManager:
         intent_manager = IntentManager()
-        intent_manager.add_intent(CALENDAR)
-        intent_manager.add_intent(LECTURE)
+        intent_manager.add_intent(intent.CALENDAR)
+        intent_manager.add_intent(intent.LECTURE)
         intent_manager.use_unknown_intent = True
         return intent_manager
 
@@ -119,8 +84,8 @@ if __name__ == "__main__":
     manager = IntentManager()
 
     # Adding intents
-    manager.add_intent(CALENDAR)
-    manager.add_intent(LECTURE)
+    manager.add_intent(intent.CALENDAR)
+    manager.add_intent(intent.LECTURE)
 
     print(manager.list_intent_names())
 

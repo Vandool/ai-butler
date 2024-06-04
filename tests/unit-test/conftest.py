@@ -5,11 +5,13 @@ from pathlib import Path
 
 import pytest
 from dotenv import load_dotenv
+from huggingface_hub import InferenceClient
 
+from src.classifier.base_classifier import BaseClassifier
 from src.classifier.few_shot_text_generation_classifier import FewShotTextGenerationClassifier
-from src.classifier.zero_shot_classifier import ZeroShotClassifier
 from src.config.asr_llm_config import AsrLlmConfig
 from src.intent.intent_manager import CALENDAR, LECTURE, IntentManager
+from src.llm_client.llm_client import LLMClient
 
 # ----------------------------- Reusable Fixtures -----------------------------
 
@@ -26,18 +28,16 @@ def intent_manager_with_unknown_intent() -> IntentManager:
 
 
 @pytest.fixture(scope="session")
-def few_shot_classifier(intent_manager_with_unknown_intent):
-    return FewShotTextGenerationClassifier(
-        llm_url=AsrLlmConfig.llm_url,
-        intent_manager=intent_manager_with_unknown_intent,
-    )
+def llama2_client() -> LLMClient:
+    return LLMClient(client=InferenceClient(AsrLlmConfig.llm_url))
 
 
 @pytest.fixture(scope="session")
-def zero_shot_classifier(intent_manager_with_unknown_intent):
-    classifier = ZeroShotClassifier(model=AsrLlmConfig.zero_shot_model)
-    classifier.intent_manager = intent_manager_with_unknown_intent
-    return classifier
+def few_shot_classifier(intent_manager_with_unknown_intent, llama2_client) -> BaseClassifier:
+    return FewShotTextGenerationClassifier(
+        llm_client=llama2_client,
+        intent_manager=intent_manager_with_unknown_intent,
+    )
 
 
 # ----------------------------- Report infrastructure -----------------------------

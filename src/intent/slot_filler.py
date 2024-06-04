@@ -4,16 +4,54 @@ import datetime
 import inspect
 import json
 from collections.abc import Callable
+from dataclasses import dataclass, field
+from typing import Any
 
 from huggingface_hub import InferenceClient
 
 from src import utils
-from src.config.asr_llm_config import get_config
+from src.config.asr_llm_config import get_asr_llm_config
 from src.history.history import History
-from src.intent.intent import Slot
-from src.intent.web_handler.calendar_api import CalendarAPI
+from src.llm_client.llm_client import LLMClient
+from src.web_handler.calendar_api import CalendarAPI
 
 logger = utils.get_logger("SlotFiller")
+
+
+@dataclass
+class Slot:
+    name: str
+    param_type: type
+    is_required: bool
+    # Idea: based on the attempts made we can modify the prompt to ask more specific question
+    attempts: int = 0
+    value: Any = None
+    is_set: bool = field(default=False, init=False)
+
+    def set_value(self, value: Any):
+        # TODO(Arvand): Here we neeed type checking, we need a proper setter, maybe using llm
+        self.value = value
+        self.is_set = True
+        self.attempts += 1
+
+    def get_name_value(self):
+        return {"name": self.name, "value": self.value}
+
+    def get_kwarg(self) -> dict:
+        return {self.name: self.value}
+
+    def __str__(self):
+        return str(json.dumps(self.__dict__, indent=2))
+
+
+def extract_slots_from_function(func) -> list[Slot]:
+    sig = inspect.signature(func)
+    slots = []
+    for param in sig.parameters.values():
+        required = param.default is param.empty
+        slots.append(Slot(param.name, param.annotation, required))
+    return slots
+
 
 _GREETING_PROMPT_FMT = """
 <s>[INST] <<SYS>>
@@ -31,15 +69,6 @@ Text: {purpose}
 <</SYS>> [/INST]
 AI:
 """
-
-
-def extract_slots_from_function(func) -> list[Slot]:
-    sig = inspect.signature(func)
-    slots = []
-    for param in sig.parameters.values():
-        required = param.default is param.empty
-        slots.append(Slot(name=param.name, param_type=param.annotation, is_required=required))
-    return slots
 
 
 class SlotFillerSimple:
@@ -86,10 +115,10 @@ AI:
 """
     _SLOT_INSTRUCTION_FMT = "If {name} is None with respect to the Current Slots 'value', ask a question about the {name} of the appointment."
 
-    def __init__(self, func: Callable, client: InferenceClient):
+    def __init__(self, func: Callable, llm_client: LLMClient):
         self.purpose: str = func.__name__
         self.slots: list[Slot] = extract_slots_from_function(func)
-        self.client = client
+        self.llm_client = llm_client
         self.history: History = History()
         self.is_greeting: bool = True
 
@@ -126,28 +155,28 @@ AI:
         self.history.add_human_message(user_input)
         logger.info(f"Handling user input '{user_input}' ...")
         prompt = self.generate_prompt(user_input)
-        response = self.generate_response(prompt)
-        self.history.add_ai_message(response)
-        return response
-
-    def generate_response(self, prompt: str) -> str:
-        return self.client.text_generation(
-            prompt=prompt,
-            max_new_tokens=128,
-        )
+        llm_response = self.llm_client.get_response(prompt=prompt)
+        self.history.add_ai_message(llm_response)
+        return llm_response
 
     def get_user_input(self) -> str:
         if self.history.is_empty:
             initial_message = "I would like to create an appointment"
             self.history.add_human_message("")
-            greetings = self.generate_response(prompt=self.generate_prompt(initial_message))
-            self.history.add_ai_message(greetings)
-            return input(greetings + "\nUser: ")
+            prompt = self.generate_prompt(initial_message)
+            greetings_response = self.llm_client.get_response(
+                prompt=prompt,
+            )
+            self.history.add_ai_message(greetings_response)
+            return input(greetings_response + "\nUser: ")
         return input("User: ")
 
     def fill_slot(self, user_input: str) -> None:
         if "time" in self.next_slot.name:
-            user_input = clean(string=self.generate_response(prompt=datetime_prompt(user_input)))
+            prompt = datetime_prompt(user_input)
+            user_input = clean(
+                string=self.llm_client.get_response(prompt=prompt),
+            )
         self.next_slot.set_value(value=user_input)
 
     def get_kwargs(self) -> dict:
@@ -167,11 +196,12 @@ AI:
 
 
 def run_slot_filler():
-    config = get_config()
+    config = get_asr_llm_config()
     logger.info("%s: %s", config.__class__.__name__, json.dumps(config.__dict__, indent=2))
 
     slot_filler = SlotFillerSimple(
-        func=CalendarAPI.create_new_appointment, client=InferenceClient(model=config.llm_url)
+        func=CalendarAPI.create_new_appointment,
+        llm_client=LLMClient(client=InferenceClient(model=config.llm_url)),
     )
     slot_filler.run_text_interface()
 

@@ -1,25 +1,10 @@
+import inspect
 import json
 import logging
 import os
-from typing import Any
-
-from sentence_transformers import SentenceTransformer, util
-
-# Get the similarity model name from environment variable or use default
-similarity_model_name = os.getenv("BUTLER_SIMILARITY_MODEL", "all-MiniLM-L6-v2")
-model = SentenceTransformer(similarity_model_name)
-
-
-def calculate_similarity(text1: str, text2: str) -> float:
-    # Encode the texts into embeddings
-    embeddings1 = model.encode(text1, convert_to_tensor=True)
-    embeddings2 = model.encode(text2, convert_to_tensor=True)
-
-    # Compute the cosine similarity between the embeddings
-    similarity = util.pytorch_cos_sim(embeddings1, embeddings2)
-
-    # The similarity is a 1x1 tensor, we get the value
-    return similarity.item()
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any, Final
 
 
 class CustomLogger(logging.Logger):
@@ -44,3 +29,48 @@ def get_logger(module_name: str) -> CustomLogger:
         logger.propagate = False
 
     return logger
+
+
+_IS_MARKED_ATTR: Final[str] = "_is_marked"
+
+
+def mark_intent(func: Callable) -> Callable:
+    setattr(func, _IS_MARKED_ATTR, True)
+    return func
+
+
+@dataclass
+class FunctionInfo:
+    name: str
+    has_slots: bool
+    docstring: str
+
+
+def get_marked_functions_and_docstrings(module: object) -> dict[str, FunctionInfo]:
+    functions_info = {}
+    for name, obj in inspect.getmembers(module):
+        if inspect.isfunction(obj) and getattr(obj, _IS_MARKED_ATTR, False):
+            function_info = FunctionInfo(
+                name=name,
+                has_slots=bool(inspect.signature(obj).parameters),
+                docstring=inspect.getdoc(obj),
+            )
+            functions_info[name] = function_info
+    return functions_info
+
+
+def parse_docstring(docstring) -> (str, list[str]):
+    lines = docstring.strip().split("\n")
+    description = lines[0].strip()
+
+    examples = []
+    examples_start = False
+    for line in lines[1:]:
+        if "Examples:" in line:
+            examples_start = True
+        elif examples_start:
+            example = line.strip()
+            if example.startswith("- "):
+                examples.append(example[2:].strip())
+
+    return description, examples

@@ -12,8 +12,8 @@ from threading import Thread
 import requests
 from sseclient import SSEClient
 
-from src.pythonrecordingclient import BugException
 from src import utils
+from src.pythonrecordingclient import BugException
 from webhandler.webutils import check_status_code, return_json
 
 logger = utils.get_logger("Client")

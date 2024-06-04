@@ -4,24 +4,16 @@ import datetime
 import json
 from typing import Any
 
-from dotenv import load_dotenv
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
 from src import utils
-from src.classifier.zero_shot_classifier import ZeroShotClassifier
 from src.config import google_api_config
-from src.config.asr_llm_config import AsrLlmConfig
 from src.config.google_api_config import GoogleApiConfig
-from src.intent import intent
-from src.intent.intent_manager import IntentManager
-from src.intent.processable import Processable
-from src.intent.web_handler.my_web_utils import catch_http_exception
+from src.web_handler.my_web_utils import catch_http_exception
 
 # Authentication and service creation
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
-
-load_dotenv()
 
 gc_config = google_api_config.get_google_api_config()
 
@@ -42,32 +34,13 @@ service = build_service(config=gc_config)
 logger = utils.get_logger("CalendarAPI")
 
 
-def get_classifier():
-    intent_manager_ = IntentManager()
-    for name_, info in intent.get_marked_functions_and_docstrings(module=CalendarAPI).items():
-        intent_manager_.add_intent(
-            intent.Intent(
-                name=name_,
-                description=info[0],
-            ),
-        )
-    return ZeroShotClassifier(model=AsrLlmConfig.zero_shot_model, intent_manager=intent_manager_)
-
-
-class CalendarAPI(Processable):
+class CalendarAPI:
     def __init__(self):
         super().__init__()
-        self.classifier = get_classifier()
-
-    def process(self, the_input: str) -> Any:
-        logger.info(f"Processing '{the_input}'")
-        intent = self.classifier.get_closest_intent_using_similarity(the_input)
-        logger.info(f"Intent found: {intent}")
-        return intent.name
 
     @staticmethod
     @catch_http_exception
-    @intent.mark_intent
+    @utils.mark_intent
     def create_new_appointment(
         summary: str,
         start_time: str,
@@ -75,7 +48,13 @@ class CalendarAPI(Processable):
         description: str | None = None,
         location: str | None = None,
     ):
-        """Create a new appointment in the calendar using the specified parameters."""
+        """Create a new appointment in the calendar using the specified parameters.
+
+        Examples:
+            - I would like to create a new appointment
+            - Let's make an appointment in the calendar
+            - Can you create an appointment for me?
+        """
         event = {
             "summary": summary,
             "location": location,
@@ -93,9 +72,15 @@ class CalendarAPI(Processable):
 
     @staticmethod
     @catch_http_exception
-    @intent.mark_intent
+    @utils.mark_intent
     def get_next_appointment():
-        """Get the next appointment in the calendar."""
+        """Get the next appointment in the calendar.
+
+        Examples:
+            - What's next in my calendar?
+            - So what are we doing next?
+            - Can you get my next appointment?
+        """
         now = datetime.datetime.utcnow().isoformat() + "Z"
         events_result = (
             service.events()
@@ -107,7 +92,19 @@ class CalendarAPI(Processable):
 
     @staticmethod
     @catch_http_exception
-    @intent.mark_intent
+    @utils.mark_intent
+    def delete_next_appointment() -> bool:
+        """Delete the next appointment in the calendar.
+        Examples:
+            - I would like to delete my next appointment?
+            - Can you please cancel the next meeting?
+            - Oh, I am already tired from all these meeting, can you please remove the next one?
+        """
+        event = CalendarAPI.get_next_appointment()
+        return event and CalendarAPI.delete_appointment_by_id(appointment_id=event["id"])
+
+    @staticmethod
+    @catch_http_exception
     def delete_appointment_by_time(start_time: str):
         """Delete the appointment with the specified start time."""
         events_result = (
@@ -130,22 +127,12 @@ class CalendarAPI(Processable):
 
     @staticmethod
     @catch_http_exception
-    @intent.mark_intent
     def delete_appointment_by_id(appointment_id: int) -> bool:
         service.events().delete(calendarId=gc_config.calendar_id, eventId=appointment_id).execute()
         return True
 
     @staticmethod
     @catch_http_exception
-    @intent.mark_intent
-    def delete_next_appointment() -> bool:
-        """Delete the next appointment in the calendar."""
-        event = CalendarAPI.get_next_appointment()
-        return event and CalendarAPI.delete_appointment_by_id(appointment_id=event["id"])
-
-    @staticmethod
-    @catch_http_exception
-    @intent.mark_intent
     def delete_all_appointments_today():
         """Delete all the today's appointments in the calendar."""
         start_of_day = datetime.datetime.combine(datetime.date.today(), datetime.time.min).isoformat() + "Z"
@@ -168,7 +155,6 @@ class CalendarAPI(Processable):
 
     @staticmethod
     @catch_http_exception
-    @intent.mark_intent
     def list_appointments(time_start: str, time_end: str) -> list:
         """list all the appointments in the calendar."""
         events_result = (
@@ -186,7 +172,6 @@ class CalendarAPI(Processable):
 
     @staticmethod
     @catch_http_exception
-    @intent.mark_intent
     def am_i_free(time: str | None = None) -> bool:
         """Determine if I have no appointments among the specified time."""
         return (
@@ -201,7 +186,6 @@ class CalendarAPI(Processable):
 
     @staticmethod
     @catch_http_exception
-    @intent.mark_intent
     def am_i_free_in_the_next(hours: int = 2) -> bool:
         """Determine if I have no appointments in the next specified (defaults to 2) hours."""
         return (
@@ -216,7 +200,6 @@ class CalendarAPI(Processable):
 
     @staticmethod
     @catch_http_exception
-    @intent.mark_intent
     def list_todays_appointments():
         """list all the today's appointments in the calendar."""
         return CalendarAPI.list_appointments(
@@ -226,7 +209,6 @@ class CalendarAPI(Processable):
 
     @staticmethod
     @catch_http_exception
-    @intent.mark_intent
     def list_this_weeks_appointments():
         """list all the today's appointments in the calendar."""
         today = datetime.date.today()
@@ -239,7 +221,6 @@ class CalendarAPI(Processable):
 
     @staticmethod
     @catch_http_exception
-    @intent.mark_intent
     def list_calendars() -> list:
         """list all the calendars in the account."""
         calendar_list = service.calendarList().list().execute()
@@ -255,36 +236,18 @@ def format_datetime(dt: datetime) -> str:
 
 
 if __name__ == "__main__":
-    # intent_manager = IntentManager()
-    # for name, docstring in intent.get_marked_functions_and_docstrings(module=CalendarAPI).items():
-    #     intent_manager.add_intent(
-    #         intent.Intent(
-    #             name=name,
-    #             description=docstring,
-    #         ),
-    #     )
-    # print(intent_manager)
-    # print("")
-    # slots = extract_slots_from_function(CalendarAPI.create_new_appointment)
-    # for slot in slots:
-    #     print(slot)
-
     test_calendar = True
     if test_calendar:
-        new_event = CalendarAPI.create_new_appointment(
-            summary="Team Meeting",
-            start_time=format_datetime(datetime.datetime.now(datetime.UTC)),
-            end_time=format_datetime(datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)),
-            description="Discuss project updates",
-            location="Conference Room",
-        )
-        print("New Event Created:", new_event)
+        # new_event = CalendarAPI.create_new_appointment(
+        #     summary="Team Meeting",
+        #     start_time=format_datetime(datetime.datetime.now(datetime.UTC)),
+        #     end_time=format_datetime(datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)),
+        #     description="Discuss project updates",
+        #     location="Conference Room",
+        # )
+        # print("New Event Created:", new_event)
 
         next_appointment = CalendarAPI.get_next_appointment()
         print("Next Appointment:", json.dumps(next_appointment, indent=2))
-
-        # print(f"Am I free In the next 2 hours: {CalendarAPI.am_i_free_in_the_next()}")
-        # print(f"Am I free Now: {CalendarAPI.am_i_free(time=format_datetime(datetime.datetime.now(datetime.UTC)))}")
-        # print(f"Deleted next appointment: {CalendarAPI.delete_next_appointment()}")
-
-    print(datetime.datetime.now(datetime.UTC).isoformat())
+        delete_appointment = CalendarAPI.get_next_appointment()
+        print("Deleted Appointment:", json.dumps(delete_appointment, indent=2))

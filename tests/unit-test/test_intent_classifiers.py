@@ -1,4 +1,6 @@
 # List of test utterances for each intent
+from __future__ import annotations
+
 import pytest
 
 from src.intent.intent_manager import CALENDAR, LECTURE, UNKNOWN
@@ -64,18 +66,7 @@ def test_few_shot_text_generation_classifier_zero_shot(
     capture_output_for_report,
     few_shot_classifier,
 ):
-    output, llm_output = few_shot_classifier.get_closest_intent_simple(input_text=the_input)
-    handle_output_and_llmoutput(capture_output_for_report, expected_output, llm_output, output, the_input)
-
-
-def handle_output_and_llmoutput(capture_output_for_report, expected_output, llm_output, output, the_input):
-    if output is not None:
-        test_result = output.name.lower() == expected_output.lower()
-        capture_output_for_report(output=test_result, llm_output=llm_output)
-        assert test_result
-    else:
-        capture_output_for_report(output=False, llm_output=llm_output)
-        pytest.fail(msg=f"Simple classifier did not generate any intent for input {the_input}")
+    handle_test(capture_output_for_report, expected_output, few_shot_classifier, the_input)
 
 
 @pytest.mark.parametrize("the_input, expected_output", test_data)
@@ -86,11 +77,13 @@ def test_few_shot_text_generation_classifier_zero_shot_detailed(
     capture_output_for_report,
     few_shot_classifier,
 ):
-    output, llm_output = few_shot_classifier.get_closest_intent_simple(
-        input_text=the_input,
+    handle_test(
+        capture_output_for_report,
+        expected_output,
+        few_shot_classifier,
+        the_input,
         prompt_type=PromptType.ZERO_SHOT_DETAILED,
     )
-    handle_output_and_llmoutput(capture_output_for_report, expected_output, llm_output, output, the_input)
 
 
 @pytest.mark.parametrize("the_input, expected_output", test_data)
@@ -101,11 +94,13 @@ def test_few_shot_text_generation_classifier_one_shot_detailed(
     capture_output_for_report,
     few_shot_classifier,
 ):
-    output, llm_output = few_shot_classifier.get_closest_intent_simple(
-        input_text=the_input,
+    handle_test(
+        capture_output_for_report,
+        expected_output,
+        few_shot_classifier,
+        the_input,
         prompt_type=PromptType.ONE_SHOT_PER_CLASS_DETAILED,
     )
-    handle_output_and_llmoutput(capture_output_for_report, expected_output, llm_output, output, the_input)
 
 
 @pytest.mark.parametrize("the_input, expected_output", test_data)
@@ -116,16 +111,27 @@ def test_few_shot_text_generation_classifier_few_shot_detailed(
     capture_output_for_report,
     few_shot_classifier,
 ):
-    output, llm_output = few_shot_classifier.get_closest_intent_simple(
-        input_text=the_input,
+    handle_test(
+        capture_output_for_report,
+        expected_output,
+        few_shot_classifier,
+        the_input,
         prompt_type=PromptType.FEW_SHOT_DETAILED,
     )
-    handle_output_and_llmoutput(capture_output_for_report, expected_output, llm_output, output, the_input)
 
 
-# @pytest.mark.parametrize("the_input, expected_output", test_data)
-# # @pytest.mark.report_test()  # Custom marker to include this test in the report
-# def test_zero_shot_classifier(the_input, expected_output, capture_output_for_report, zero_shot_classifier):
-#     output_intent = zero_shot_classifier.classify(the_input)
-#     capture_output_for_report(output_intent)
-#     assert output_intent.lower() == expected_output.lower()
+def handle_test(
+    capture_output_for_report,
+    expected_output,
+    few_shot_classifier,
+    the_input,
+    prompt_type: PromptType | None = None,
+):
+    response = few_shot_classifier.classify(input_text=the_input, prompt_type=prompt_type)
+    if response.llm_response is not None:
+        test_result = response.llm_response.name.lower() == expected_output.lower()
+        capture_output_for_report(output=test_result, llm_output=response.llm_response)
+        assert test_result
+    else:
+        capture_output_for_report(output=False, llm_output=response.llm_response)
+        pytest.fail(msg=f"Simple classifier did not generate any intent for input {the_input}")
