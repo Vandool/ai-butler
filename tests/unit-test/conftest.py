@@ -10,7 +10,8 @@ from huggingface_hub import InferenceClient
 from src.classifier.base_classifier import BaseClassifier
 from src.classifier.few_shot_text_generation_classifier import FewShotTextGenerationClassifier
 from src.config.asr_llm_config import AsrLlmConfig
-from src.intent.intent_manager import CALENDAR, LECTURE, IntentManager
+from src.intent.intent import CALENDAR, LECTURE
+from src.intent.intent_manager import IntentManager
 from src.llm_client.llm_client import LLMClient
 
 # ----------------------------- Reusable Fixtures -----------------------------
