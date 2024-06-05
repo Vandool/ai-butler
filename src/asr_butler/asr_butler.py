@@ -38,6 +38,8 @@ class ASRModule:
         llm_client: LLMClient | None,
         start_state: State | None = None,
         tts_client: TextToSpeech | None = None,
+        *,
+        is_text_interface: bool = False,
     ):
         self.history = history
         self.llm_client = llm_client
@@ -54,7 +56,7 @@ class ASRModule:
             output_path = Path(self.args.output_file)
             output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        if args.audio_device < 0:
+        if not is_text_interface and args.audio_device < 0:
             self.list_and_select_audio_device()
         self.audio_source = self.set_audio_input()
         self.processing = True  # Flag to control SSEClient processing
@@ -538,9 +540,13 @@ class ASRModule:
         else:
             self.schedule_sessions()
 
-    def run_text_interface(self):
+    def run_cli_interface(self):
         while True:
             self.process_command(user_input=input("User Input :"))
+
+    def run_text_interface(self, user_inputs: list[str]):
+        for user_input in user_inputs:
+            self.process_command(user_input=user_input)
 
 
 class TheButler(ASRModule):
@@ -560,6 +566,7 @@ if __name__ == "__main__":
             # tts_client=tts,
         ),
         # tts_client=tts,
+        is_text_interface=True,
     )
     # asr_module.run_session()
-    asr_module.run_text_interface()
+    asr_module.run_cli_interface()
