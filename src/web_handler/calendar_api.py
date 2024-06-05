@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import json
+import webbrowser
 from typing import Any
 
 from google.oauth2 import service_account
@@ -229,6 +230,12 @@ class CalendarAPI:
             logger.info(f"ID: {calendar['id']}, Summary: {calendar['summary']}")
         return calendars
 
+    @staticmethod
+    def open_html_link(response: dict) -> None:
+        if link := response.get("htmlLink"):
+            # Open the link in the default web browser
+            webbrowser.open(link)
+
 
 def format_datetime(dt: datetime) -> str:
     """Format datetime to ISO 8601 format with UTC timezone"""
@@ -245,10 +252,10 @@ if __name__ == "__main__":
             description="Discuss project updates",
             location="Conference Room",
         )
+        CalendarAPI.open_html_link(new_event)
         print("New Event Created:", new_event)
 
         next_appointment = CalendarAPI.get_next_appointment()
-        print("Next Appoint"
-              "ment:", json.dumps(next_appointment, indent=2))
+        print("Next Appointment:", json.dumps(next_appointment, indent=2))
         delete_appointment = CalendarAPI.get_next_appointment()
         print("Deleted Appointment:", json.dumps(delete_appointment, indent=2))

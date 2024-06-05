@@ -11,7 +11,9 @@ class PromptType(enum.Enum):
     ZERO_SHOT = "zero_shot", "_generate_zero_shot_prompt"
     ZERO_SHOT_DETAILED = "zero_shot_detailed", "_generate_zero_shot_detailed_prompt"
     ONE_SHOT_PER_CLASS_DETAILED = "one_shot_per_class_detailed", "_generate_one_shot_per_class_detailed_prompt"
+    ONE_SHOT_PER_CLASS = "one_shot_per_class", "_generate_one_shot_per_class_prompt"
     FEW_SHOT_DETAILED = "few_shot_per_class_detailed", "_generate_few_shot_per_class_detailed_prompt"
+    FEW_SHOT = "few_shot_per_class", "_generate_few_shot_per_class_prompt"
 
     @property
     def name(self):
