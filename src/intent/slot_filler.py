@@ -152,12 +152,15 @@ AI:
             input=user_input,
         )
 
-    def process(self, user_input: str) -> str:
+    def process(self, user_input: str) -> None:
         if not self.is_just_started:
             self.fill_slot(user_input=user_input)
         else:
             self.is_just_started = False
         self.logger.info_pretty(self.get_kwargs())
+
+        if self.is_done:
+            return
 
         self.history.add_human_message(user_input)
         self.logger.info(f"Handling user input '{user_input}' ...")

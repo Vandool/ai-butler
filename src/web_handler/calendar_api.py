@@ -238,14 +238,14 @@ def format_datetime(dt: datetime) -> str:
 if __name__ == "__main__":
     test_calendar = True
     if test_calendar:
-        # new_event = CalendarAPI.create_new_appointment(
-        #     summary="Team Meeting",
-        #     start_time=format_datetime(datetime.datetime.now(datetime.UTC)),
-        #     end_time=format_datetime(datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)),
-        #     description="Discuss project updates",
-        #     location="Conference Room",
-        # )
-        # print("New Event Created:", new_event)
+        new_event = CalendarAPI.create_new_appointment(
+            summary="Team Meeting",
+            start_time=format_datetime(datetime.datetime.now(datetime.UTC)),
+            end_time=format_datetime(datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)),
+            description="Discuss project updates",
+            location="Conference Room",
+        )
+        print("New Event Created:", new_event)
 
         next_appointment = CalendarAPI.get_next_appointment()
         print("Next Appoint"

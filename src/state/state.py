@@ -155,8 +155,8 @@ class CalendarState(State):
         return self._process_intent_classification(user_input)
 
     def _process_slot_filling(self, user_input: str) -> State:
+        self.slot_filler.process(user_input)
         if not self.slot_filler.is_done:
-            self.slot_filler.process(user_input)
             return self
 
         self._call_intended_function(user_input, **self.slot_filler.get_kwargs())

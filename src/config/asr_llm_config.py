@@ -19,7 +19,7 @@ class AsrLlmConfig:
     input: str = "portaudio"
     print_level: int = 0
     output_file: str = None
-    audio_device: int = -1
+    audio_device: int = 0
     ffmpeg_input: str = None
     ffmpeg_pre: str = None
     ffmpeg_post: str = None

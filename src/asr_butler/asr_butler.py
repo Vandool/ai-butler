@@ -56,9 +56,10 @@ class ASRModule:
             output_path = Path(self.args.output_file)
             output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        if not is_text_interface and args.audio_device < 0:
+        if not is_text_interface:
             self.list_and_select_audio_device()
-        self.audio_source = self.set_audio_input()
+            self.audio_source = self.set_audio_input()
+
         self.processing = True  # Flag to control SSEClient processing
 
     def start_audio(self):
@@ -546,6 +547,7 @@ class ASRModule:
 
     def run_text_interface(self, user_inputs: list[str]):
         for user_input in user_inputs:
+            logger.info(f"User Input : {user_input}")
             self.process_command(user_input=user_input)
 
 
@@ -569,4 +571,14 @@ if __name__ == "__main__":
         is_text_interface=True,
     )
     # asr_module.run_session()
-    asr_module.run_cli_interface()
+    # asr_module.run_cli_interface()
+    asr_module.run_text_interface(
+        [
+            "Hey butler can we create a meeting?",
+            "Skateboarding",
+            "Today at 20",
+            "Today at 21",
+            "Get some ollies done",
+            "Skatepark",
+        ],
+    )
