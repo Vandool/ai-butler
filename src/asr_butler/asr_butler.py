@@ -414,7 +414,7 @@ class ASRModule:
 
         logger.info("Requesting default graph for ASR")
         res = requests.post(
-            f"{self.args.url}/{self.args.api}/get_default_asr",
+            f"{self.args.url}/{self.args.api}/start_praktikum",
             json=json.dumps(d),
             cookies={"_forward_auth": self.args.token},
         )

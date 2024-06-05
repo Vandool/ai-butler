@@ -430,7 +430,7 @@ def set_graph(args):
 
     logger.info("Requesting default graph for ASR")
     res = requests.post(
-        args.url + "/" + args.api + "/get_default_asr",
+        args.url + "/" + args.api + "/start_praktikum",
         json=json.dumps(d),
         cookies={"_forward_auth": args.token},
     )
