@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import json
+import random
 
 from huggingface_hub import InferenceClient
 
@@ -11,10 +14,11 @@ class LLMClient:
         self.client = client
         self.logger = utils.get_logger(self.__class__.__name__)
 
-    def get_response(self, prompt: str, max_new_tokens: int = 128) -> str:
+    def get_response(self, prompt: str, max_new_tokens: int = 128, seed: int | None = random.randint(1, 999)) -> str:
         generated_text = self.client.text_generation(
             prompt=prompt,
             max_new_tokens=max_new_tokens,
+            seed=seed,
         )
         self.logger.debug("Client generated texts:\n%s", generated_text)
         return generated_text
