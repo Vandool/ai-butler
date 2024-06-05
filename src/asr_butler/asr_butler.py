@@ -24,7 +24,7 @@ from src.pythonrecordingclient.ffmpegStreamAdapter import FfmpegStream
 from src.pythonrecordingclient.helper import BugException
 from src.pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
 from src.state.state import InitialState, State
-from src.text2speech.microsoft_speecht5_tts import MicrosoftSpeechT5TTS, TextToSpeech
+from src.text2speech.microsoft_speecht5_tts import TextToSpeech
 from src.web_handler.my_web_utils import check_status_code, return_json
 
 logger = utils.get_logger("ASRModule")
@@ -538,6 +538,10 @@ class ASRModule:
         else:
             self.schedule_sessions()
 
+    def run_text_interface(self):
+        while True:
+            self.process_command(user_input=input("User Input :"))
+
 
 class TheButler(ASRModule):
     """ASRModule is the butler, the butler is ASR"""
@@ -546,12 +550,16 @@ class TheButler(ASRModule):
 if __name__ == "__main__":
     arguments = get_asr_llm_config()
     llm_client_ = LLMClient(client=InferenceClient(arguments.llm_url))
-    tts = MicrosoftSpeechT5TTS(model_path=Path.cwd() / "models" / "speecht5_tts.pt")
+    # tts = MicrosoftSpeechT5TTS(model_path=Path.cwd() / "models" / "speecht5_tts.pt")
     asr_module = TheButler(
         args=arguments,
         history=History(),
         llm_client=llm_client_,
-        start_state=InitialState(llm_client=llm_client_, tts_client=tts),
-        tts_client=tts,
+        start_state=InitialState(
+            llm_client=llm_client_,
+            # tts_client=tts,
+        ),
+        # tts_client=tts,
     )
-    asr_module.run_session()
+    # asr_module.run_session()
+    asr_module.run_text_interface()
