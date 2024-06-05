@@ -248,6 +248,7 @@ if __name__ == "__main__":
         # print("New Event Created:", new_event)
 
         next_appointment = CalendarAPI.get_next_appointment()
-        print("Next Appointment:", json.dumps(next_appointment, indent=2))
+        print("Next Appoint"
+              "ment:", json.dumps(next_appointment, indent=2))
         delete_appointment = CalendarAPI.get_next_appointment()
         print("Deleted Appointment:", json.dumps(delete_appointment, indent=2))

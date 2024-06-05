@@ -7,7 +7,7 @@ from src.intent.intent import CALENDAR, LECTURE, UNKNOWN
 from src.prompt_generator.prompt_generator import PromptType
 
 test_data = [
-    # "the_input, expected_output"
+    # ("the_input_txt, the_input_audio, intent, function_name")
     # Google Calendar
     ("Add a new calendar event", CALENDAR.name),
     ("Set up a meeting for tomorrow", CALENDAR.name),

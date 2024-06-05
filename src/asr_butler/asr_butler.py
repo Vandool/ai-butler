@@ -54,8 +54,6 @@ class ASRModule:
             output_path = Path(self.args.output_file)
             output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        logger.labeled_info_pretty(label="Available Languages", info=self.get_available_languages())
-        logger.labeled_info_pretty(label="Active Sessions", info=self.get_active_sessions())
         if args.audio_device < 0:
             self.list_and_select_audio_device()
         self.audio_source = self.set_audio_input()

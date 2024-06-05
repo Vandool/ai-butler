@@ -159,7 +159,7 @@ class CalendarState(State):
             self.slot_filler.process(user_input)
             return self
 
-        self._call_intended_function(user_input)
+        self._call_intended_function(user_input, **self.slot_filler.get_kwargs())
         return InitialState(llm_client=self.llm_client, tts_client=self.tts_client)
 
     def _process_intent_classification(self, user_input: str) -> State:
@@ -200,11 +200,11 @@ class CalendarState(State):
     def _in_slot_filling_process(self):
         return self.slot_filler is not None
 
-    def _call_intended_function(self, user_input: str):
+    def _call_intended_function(self, user_input: str, **kwargs) -> None:
         intended_fn = self.get_intended_function()
 
         self.logger.info(f"Calling `{intended_fn.__name__}` ...")
-        fn_response = intended_fn()
+        fn_response = intended_fn(**kwargs)
 
         if isinstance(fn_response, dict):
             fn_response = _add_time_now_to(fn_response)
