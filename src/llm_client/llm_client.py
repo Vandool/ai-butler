@@ -1,14 +1,11 @@
 from __future__ import annotations
 
 import json
-import os
 
 from huggingface_hub import InferenceClient
 
 from src import utils
 from src.config.asr_llm_config import get_asr_llm_config
-
-DEFAULT_SEED = os.getenv("DEFAULT_SEED", None)
 
 
 class LLMClient:
