@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
-import random
+import os
 
 from huggingface_hub import InferenceClient
 
 from src import utils
 from src.config.asr_llm_config import get_asr_llm_config
+
+DEFAULT_SEED = os.getenv("DEFAULT_SEED", None)
 
 
 class LLMClient:
@@ -14,7 +16,7 @@ class LLMClient:
         self.client = client
         self.logger = utils.get_logger(self.__class__.__name__)
 
-    def get_response(self, prompt: str, max_new_tokens: int = 128, seed: int | None = random.randint(1, 999)) -> str:
+    def get_response(self, prompt: str, max_new_tokens: int = 128, seed: int | None = DEFAULT_SEED) -> str:
         generated_text = self.client.text_generation(
             prompt=prompt,
             max_new_tokens=max_new_tokens,
