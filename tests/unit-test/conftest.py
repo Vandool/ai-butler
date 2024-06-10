@@ -10,7 +10,8 @@ from huggingface_hub import InferenceClient
 from src.classifier.base_classifier import BaseClassifier
 from src.classifier.few_shot_text_generation_classifier import FewShotTextGenerationClassifier
 from src.config.asr_llm_config import AsrLlmConfig
-from src.intent.intent_manager import CALENDAR, LECTURE, IntentManager
+from src.intent.intent import CALENDAR, LECTURE
+from src.intent.intent_manager import IntentManager
 from src.llm_client.llm_client import LLMClient
 
 # ----------------------------- Reusable Fixtures -----------------------------
@@ -76,7 +77,7 @@ def pytest_runtest_makereport(item, call):  # noqa: ARG001
 def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
     report_dir = Path(os.getenv("PROJECT_DIR")) / "reports"
     report_dir.mkdir(parents=True, exist_ok=True)
-    report_file = report_dir / f"unit-test_{datetime.datetime.now()}.md"
+    report_file = report_dir / f"unit-test_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.md"
 
     report_lines = ["# Test Report", ""]
 
