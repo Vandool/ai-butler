@@ -135,6 +135,10 @@ AI:
                 return slot
         return None
 
+    def text_to_speech(self, text: str) -> Slot:
+        if self.tts is not None:
+            self.tts.text_to_speech(text=text)
+
     def _generate_prompt(self, user_input: str) -> str:
         slot_instructions = self._SLOT_INSTRUCTION_FMT.format(name=self._next_slot.name)
         current_slots_str = self._next_slot.get_name_value()
@@ -148,18 +152,22 @@ AI:
             input=user_input,
         )
 
-    def process(self, user_input: str) -> str:
+    def process(self, user_input: str) -> None:
         if not self.is_just_started:
             self.fill_slot(user_input=user_input)
         else:
-            self.is_just_started = True
+            self.is_just_started = False
+        self.logger.info_pretty(self.get_kwargs())
+
+        if self.is_done:
+            return
 
         self.history.add_human_message(user_input)
         self.logger.info(f"Handling user input '{user_input}' ...")
         llm_response = self.llm_client.get_response(prompt=self._generate_prompt(user_input))
         self.history.add_ai_message(llm_response)
         self.logger.info(llm_response)
-        self.tts.text_to_speech(llm_response)
+        self.text_to_speech(llm_response)
 
     def handle_user_input_from_text_interface(self, user_input: str) -> str:
         self.fill_slot(user_input)

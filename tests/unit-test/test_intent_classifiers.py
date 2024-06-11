@@ -131,7 +131,13 @@ def test_few_shot_text_generation_classifier_zero_shot(
         capture_output_for_report,
         few_shot_classifier,
 ):
-    handle_test(capture_output_for_report, expected_output, few_shot_classifier, the_input)
+    handle_test(
+        capture_output_for_report,
+        expected_output,
+        few_shot_classifier,
+        the_input,
+        prompt_type=PromptType.ZERO_SHOT,
+    )
 
 
 @pytest.mark.parametrize("the_input, expected_output", test_data)
@@ -165,6 +171,23 @@ def test_few_shot_text_generation_classifier_one_shot_detailed(
         few_shot_classifier,
         the_input,
         prompt_type=PromptType.ONE_SHOT_PER_CLASS_DETAILED,
+    )
+
+
+@pytest.mark.parametrize("the_input, expected_output", test_data)
+@pytest.mark.report_test()  # Custom marker to include this test in the report
+def test_few_shot_text_generation_classifier_one_shot(
+    the_input,
+    expected_output,
+    capture_output_for_report,
+    few_shot_classifier,
+):
+    handle_test(
+        capture_output_for_report,
+        expected_output,
+        few_shot_classifier,
+        the_input,
+        prompt_type=PromptType.ONE_SHOT_PER_CLASS,
     )
 
 
@@ -232,6 +255,23 @@ def test_audio_few_shot_classifier(the_input,_ , expected_output, capture_output
         few_shot_classifier,
         asr_output,
         prompt_type=PromptType.ZERO_SHOT_DETAILED,
+    )
+
+
+@pytest.mark.parametrize("the_input, expected_output", test_data)
+@pytest.mark.report_test()  # Custom marker to include this test in the report
+def test_few_shot_text_generation_classifier_few_shot(
+    the_input,
+    expected_output,
+    capture_output_for_report,
+    few_shot_classifier,
+):
+    handle_test(
+        capture_output_for_report,
+        expected_output,
+        few_shot_classifier,
+        the_input,
+        prompt_type=PromptType.FEW_SHOT,
     )
 
 

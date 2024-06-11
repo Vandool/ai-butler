@@ -24,7 +24,7 @@ from src.pythonrecordingclient.ffmpegStreamAdapter import FfmpegStream
 from src.pythonrecordingclient.helper import BugException
 from src.pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
 from src.state.state import InitialState, State
-from src.text2speech.microsoft_speecht5_tts import MicrosoftSpeechT5TTS, TextToSpeech
+from src.text2speech.microsoft_speecht5_tts import TextToSpeech
 from src.web_handler.my_web_utils import check_status_code, return_json
 
 logger = utils.get_logger("ASRModule")
@@ -38,6 +38,8 @@ class ASRModule:
         llm_client: LLMClient | None,
         start_state: State | None = None,
         tts_client: TextToSpeech | None = None,
+        *,
+        is_text_interface: bool = False,
     ):
         self.history = history
         self.llm_client = llm_client
@@ -54,11 +56,10 @@ class ASRModule:
             output_path = Path(self.args.output_file)
             output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        logger.labeled_info_pretty(label="Available Languages", info=self.get_available_languages())
-        logger.labeled_info_pretty(label="Active Sessions", info=self.get_active_sessions())
-        if args.audio_device < 0:
+        if not is_text_interface:
             self.list_and_select_audio_device()
-        self.audio_source = self.set_audio_input()
+            self.audio_source = self.set_audio_input()
+
         self.processing = True  # Flag to control SSEClient processing
 
     def start_audio(self):
@@ -416,7 +417,7 @@ class ASRModule:
 
         logger.info("Requesting default graph for ASR")
         res = requests.post(
-            f"{self.args.url}/{self.args.api}/get_default_asr",
+            f"{self.args.url}/{self.args.api}/start_praktikum",
             json=json.dumps(d),
             cookies={"_forward_auth": self.args.token},
         )
@@ -540,6 +541,15 @@ class ASRModule:
         else:
             self.schedule_sessions()
 
+    def run_cli_interface(self):
+        while True:
+            self.process_command(user_input=input("User Input :"))
+
+    def run_text_interface(self, user_inputs: list[str]):
+        for user_input in user_inputs:
+            logger.info(f"User Input : {user_input}")
+            self.process_command(user_input=user_input)
+
 
 class TheButler(ASRModule):
     """ASRModule is the butler, the butler is ASR"""
@@ -548,12 +558,27 @@ class TheButler(ASRModule):
 if __name__ == "__main__":
     arguments = get_asr_llm_config()
     llm_client_ = LLMClient(client=InferenceClient(arguments.llm_url))
-    tts = MicrosoftSpeechT5TTS(model_path=Path.cwd() / "models" / "speecht5_tts.pt")
+    # tts = MicrosoftSpeechT5TTS(model_path=Path.cwd() / "models" / "speecht5_tts.pt")
     asr_module = TheButler(
         args=arguments,
         history=History(),
         llm_client=llm_client_,
-        start_state=InitialState(llm_client=llm_client_, tts_client=tts),
-        tts_client=tts,
+        start_state=InitialState(
+            llm_client=llm_client_,
+            # tts_client=tts
+        ),
+        # tts_client=tts,
+        is_text_interface=True,
     )
-    asr_module.run_session()
+    # asr_module.run_session()
+    # asr_module.run_cli_interface()
+    asr_module.run_text_interface(
+        [
+            "Hey butler can we create a meeting?",
+            "Skateboarding",
+            "Today at 20",
+            "Today at 21",
+            "Get some ollies done",
+            "Skatepark",
+        ],
+    )

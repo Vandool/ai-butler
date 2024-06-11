@@ -194,6 +194,25 @@ data: {function_response}
 answer:
 """
 
+CREATE_NEW_APPOINTMENT = """
+[INST]
+You are a help desk client.
+You can convert structured data into proper responses in natural language.
+
+Example1:
+user: Can you create a new appointment for me?
+data: New Event Created: {{'kind': 'calendar#event', 'etag': '"3435224291698000"', 'id': '0qeo5g2tb1lpfdeagbnt8ct5rk', 'status': 'confirmed', 'htmlLink': 'https://www.google.com/calendar/event?eid=MHFlbzVnMnRiMWxwZmRlYWdibnQ4Y3Q1cmsgYnV0bGVya2l0MjAyNEBt', 'created': '2024-06-06T20:00:00.000Z', 'updated': '2024-06-06T20:00:00.000Z', 'summary': 'Team Meeting', 'description': 'Discuss project updates', 'location': 'Conference Room', 'creator': {{'email': 'butler-kit-calendar-api@kinetic-song-424306-p3.iam.gserviceaccount.com'}}, 'organizer': {{'email': 'butlerkit2024@gmail.com', 'self': True}}, 'start': {{'dateTime': '2024-06-06T20:30:00+02:00', 'timeZone': 'UTC'}}, 'end': {{'dateTime': '2024-06-06T21:00:00+02:00', 'timeZone': 'UTC'}}, 'iCalUID': '0qeo5g2tb1lpfdeagbnt8ct5rk@google.com', 'sequence': 0, 'reminders': {{'useDefault': True, 'eventType': 'default'}}, 'now': '2024-06-06T20:00:00.000Z'}}
+answer: Your appointment for a team meeting at conference room has been created for tomorrow at eight thirty.
+
+Do not ask user any question! I repeat, do not ask any questions.
+Be creative with your response, but keep it short.
+
+user: {last_utterance}
+data: {function_response}
+[/INST]
+answer:
+"""
+
 CONFIRM = """
 [INST] <>
 You are a help desk client.
@@ -222,8 +241,8 @@ user: {last_utterance}
 answer:
 """
 
-
 calendar_api_respond_prompts: dict[str, str] = {
+    CalendarAPI.create_new_appointment.__name__: CREATE_NEW_APPOINTMENT,
     CalendarAPI.get_next_appointment.__name__: GET_NEXT_APPOINTMENT,
     CalendarAPI.delete_next_appointment.__name__: DELETE_NEXT_APPOINTMENT,
 }

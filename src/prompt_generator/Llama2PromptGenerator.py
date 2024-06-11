@@ -7,11 +7,13 @@ from huggingface_hub import HfFolder
 from transformers import LlamaTokenizer
 
 from src import utils
-from src.intent.intent_manager import CALENDAR, LECTURE, IntentManager
+from src.intent.intent import CALENDAR, LECTURE
+from src.intent.intent_manager import IntentManager
 from src.prompt_generator.prompt_generator import PromptType, create_or_list
 
 load_dotenv()
 access_token = os.getenv("HUGGINGFACE_ACCESS_TOKEN", default="<TOKEN>")
+chat_template_model = os.getenv("HUGGINGFACE_CHAT_TEMPLATE_MODEL", default="meta-llama/Llama-2-7b-chat-hf")
 
 # Save the token to the Hugging Face cache
 HfFolder.save_token(access_token)
@@ -22,10 +24,12 @@ class Llama2PromptGenerator:
         self.intent_manager = intent_manager
         self.num_shots = num_shots
         self.tokenizer = LlamaTokenizer.from_pretrained(
-            "meta-llama/Llama-2-7b-chat-hf",
+            chat_template_model,
             token=access_token,
         )
         self._validate_func_names()
+        self.classes = create_or_list(self.intent_manager.list_intent_names())
+        self.classes_detailed = str({intent.name: intent.description for intent in self.intent_manager})
 
     def generate_prompt(self, input_text: str, prompt_type: PromptType = PromptType.ZERO_SHOT) -> str:
         """Generate a prompt based on the type specified."""
@@ -33,42 +37,50 @@ class Llama2PromptGenerator:
 
     def _generate_zero_shot_prompt(self, input_text: str) -> str:
         """Generate a simple classification prompt."""
-        classes = create_or_list(self.intent_manager.list_intent_names())
         messages = [
-            {"role": "system", "content": f"Classify the text into one of the following classes: {classes}"},
-            {"role": "user", "content": f"{input_text} Class:"},
+            {"role": "system", "content": f"Classify the text into one of the following classes: {self.classes}"},
+            {"role": "user", "content": input_text},
         ]
         return self.apply_chat_template(messages)
 
     def _generate_zero_shot_detailed_prompt(self, input_text: str) -> str:
         """Generate a simple classification prompt with class descriptions."""
-        classes = "\n".join(f"{intent.name}: {intent.description}" for intent in self.intent_manager)
         messages = [
-            {"role": "system", "content": f"Classify the text into one of the following classes:\n{classes}"},
+            {"role": "system", "content": "Classify the text into one of the following classes:"},
             {"role": "user", "content": f"{input_text} Class:"},
         ]
         return self.apply_chat_template(messages)
 
     def _generate_one_shot_per_class_detailed_prompt(self, input_text: str) -> str:
+        return self._generate_detailed_prompt(input_text, num_shots=1, is_detailed=True)
+
+    def _generate_one_shot_per_class_prompt(self, input_text: str) -> str:
         return self._generate_detailed_prompt(input_text, num_shots=1)
 
     def _generate_few_shot_per_class_detailed_prompt(self, input_text: str) -> str:
+        return self._generate_detailed_prompt(input_text, num_shots=3, is_detailed=True)
+
+    def _generate_few_shot_per_class_prompt(self, input_text: str) -> str:
         return self._generate_detailed_prompt(input_text, num_shots=3)
 
-    def _generate_detailed_prompt(self, input_text: str, num_shots: int) -> str:
+    def _generate_detailed_prompt(self, input_text: str, num_shots: int, *, is_detailed: bool = False) -> str:
         """Generate a detailed classification prompt with descriptions and a specified number of examples."""
         examples = self.intent_manager.get_all_examples(num_shots=num_shots)
-        classes = "\n".join(f"{intent.name}: {intent.description}" for intent in self.intent_manager)
         messages = [
-            {"role": "system", "content": f"Classify the text into one of the following classes: {classes}\n"},
+            {
+                "role": "system",
+                "content": f"You are chatbot helping the user to complete his tasks. "
+                f"Classify the text into one of the following classes: "
+                f"{self.classes_detailed if is_detailed else self.classes}",
+            },
         ]
 
         for intent, ex_list in examples.items():
             for example in ex_list:
-                messages.append({"role": "user", "content": f"Text: {example} Class:"})
-                messages.append({"role": "assistant", "content": f"{intent}"})
+                messages.append({"role": "user", "content": example})
+                messages.append({"role": "assistant", "content": intent})
 
-        messages.append({"role": "user", "content": f"{input_text} Class:"})
+        messages.append({"role": "user", "content": input_text})
 
         return self.apply_chat_template(messages)
 
@@ -85,13 +97,13 @@ class Llama2PromptGenerator:
 
 if __name__ == "__main__":
     intent_manager = IntentManager()
-    prompt_generator = Llama2PromptGenerator(intent_manager)
     intent_manager.add_intent(CALENDAR)
     intent_manager.add_intent(LECTURE)
+    intent_manager.use_unknown_intent = True
+    prompt_generator = Llama2PromptGenerator(intent_manager)
     logger = utils.get_logger("Llama2PromptGenerator")
 
     input_text = "I would like to make an appointment"
-    intent_manager.use_unknown_intent = True
 
     for p_type in PromptType:
         logger.info(f"---{p_type.name.upper()} Prompt---")

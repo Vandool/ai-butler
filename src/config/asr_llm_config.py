@@ -19,7 +19,7 @@ class AsrLlmConfig:
     input: str = "portaudio"
     print_level: int = 0
     output_file: str = None
-    audio_device: int = -1
+    audio_device: int = 0
     ffmpeg_input: str = None
     ffmpeg_pre: str = None
     ffmpeg_post: str = None
@@ -60,6 +60,7 @@ class AsrLlmConfig:
     list_active_sessions: bool = False
     buffer_size: int = 4096  # Default buffer size
     chunk_size: int = 1024  # Default chunk size
+    default_llm_inference_seed: bool | None = None
 
 
 def get_asr_llm_config() -> AsrLlmConfig:
@@ -71,6 +72,10 @@ def get_asr_llm_config() -> AsrLlmConfig:
         llm_url=args.llm_url or config_utils.get_env_variable_with_default("BUTLER_LLM_URL", AsrLlmConfig.llm_url),
         zero_shot_model=args.zero_shot_model
         or config_utils.get_env_variable_with_default("BUTLER_ZERO_SHOT_MODEL", AsrLlmConfig.zero_shot_model),
+        default_llm_inference_seed=config_utils.get_env_variable_with_default(
+            "DEFAULT_LLM_INFERENCE_SEED",
+            AsrLlmConfig.default_llm_inference_seed,
+        ),
         url=args.url,
         input=args.input,
         print_level=args.print_level,
@@ -125,7 +130,12 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--llm-url", help="URL of the language model", default=None)
     parser.add_argument("--token", help="Web API access token for authentication", default=None)
     parser.add_argument("--zero-shot-model", help="Zero-shot model name", default=None)
-    parser.add_argument("-u", "--url", default="https://lt2srv-backup.iar.kit.edu", help="Where to send the audio to")
+    parser.add_argument(
+        "-u",
+        "--url",
+        default="https://lt2srv-backup.iar.kit.edu",
+        help="Where to send the audio to",
+    )
     parser.add_argument(
         "-i",
         "--input",
@@ -144,7 +154,11 @@ def parse_arguments() -> argparse.Namespace:
         type=int,
         default=0,
     )
-    parser.add_argument("--list-available-languages", help="List available languages of mediator", action="store_true")
+    parser.add_argument(
+        "--list-available-languages",
+        help="List available languages of mediator",
+        action="store_true",
+    )
     parser.add_argument("--list-active-sessions", help="List active session on mediator", action="store_true")
     parser.add_argument(
         "--output-file",
@@ -171,13 +185,13 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--ffmpeg-pre",
         help="Ffmpeg options inserted before input parameter (-f). Don't forget to escape via string so this will be "
-        "one single parameter.",
+             "one single parameter.",
         type=str,
     )
     parser.add_argument(
         "--ffmpeg-post",
         help="Ffmpeg options inserted after input parameter (-f). Don't forget to escape via string so this will be "
-        "one single parameter.",
+             "one single parameter.",
         type=str,
     )
     parser.add_argument("--volume", help="Adjust the volume via ffmpeg", type=float, default=1.0)
@@ -205,7 +219,7 @@ def parse_arguments() -> argparse.Namespace:
         type=lambda kv: kv.split("="),
         dest="asr_properties",
         help="Used ASR properties, e.g. --asr-kv version=online --asr-kv segmenter=VAD --asr-kv "
-        "stability_detection=False for online or --asr-kv version=offline --asr-kv segmenter=None for offline",
+             "stability_detection=False for online or --asr-kv version=offline --asr-kv segmenter=None for offline",
     )
     parser.add_argument("--no-textsegmenter", help="Set this to not use a textsegmenter", action="store_true")
     parser.add_argument("--textseg-kv", action="append", type=lambda kv: kv.split("="), dest="textseg_properties")
@@ -245,8 +259,17 @@ def parse_arguments() -> argparse.Namespace:
         dest="video_properties",
         help="Used video properties",
     )
-    parser.add_argument("--show-on-website", help="Whether to show this session on the website", action="store_true")
-    parser.add_argument("--website-title", help="Which title is shown on the website", type=str, default="Audioclient")
+    parser.add_argument(
+        "--show-on-website",
+        help="Whether to show this session on the website",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--website-title",
+        help="Which title is shown on the website",
+        type=str,
+        default="Audioclient",
+    )
     parser.add_argument("--meta", help="Meta information for website title", type=str, default="")
     parser.add_argument("--access", help="Access information for website title", type=str, default="")
     parser.add_argument("--run-scheduler", help="Whether to run scheduler", action="store_true")
@@ -276,6 +299,11 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--summarize", help="Adds a summarizer after text segmentation.", action="store_true")
     parser.add_argument("--speaker-diarization", help="TODO", action="store_true")
     parser.add_argument("--absolute-timestamps", help="Returns absolute timestamps", action="store_true")
-    parser.add_argument("--memory-words", help="Words used in the memory-enhanced ASR model", nargs="+", default=None)
+    parser.add_argument(
+        "--memory-words",
+        help="Words used in the memory-enhanced ASR model",
+        nargs="+",
+        default=None,
+    )
 
     return parser.parse_args()

@@ -74,3 +74,21 @@ def parse_docstring(docstring) -> (str, list[str]):
                 examples.append(example[2:].strip())
 
     return description, examples
+
+
+class TestObjCall:
+    def __init__(self):
+        self.c = "c"
+
+    @staticmethod
+    def func_a(a: str):
+        return f"a = {a}"
+
+    def func_b(self, a: str, b: str) -> str:
+        return f"{a} = {b} = {self.c}"
+
+    def func_c(self, a: str, b: str, c: str) -> str:
+        return f"{a} = {b} = {c} = {self.c}"
+
+    def func_d(self, a: str, b: str, c: str, d: str) -> str:
+        return f"{a} = {b} = {c} = {self.c} = {d}"

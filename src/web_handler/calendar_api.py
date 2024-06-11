@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import json
+import webbrowser
 from typing import Any
 
 from google.oauth2 import service_account
@@ -51,9 +52,9 @@ class CalendarAPI:
         """Create a new appointment in the calendar using the specified parameters.
 
         Examples:
-            - I would like to create a new appointment
-            - Let's make an appointment in the calendar
-            - Can you create an appointment for me?
+            - I'd like to schedule a new appointment.
+            - Please create a new appointment in my calendar.
+            - Can you set up a meeting for me?
         """
         event = {
             "summary": summary,
@@ -77,9 +78,9 @@ class CalendarAPI:
         """Get the next appointment in the calendar.
 
         Examples:
-            - What's next in my calendar?
-            - So what are we doing next?
-            - Can you get my next appointment?
+            - What's my next appointment?
+            - Can you show me my next meeting?
+            - What's coming up next in my schedule?
         """
         now = datetime.datetime.utcnow().isoformat() + "Z"
         events_result = (
@@ -95,13 +96,61 @@ class CalendarAPI:
     @utils.mark_intent
     def delete_next_appointment() -> bool:
         """Delete the next appointment in the calendar.
+
         Examples:
-            - I would like to delete my next appointment?
-            - Can you please cancel the next meeting?
-            - Oh, I am already tired from all these meeting, can you please remove the next one?
+            - Please delete my next appointment.
+            - Can you cancel my next meeting?
+            - I'm tired of meetings, please remove the next one.
         """
         event = CalendarAPI.get_next_appointment()
         return event and CalendarAPI.delete_appointment_by_id(appointment_id=event["id"])
+
+    @staticmethod
+    @catch_http_exception
+    @utils.mark_intent
+    def delete_all_appointments_today():
+        """Delete all the today's appointments in the calendar.
+
+        Examples:
+            - Please delete all my appointments today.
+            - Can you cancel all my meetings today?
+            - Clear my schedule for today.
+        """
+        start_of_day = datetime.datetime.combine(datetime.date.today(), datetime.time.min).isoformat() + "Z"
+        end_of_day = datetime.datetime.combine(datetime.date.today(), datetime.time.max).isoformat() + "Z"
+        events_result = (
+            service.events()
+            .list(
+                calendarId=gc_config.calendar_id,
+                timeMin=start_of_day,
+                timeMax=end_of_day,
+                singleEvents=True,
+                orderBy="startTime",
+            )
+            .execute()
+        )
+        events = events_result.get("items", [])
+        for event in events:
+            service.events().delete(calendarId=gc_config.calendar_id, eventId=event["id"]).execute()
+        return True
+
+    @staticmethod
+    @catch_http_exception
+    def list_this_weeks_appointments():
+        """list all the today's appointments in the calendar.
+
+        Examples:
+            - How does this look like in my calendar?
+            - Can you provide this week's agenda?
+            - What are we doing this week?
+        """
+        today = datetime.date.today()
+        start_of_week = (today - datetime.timedelta(days=today.weekday())).isoformat() + "T00:00:00Z"
+        end_of_week = (today + datetime.timedelta(days=6 - today.weekday())).isoformat() + "T23:59:59Z"
+        return CalendarAPI.list_appointments(
+            time_start=start_of_week,
+            time_end=end_of_week,
+        )
 
     @staticmethod
     @catch_http_exception
@@ -129,28 +178,6 @@ class CalendarAPI:
     @catch_http_exception
     def delete_appointment_by_id(appointment_id: int) -> bool:
         service.events().delete(calendarId=gc_config.calendar_id, eventId=appointment_id).execute()
-        return True
-
-    @staticmethod
-    @catch_http_exception
-    def delete_all_appointments_today():
-        """Delete all the today's appointments in the calendar."""
-        start_of_day = datetime.datetime.combine(datetime.date.today(), datetime.time.min).isoformat() + "Z"
-        end_of_day = datetime.datetime.combine(datetime.date.today(), datetime.time.max).isoformat() + "Z"
-        events_result = (
-            service.events()
-            .list(
-                calendarId=gc_config.calendar_id,
-                timeMin=start_of_day,
-                timeMax=end_of_day,
-                singleEvents=True,
-                orderBy="startTime",
-            )
-            .execute()
-        )
-        events = events_result.get("items", [])
-        for event in events:
-            service.events().delete(calendarId=gc_config.calendar_id, eventId=event["id"]).execute()
         return True
 
     @staticmethod
@@ -209,18 +236,6 @@ class CalendarAPI:
 
     @staticmethod
     @catch_http_exception
-    def list_this_weeks_appointments():
-        """list all the today's appointments in the calendar."""
-        today = datetime.date.today()
-        start_of_week = (today - datetime.timedelta(days=today.weekday())).isoformat() + "T00:00:00Z"
-        end_of_week = (today + datetime.timedelta(days=6 - today.weekday())).isoformat() + "T23:59:59Z"
-        return CalendarAPI.list_appointments(
-            time_start=start_of_week,
-            time_end=end_of_week,
-        )
-
-    @staticmethod
-    @catch_http_exception
     def list_calendars() -> list:
         """list all the calendars in the account."""
         calendar_list = service.calendarList().list().execute()
@@ -228,6 +243,12 @@ class CalendarAPI:
         for calendar in calendars:
             logger.info(f"ID: {calendar['id']}, Summary: {calendar['summary']}")
         return calendars
+
+    @staticmethod
+    def open_html_link(response: dict) -> None:
+        if link := response.get("htmlLink"):
+            # Open the link in the default web browser
+            webbrowser.open(link)
 
 
 def format_datetime(dt: datetime) -> str:
@@ -238,14 +259,15 @@ def format_datetime(dt: datetime) -> str:
 if __name__ == "__main__":
     test_calendar = True
     if test_calendar:
-        # new_event = CalendarAPI.create_new_appointment(
-        #     summary="Team Meeting",
-        #     start_time=format_datetime(datetime.datetime.now(datetime.UTC)),
-        #     end_time=format_datetime(datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)),
-        #     description="Discuss project updates",
-        #     location="Conference Room",
-        # )
-        # print("New Event Created:", new_event)
+        new_event = CalendarAPI.create_new_appointment(
+            summary="Team Meeting",
+            start_time=format_datetime(datetime.datetime.now(datetime.UTC)),
+            end_time=format_datetime(datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)),
+            description="Discuss project updates",
+            location="Conference Room",
+        )
+        CalendarAPI.open_html_link(new_event)
+        print("New Event Created:", new_event)
 
         next_appointment = CalendarAPI.get_next_appointment()
         print("Next Appointment:", json.dumps(next_appointment, indent=2))

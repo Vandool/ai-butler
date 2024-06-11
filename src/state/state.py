@@ -11,6 +11,7 @@ from src.classifier.base_classifier import BaseClassifier
 from src.classifier.classifier_generator import generate_classifier
 from src.classifier.few_shot_text_generation_classifier import FewShotTextGenerationClassifier
 from src.config.asr_llm_config import AsrLlmConfig
+from src.history.history import History
 from src.intent import intent
 from src.intent.intent import Intent
 from src.intent.intent_manager import IntentManagerFactory
@@ -31,12 +32,19 @@ def _add_time_now_to(fn_response):
 
 
 class State(abc.ABC):
-    def __init__(self, llm_client: LLMClient, classifier: BaseClassifier, tts_client: TextToSpeech | None = None):
+    def __init__(
+        self,
+        llm_client: LLMClient,
+        classifier: BaseClassifier,
+        tts_client: TextToSpeech | None = None,
+        history: History | None = None,
+    ):
         super().__init__()
         self.llm_client = llm_client
         self.logger = utils.get_logger(self.__class__.__name__)
         self.classifier = classifier
         self.tts_client = tts_client
+        self.history = history
 
     @abc.abstractmethod
     def process(self, user_input: str) -> State:
@@ -155,11 +163,11 @@ class CalendarState(State):
         return self._process_intent_classification(user_input)
 
     def _process_slot_filling(self, user_input: str) -> State:
+        self.slot_filler.process(user_input)
         if not self.slot_filler.is_done:
-            self.slot_filler.process(user_input)
             return self
 
-        self._call_intended_function(user_input)
+        self._call_intended_function(user_input, **self.slot_filler.get_kwargs())
         return InitialState(llm_client=self.llm_client, tts_client=self.tts_client)
 
     def _process_intent_classification(self, user_input: str) -> State:
@@ -200,11 +208,11 @@ class CalendarState(State):
     def _in_slot_filling_process(self):
         return self.slot_filler is not None
 
-    def _call_intended_function(self, user_input: str):
+    def _call_intended_function(self, user_input: str, **kwargs) -> None:
         intended_fn = self.get_intended_function()
 
         self.logger.info(f"Calling `{intended_fn.__name__}` ...")
-        fn_response = intended_fn()
+        fn_response = intended_fn(**kwargs)
 
         if isinstance(fn_response, dict):
             fn_response = _add_time_now_to(fn_response)
@@ -215,6 +223,8 @@ class CalendarState(State):
         )
         self.logger.debug(llm_prompt)
 
+        # Open the html link
+        self.api.open_html_link(response=fn_response)
         self.output(response=(self.llm_client.get_response(prompt=llm_prompt)))
 
     def get_clarify_prompt(self, last_input: str) -> None:
