@@ -11,7 +11,7 @@ from src.classifier.base_classifier import BaseClassifier
 from src.classifier.classifier_generator import generate_classifier
 from src.classifier.few_shot_text_generation_classifier import FewShotTextGenerationClassifier
 from src.config.asr_llm_config import AsrLlmConfig
-from src.history.history import History
+from src.history.chathistory import ChatHistory, Message, Role
 from src.intent import intent
 from src.intent.intent import Intent
 from src.intent.intent_manager import IntentManagerFactory
@@ -37,14 +37,22 @@ class State(abc.ABC):
         llm_client: LLMClient,
         classifier: BaseClassifier,
         tts_client: TextToSpeech | None = None,
-        history: History | None = None,
+        history: ChatHistory | None = None,
     ):
         super().__init__()
         self.llm_client = llm_client
         self.logger = utils.get_logger(self.__class__.__name__)
         self.classifier = classifier
         self.tts_client = tts_client
-        self.history = history
+        self._history = history
+
+    @property
+    def history(self) -> ChatHistory:
+        return self._history
+
+    @history.setter
+    def history(self, history: ChatHistory):
+        self._history = history
 
     @abc.abstractmethod
     def process(self, user_input: str) -> State:
@@ -59,6 +67,12 @@ class State(abc.ABC):
             prompt=self.get_clarify_prompt(last_input=last_input),
         )
         self.logger.info(llm_response)
+
+        if self.history:
+            self.history.add_message(
+                Message(text=llm_response, role=Role.ASSISTANT, current_state=self.__class__.__name__),
+            )
+
         self.text_to_speech(llm_response)
 
     def text_to_speech(self, text: str) -> None:
@@ -77,7 +91,12 @@ class State(abc.ABC):
 class InitialState(State):
     KEYWORDS: ClassVar[list[str]] = ["ok butler", "okay butler", "hey butler", "butler", "bottler"]
 
-    def __init__(self, llm_client: LLMClient, tts_client: TextToSpeech | None = None):
+    def __init__(
+        self,
+        llm_client: LLMClient,
+        tts_client: TextToSpeech | None = None,
+        history: ChatHistory | None = None,
+    ):
         super().__init__(
             llm_client=llm_client,
             classifier=FewShotTextGenerationClassifier(
@@ -85,11 +104,16 @@ class InitialState(State):
                 intent_manager=IntentManagerFactory.get_intent_manager_with_unknown_intent(),
             ),
             tts_client=tts_client,
+            history=history,
         )
+        self.message = Message(current_state=self.__class__.__name__)
 
     def process(self, user_input: str) -> State:
         next_state = self
         if self._keyword_spotting(user_input):
+            if self.history:
+                self.message = self.message.set_text(user_input).set_role(Role.USER)
+
             self.logger.info("Keyword spotted, sending to classifier.")
             trimmed_transcript = self._trim_transcript(user_input)
             self.logger.info(f"Trimmed sequence: {trimmed_transcript}")
@@ -120,10 +144,18 @@ class InitialState(State):
         self.logger.info(f"\tLLM Output: {classifier_response.llm_response}")
         self.logger.info(f"\tIntention Class: {classifier_response.intent.name}")
 
+        if self.history:
+            self.message = self.message.set_intent_name(classifier_response.intent.name)
+            self.history.add_message(self.message)
+
         if classifier_response.intent == intent.CALENDAR:
-            return CalendarState(llm_client=self.llm_client, tts_client=self.tts_client).process(user_input)
+            return CalendarState(llm_client=self.llm_client, tts_client=self.tts_client, history=self.history).process(
+                user_input,
+            )
         if classifier_response.intent == intent.LECTURE:
-            return LectureState(llm_client=self.llm_client, tts_client=self.tts_client).process(user_input)
+            return LectureState(llm_client=self.llm_client, tts_client=self.tts_client, history=self.history).process(
+                user_input,
+            )
 
         self.clarify(last_input=user_input)
         return self
@@ -135,18 +167,26 @@ class InitialState(State):
 
 
 class CalendarState(State):
-    def __init__(self, llm_client: LLMClient, tts_client: TextToSpeech | None = None):
+    def __init__(
+        self,
+        llm_client: LLMClient,
+        tts_client: TextToSpeech | None = None,
+        history: ChatHistory | None = None,
+    ):
         self.api = CalendarAPI()
         super().__init__(
             llm_client=llm_client,
             classifier=generate_classifier(module=self.api, llm_client=llm_client),
             tts_client=tts_client,
+            history=history,
         )
         self.slot_filler: SlotFillerSimple | None = None
         self.function_info: dict[FunctionName, FunctionInfo] | None = utils.get_marked_functions_and_docstrings(
             module=self.api,
         )
         self._current_intent: Intent | None = None
+        if self.history:
+            self.message = Message().set_current_state(self.__class__.__name__)
 
     @property
     def current_intent(self) -> Intent:
@@ -167,14 +207,19 @@ class CalendarState(State):
         if not self.slot_filler.is_done:
             return self
 
+        # Extend history wish slot filler's history
+        if self.history:
+            self.history.add_history(self.slot_filler.history)
+
         self._call_intended_function(user_input, **self.slot_filler.get_kwargs())
-        return InitialState(llm_client=self.llm_client, tts_client=self.tts_client)
+        return InitialState(llm_client=self.llm_client, tts_client=self.tts_client, history=self.history)
 
     def _process_intent_classification(self, user_input: str) -> State:
         classifier_response = self.classifier.classify(
             input_text=user_input,
             prompt_type=PromptType.FEW_SHOT_DETAILED,
         )
+
         self.logger.info(f"\tLLM Output: {classifier_response.llm_response}")
         self.logger.info(f"\tIntention Class: {classifier_response.intent.name}")
 
@@ -183,6 +228,8 @@ class CalendarState(State):
             return self
 
         self.current_intent = classifier_response.intent
+        if self.history:
+            self.message = Message().set_intent_name(self.current_intent.name)
 
         if self._slot_filling_required(fn_name=self.current_intent.name):
             self._start_slot_filling(user_input)
@@ -225,7 +272,18 @@ class CalendarState(State):
 
         # Open the html link
         self.api.open_html_link(response=fn_response)
-        self.output(response=(self.llm_client.get_response(prompt=llm_prompt)))
+
+        response = self.llm_client.get_response(prompt=llm_prompt)
+        if self.history:
+            self.history.add_message(
+                self.message.set_text(text=response)
+                .set_role(Role.ASSISTANT)
+                .set_function_call(function_call=self.current_intent.name)
+                .set_function_args(kwargs.items())
+                .set_function_response(fn_response),
+            )
+
+        self.output(response=response)
 
     def get_clarify_prompt(self, last_input: str) -> None:
         return respond_prompts.INIT_STATE_REPEAT_FMT.format(
@@ -239,12 +297,18 @@ class CalendarState(State):
 
 
 class LectureState(State):
-    def __init__(self, llm_client: LLMClient, tts_client: TextToSpeech | None = None):
+    def __init__(
+        self,
+        llm_client: LLMClient,
+        tts_client: TextToSpeech | None = None,
+        history: ChatHistory | None = None,
+    ):
         self.api = CalendarAPI()
         super().__init__(
             llm_client=llm_client,
             classifier=generate_classifier(module=self.api, llm_client=llm_client),
             tts_client=tts_client,
+            history=history,
         )
 
     def get_clarify_prompt(self, last_input: str) -> str:

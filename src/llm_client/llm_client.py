@@ -13,7 +13,7 @@ class LLMClient:
         self.client = client
         self.logger = utils.get_logger(self.__class__.__name__)
 
-    def get_response(self, prompt: str, max_new_tokens: int = 128, seed: int | None = DEFAULT_SEED) -> str:
+    def get_response(self, prompt: str, max_new_tokens: int = 128, seed: int | None = None) -> str:
         generated_text = self.client.text_generation(
             prompt=prompt,
             max_new_tokens=max_new_tokens,

@@ -11,7 +11,7 @@ from huggingface_hub import InferenceClient
 
 from src import utils
 from src.config.asr_llm_config import get_asr_llm_config
-from src.history.history import History
+from src.history.chathistory import ChatHistory, Message, Role
 from src.llm_client.llm_client import LLMClient
 from src.text2speech.microsoft_speecht5_tts import TextToSpeech
 from src.web_handler.calendar_api import CalendarAPI
@@ -66,7 +66,7 @@ Do not ask user any question! I repeat, do not ask any questions.
 
 Text: {purpose}
 <</SYS>> [/INST]
-AI:
+Assistant:
 """
 
 
@@ -93,9 +93,9 @@ Current conversation:
 {history}
 Current Slots:
 {slots}
-Human: {input}
+User: {input}
 <</SYS>> [/INST]
-AI:
+Assistant:
 """
     _GREETING_PROMPT_FMT = """
 <s>[INST] <<SYS>>
@@ -103,21 +103,21 @@ You are an AI assistant and welcome the human to the conversation and greet them
 
 Example:
 text: create_an_appointment
-AI: Alright, let's create an appointment.
+Assist: Alright, let's create an appointment.
 
 Greet them with one very short sentence.
 Do not ask user any question! I repeat, do not ask any questions.
 
 Text: {purpose}
 <</SYS>> [/INST]
-AI:
+Assistant:
 """
     _SLOT_INSTRUCTION_FMT = "If {name} is None with respect to the Current Slots 'value', ask a question about the {name} of the appointment."
 
     def __init__(self, func: Callable, llm_client: LLMClient, text_to_speech: TextToSpeech | None = None):
         self.purpose: str = func.__name__
         self.slots: list[Slot] = extract_slots_from_function(func)
-        self.history: History = History()
+        self.history: ChatHistory = ChatHistory()
         self.logger = utils.get_logger("SlotFiller")
         self.is_greeting: bool = True
         self.llm_client = llm_client
@@ -142,12 +142,10 @@ AI:
     def _generate_prompt(self, user_input: str) -> str:
         slot_instructions = self._SLOT_INSTRUCTION_FMT.format(name=self._next_slot.name)
         current_slots_str = self._next_slot.get_name_value()
-        history_str = self.history.get_history()
-
         return self._DEFAULT_TEMPLATE_FMT.format(
             purpose=self.purpose,
             slot_instructions=slot_instructions,
-            history=history_str,
+            history=self.history.get_annotated_history(),
             slots=current_slots_str,
             input=user_input,
         )
@@ -155,6 +153,10 @@ AI:
     def process(self, user_input: str) -> None:
         if not self.is_just_started:
             self.fill_slot(user_input=user_input)
+            self.history.add_message(
+                Message(text=user_input, role=Role.USER, current_state=self.__class__.__name__,
+                        intent_name=self.purpose)
+            )
         else:
             self.is_just_started = False
         self.logger.info_pretty(self.get_kwargs())
@@ -162,10 +164,11 @@ AI:
         if self.is_done:
             return
 
-        self.history.add_human_message(user_input)
         self.logger.info(f"Handling user input '{user_input}' ...")
+
         llm_response = self.llm_client.get_response(prompt=self._generate_prompt(user_input))
-        self.history.add_ai_message(llm_response)
+        self.history.add_message(Message(text=llm_response, role=Role.ASSISTANT, current_state=self.__class__.__name__))
+
         self.logger.info(llm_response)
         self.text_to_speech(llm_response)
 

@@ -18,7 +18,7 @@ from sseclient import SSEClient
 
 from src import utils
 from src.config.asr_llm_config import get_asr_llm_config
-from src.history.history import History
+from src.history.chathistory import ChatHistory
 from src.llm_client.llm_client import LLMClient
 from src.pythonrecordingclient.ffmpegStreamAdapter import FfmpegStream
 from src.pythonrecordingclient.helper import BugException
@@ -34,7 +34,7 @@ class ASRModule:
     def __init__(  # noqa: PLR0913
         self,
         args: argparse.Namespace,
-        history: History | None,
+        history: ChatHistory | None,
         llm_client: LLMClient | None,
         start_state: State | None = None,
         tts_client: TextToSpeech | None = None,
@@ -44,6 +44,9 @@ class ASRModule:
         self.history = history
         self.llm_client = llm_client
         self.state = start_state
+        if self.state:
+            self.state.history = self.history
+
         self.text_to_speech = tts_client
         self.args = args
         self.api = args.api
@@ -61,6 +64,9 @@ class ASRModule:
             self.audio_source = self.set_audio_input()
 
         self.processing = True  # Flag to control SSEClient processing
+
+    def get_history(self) -> ChatHistory | None:
+        return self.history
 
     def start_audio(self):
         logger.info("Starting audio")
@@ -332,6 +338,7 @@ class ASRModule:
 
     def process_command(self, user_input: str):
         if self.state:
+            self.state.history = self.history
             self.state = self.state.process(user_input)
 
     def _process_controll_data(self, data: dict) -> None:
@@ -561,7 +568,7 @@ if __name__ == "__main__":
     # tts = MicrosoftSpeechT5TTS(model_path=Path.cwd() / "models" / "speecht5_tts.pt")
     asr_module = TheButler(
         args=arguments,
-        history=History(),
+        history=ChatHistory(),
         llm_client=llm_client_,
         start_state=InitialState(
             llm_client=llm_client_,
@@ -582,3 +589,6 @@ if __name__ == "__main__":
             "Skatepark",
         ],
     )
+
+    for msg in asr_module.history:
+        print(msg.__dict__)

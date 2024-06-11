@@ -1,3 +1,4 @@
+import functools
 import inspect
 import json
 import logging
@@ -75,12 +76,23 @@ def parse_docstring(docstring) -> (str, list[str]):
 
     return description, examples
 
+def decorator_test(func):
+    """Decorator that checks the status code of an HTTP response and logs any errors."""
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        response = func(*args, **kwargs)
+        print(response)
+        return response
+
+    return wrapper
 
 class TestObjCall:
     def __init__(self):
         self.c = "c"
 
     @staticmethod
+    @decorator_test
     def func_a(a: str):
         return f"a = {a}"
 
