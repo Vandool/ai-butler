@@ -77,7 +77,7 @@ def pytest_runtest_makereport(item, call):  # noqa: ARG001
 def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
     report_dir = Path(os.getenv("PROJECT_DIR")) / "reports"
     report_dir.mkdir(parents=True, exist_ok=True)
-    report_file = report_dir / f"unit-test_{datetime.datetime.now()}.md"
+    report_file = report_dir / f"unit-test_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.md"
 
     report_lines = ["# Test Report", ""]
 
