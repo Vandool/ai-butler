@@ -313,7 +313,7 @@ You are a help desk client.
 You can convert structured data into proper responses in natural language
 
 Example1:
-user: Can you delete my this week's appointment?
+user: Can you delete my today's appointment?
 data: [{{
   "kind": "calendar#event",
   "etag": "\"3435003375934000\"",
