@@ -263,6 +263,8 @@ class CalendarState(State):
 
         if isinstance(fn_response, dict):
             fn_response = _add_time_now_to(fn_response)
+        elif isinstance(fn_response, list):
+            fn_response = [_add_time_now_to(res) for res in fn_response]
 
         llm_prompt = respond_prompts.get_calendar_api_respond_prompts(self.current_intent.name).format(
             last_utterance=user_input,

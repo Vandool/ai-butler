@@ -136,11 +136,12 @@ class CalendarAPI:
 
     @staticmethod
     @catch_http_exception
+    @utils.mark_intent
     def list_this_weeks_appointments():
-        """list all the today's appointments in the calendar.
+        """list all appointments in the calendar for this week.
 
         Examples:
-            - How does this look like in my calendar?
+            - How does this week look like in my calendar?
             - Can you provide this week's agenda?
             - What are we doing this week?
         """
@@ -150,6 +151,21 @@ class CalendarAPI:
         return CalendarAPI.list_appointments(
             time_start=start_of_week,
             time_end=end_of_week,
+        )
+
+    @staticmethod
+    @catch_http_exception
+    def list_todays_appointments():
+        """list all the today's appointments in the calendar.
+
+        Examples:
+            - How does today look like in my calendar?
+            - Can you provide today's agenda?
+            - What are we doing today?
+        """
+        return CalendarAPI.list_appointments(
+            time_start=format_datetime(dt=datetime.datetime.combine(datetime.date.today(), datetime.time.min)),
+            time_end=format_datetime(dt=datetime.datetime.combine(datetime.date.today(), datetime.time.max)),
         )
 
     @staticmethod
@@ -227,15 +243,6 @@ class CalendarAPI:
 
     @staticmethod
     @catch_http_exception
-    def list_todays_appointments():
-        """list all the today's appointments in the calendar."""
-        return CalendarAPI.list_appointments(
-            time_start=format_datetime(dt=datetime.datetime.combine(datetime.date.today(), datetime.time.min)),
-            time_end=format_datetime(dt=datetime.datetime.combine(datetime.date.today(), datetime.time.max)),
-        )
-
-    @staticmethod
-    @catch_http_exception
     def list_calendars() -> list:
         """list all the calendars in the account."""
         calendar_list = service.calendarList().list().execute()
@@ -259,17 +266,17 @@ def format_datetime(dt: datetime) -> str:
 if __name__ == "__main__":
     test_calendar = True
     if test_calendar:
-        new_event = CalendarAPI.create_new_appointment(
-            summary="Team Meeting",
-            start_time=format_datetime(datetime.datetime.now(datetime.UTC)),
-            end_time=format_datetime(datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)),
-            description="Discuss project updates",
-            location="Conference Room",
-        )
-        CalendarAPI.open_html_link(new_event)
-        print("New Event Created:", new_event)
-
-        next_appointment = CalendarAPI.get_next_appointment()
-        print("Next Appointment:", json.dumps(next_appointment, indent=2))
-        delete_appointment = CalendarAPI.get_next_appointment()
-        print("Deleted Appointment:", json.dumps(delete_appointment, indent=2))
+        # new_event = CalendarAPI.create_new_appointment(
+        #     summary="Team Meeting",
+        #     start_time=format_datetime(datetime.datetime.now(datetime.UTC)),
+        #     end_time=format_datetime(datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)),
+        #     description="Discuss project updates",
+        #     location="Conference Room",
+        # )
+        # CalendarAPI.open_html_link(new_event)
+        # print("New Event Created:", new_event)
+        #
+        # next_appointment = CalendarAPI.get_next_appointment()
+        # print("Next Appointment:", json.dumps(next_appointment, indent=2))
+        this_week = CalendarAPI.list_this_weeks_appointments()
+        print("this_week Appointment:", json.dumps(this_week, indent=2))
