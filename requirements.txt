@@ -13,3 +13,8 @@ sentence_transformers
 sseclient
 transformers
 watchdog
+simpleaudio
+soundfile
+torch
+datasets
+pydub

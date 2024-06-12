@@ -19,19 +19,7 @@ class OllamaClassifier(BaseClassifier):
     def name(self) -> str:
         return "ollama_classifier"
 
-    def classify(self, input_text: str, prompt_type: PromptType = PromptType.ZERO_SHOT) -> str:
+    def _get_llm_response(self, input_text: str, prompt_type: PromptType = PromptType.ZERO_SHOT) -> str:
         prompt = self._prompt_generator.generate_prompt(input_text, prompt_type=prompt_type)
         print(prompt)
-        generated_text = ollama.generate(
-            model=OLLAMA_MODEL,
-            prompt=prompt,
-        )
-
-        self.logger.debug("Ollama generated texts:\n%s", generated_text)
-        return generated_text['response']
-
-    def classify_with_details(self, input_text: str, prompt_type: PromptType = PromptType.ZERO_SHOT) -> Any:
-        prompt = self._prompt_generator.generate_prompt(input_text, prompt_type=prompt_type)
-        generated_text = ollama.generate(model=OLLAMA_MODEL, prompt=prompt)
-        self.logger.debug("Ollama generated texts:\n%s", generated_text)
-        return generated_text['response']
+        return ollama.generate(prompt=prompt, model=OLLAMA_MODEL)['response']

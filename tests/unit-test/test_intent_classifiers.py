@@ -83,7 +83,8 @@ one_shot_test_data = [
     ("delete_all_appointments_today7.mp3", "Hey butler, can you delete all today's appointments?", CALENDAR.name),
     ("delete_all_appointments_today8.mp3", "Okay butler, remove all events for today.", CALENDAR.name),
     ("delete_all_appointments_today9.mp3", "Hey butler, please delete all today's meetings.", CALENDAR.name),
-    ("delete_all_appointments_today10.mp3", "Okay butler, I want to cancel all my appointments for today.", CALENDAR.name),
+    ("delete_all_appointments_today10.mp3", "Okay butler, I want to cancel all my appointments for today.",
+     CALENDAR.name),
 ]
 
 test_data = [
@@ -177,10 +178,10 @@ def test_few_shot_text_generation_classifier_one_shot_detailed(
 @pytest.mark.parametrize("the_input, expected_output", test_data)
 @pytest.mark.report_test()  # Custom marker to include this test in the report
 def test_few_shot_text_generation_classifier_one_shot(
-    the_input,
-    expected_output,
-    capture_output_for_report,
-    few_shot_classifier,
+        the_input,
+        expected_output,
+        capture_output_for_report,
+        few_shot_classifier,
 ):
     handle_test(
         capture_output_for_report,
@@ -207,6 +208,7 @@ def test_few_shot_text_generation_classifier_few_shot_detailed(
         prompt_type=PromptType.FEW_SHOT_DETAILED,
     )
 
+
 one_shot_test_data = [one_shot_test_data[1]]
 
 
@@ -214,8 +216,9 @@ def start_thread(asr_module):
     time.sleep(1)
     asr_module.send_session()
 
+
 @pytest.mark.parametrize("the_input,_ , expected_output", one_shot_test_data)
-def test_audio_few_shot_classifier(the_input,_ , expected_output, capture_output_for_report, few_shot_classifier):
+def test_audio_few_shot_classifier(the_input, _, expected_output, capture_output_for_report, few_shot_classifier):
     sys.argv = [sys.argv[0]]
     arguments = get_asr_llm_config()
 
@@ -261,10 +264,10 @@ def test_audio_few_shot_classifier(the_input,_ , expected_output, capture_output
 @pytest.mark.parametrize("the_input, expected_output", test_data)
 @pytest.mark.report_test()  # Custom marker to include this test in the report
 def test_few_shot_text_generation_classifier_few_shot(
-    the_input,
-    expected_output,
-    capture_output_for_report,
-    few_shot_classifier,
+        the_input,
+        expected_output,
+        capture_output_for_report,
+        few_shot_classifier,
 ):
     handle_test(
         capture_output_for_report,
@@ -272,6 +275,40 @@ def test_few_shot_text_generation_classifier_few_shot(
         few_shot_classifier,
         the_input,
         prompt_type=PromptType.FEW_SHOT,
+    )
+
+
+@pytest.mark.parametrize("the_input, expected_output", test_data)
+@pytest.mark.report_test()  # Custom marker to include this test in the report
+def test_ollama_text_generation_classifier_zero_shot(
+        the_input,
+        expected_output,
+        capture_output_for_report,
+        ollama_classifier,
+):
+    handle_test(
+        capture_output_for_report,
+        expected_output,
+        ollama_classifier,
+        the_input,
+        prompt_type=PromptType.ZERO_SHOT,
+    )
+
+
+@pytest.mark.parametrize("the_input, expected_output", test_data)
+@pytest.mark.report_test()  # Custom marker to include this test in the report
+def test_ollama_text_generation_few_shot(
+        the_input,
+        expected_output,
+        capture_output_for_report,
+        ollama_classifier,
+):
+    handle_test(
+        capture_output_for_report,
+        expected_output,
+        ollama_classifier,
+        the_input,
+        prompt_type=PromptType.FEW_SHOT_DETAILED,
     )
 
 
@@ -284,7 +321,7 @@ def handle_test(
 ):
     response = few_shot_classifier.classify(input_text=the_input, prompt_type=prompt_type)
     if response.llm_response is not None:
-        test_result = response.llm_response.lower() == expected_output.lower()
+        test_result = response.intent.name.lower() == expected_output.lower()
         capture_output_for_report(output=test_result, llm_output=response.llm_response)
         assert test_result
     else:
