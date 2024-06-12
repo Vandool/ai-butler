@@ -31,6 +31,7 @@ def get_logger(module_name: str) -> CustomLogger:
 
     return logger
 
+logger = get_logger("UTILS")
 
 _IS_MARKED_ATTR: Final[str] = "_is_marked"
 

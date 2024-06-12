@@ -155,6 +155,7 @@ class CalendarAPI:
 
     @staticmethod
     @catch_http_exception
+    @utils.mark_intent
     def list_todays_appointments():
         """list all the today's appointments in the calendar.
 

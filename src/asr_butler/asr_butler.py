@@ -6,6 +6,7 @@ import copy
 import datetime
 import json
 import os
+import re
 import socket
 import sys
 import time
@@ -232,7 +233,7 @@ class ASRModule:
         time.sleep(1)
         self.send_end()
 
-    def read_text(self, start_time: float) -> None:
+    def read_text(self, start_time: float, read_one: bool = False) -> None:
         send_from = None
         if self.args.titanic_ip is not None:
             server_port = (self.args.titanic_ip, 8005)
@@ -305,6 +306,9 @@ class ASRModule:
                             self.stop_processing_messages()
                             self.stop_audio()
                             self.process_command(user_input=full_sentence)
+                            if read_one:
+                                self.send_end()
+                                return
                             self.start_audio()
                             self.start_processing_messages()
 
@@ -359,7 +363,7 @@ class ASRModule:
     @staticmethod
     def _is_sentence_complete(data: dict) -> bool:
         segment_end_key = "speech_segment_ends"
-        return segment_end_key in data and data["speech_segment_ends"]
+        return (segment_end_key in data and data["speech_segment_ends"]) or re.search(r"[.!?]$", data["seq"]) is not None
 
     def _save_json_output(self, data: dict):
         self._save_str_output(json.dumps(data, indent=2))
