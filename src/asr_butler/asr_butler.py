@@ -18,9 +18,11 @@ from huggingface_hub import InferenceClient
 from sseclient import SSEClient
 
 from src import utils
+from src.classifier.base_classifier import BaseClassifier
 from src.config.asr_llm_config import get_asr_llm_config
 from src.history.chathistory import ChatHistory
 from src.llm_client.llm_client import LLMClient
+from src.prompt_generator.prompt_generator import PromptType
 from src.pythonrecordingclient.ffmpegStreamAdapter import FfmpegStream
 from src.pythonrecordingclient.helper import BugException
 from src.pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
@@ -65,6 +67,16 @@ class ASRModule:
             self.audio_source = self.set_audio_input()
 
         self.processing = True  # Flag to control SSEClient processing
+        self.__prompt_type: PromptType | None = None
+
+    @property
+    def prompt_type(self) -> PromptType | None:
+        return self.__prompt_type
+
+    @prompt_type.setter
+    def prompt_type(self, prompt_type: PromptType | None) -> None:
+        self.__prompt_type = prompt_type
+        self.state.set_prompt_type(prompt_type)
 
     def get_history(self) -> ChatHistory | None:
         return self.history
@@ -363,7 +375,10 @@ class ASRModule:
     @staticmethod
     def _is_sentence_complete(data: dict) -> bool:
         segment_end_key = "speech_segment_ends"
-        return (segment_end_key in data and data["speech_segment_ends"]) or re.search(r"[.!?]$", data["seq"]) is not None
+        return (segment_end_key in data and data["speech_segment_ends"]) or re.search(
+            r"[.!?]$",
+            data["seq"],
+        ) is not None
 
     def _save_json_output(self, data: dict):
         self._save_str_output(json.dumps(data, indent=2))
@@ -593,6 +608,8 @@ if __name__ == "__main__":
             "Skatepark",
         ],
     )
+    # Setup Global Prompt Type
+    BaseClassifier.set_prompt_type(PromptType.ZERO_SHOT)
 
     for msg in asr_module.history:
         print(msg.__dict__)

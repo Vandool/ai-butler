@@ -1,4 +1,4 @@
-from typing import Any
+from __future__ import annotations
 
 import ollama
 
@@ -7,7 +7,7 @@ from src.intent.intent_manager import IntentManager
 from src.prompt_generator.prompt_generator import PromptType
 
 MAX_NEW_TOKENS = 128
-OLLAMA_MODEL = 'llama3'
+OLLAMA_MODEL = "llama3"
 
 
 class OllamaClassifier(BaseClassifier):
@@ -19,7 +19,7 @@ class OllamaClassifier(BaseClassifier):
     def name(self) -> str:
         return "ollama_classifier"
 
-    def _get_llm_response(self, input_text: str, prompt_type: PromptType = PromptType.ZERO_SHOT) -> str:
+    def _get_llm_response(self, input_text: str, prompt_type: PromptType) -> str:
         prompt = self._prompt_generator.generate_prompt(input_text, prompt_type=prompt_type)
         print(prompt)
-        return ollama.generate(prompt=prompt, model=OLLAMA_MODEL)['response']
+        return ollama.generate(prompt=prompt, model=OLLAMA_MODEL)["response"]

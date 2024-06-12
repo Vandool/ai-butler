@@ -16,13 +16,19 @@ class ClassifierResponse:
 
 
 class BaseClassifier(abc.ABC):
+    _PROMPT_TYPE: PromptType = PromptType.FEW_SHOT_DETAILED
+
     def __init__(self):
         self.logger = utils.get_logger(self.__class__.__name__)
         self._intent_manager: IntentManager | None = None
         self._prompt_generator: PromptGenerator | None = None
 
+    @classmethod
+    def set_prompt_type(cls, prompt_type: PromptType) -> None:
+        cls._PROMPT_TYPE = prompt_type
+
     @abc.abstractmethod
-    def _get_llm_response(self, input_text: str, prompt_type: str = "simple") -> str:
+    def _get_llm_response(self, input_text: str, prompt_type: PromptType) -> str:
         pass
 
     @property
@@ -43,8 +49,11 @@ class BaseClassifier(abc.ABC):
     def classify(
         self,
         input_text: str,
-        prompt_type: PromptType = PromptType.ZERO_SHOT,
+        prompt_type: PromptType | None = None,
     ) -> ClassifierResponse:
+        if prompt_type is None:
+            prompt_type = self._PROMPT_TYPE
+
         llm_output = self._get_llm_response(input_text, prompt_type)
         return ClassifierResponse(
             intent=self.intent_manager.get_closest_intent_simple(

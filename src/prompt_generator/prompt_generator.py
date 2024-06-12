@@ -26,9 +26,9 @@ class PromptGenerator:
     def __init__(self, intent_manager: IntentManager, num_shots: int = 1):
         self.intent_manager = intent_manager
         self.num_shots = num_shots
-        #self._validate_func_names()
+        self._validate_func_names()
 
-    def generate_prompt(self, input_text: str, prompt_type: PromptType = PromptType.ZERO_SHOT) -> str:
+    def generate_prompt(self, input_text: str, prompt_type: PromptType) -> str:
         """Generate a prompt based on the type specified."""
         return getattr(self, prompt_type.func_name)(input_text)
 
