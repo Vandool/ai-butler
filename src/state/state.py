@@ -255,8 +255,12 @@ class CalendarState(State):
     def _in_slot_filling_process(self):
         return self.slot_filler is not None
 
+    def _function_name_helper(self, fn_name):
+        pass
+
     def _call_intended_function(self, user_input: str, **kwargs) -> None:
         intended_fn = self.get_intended_function()
+        self._function_name_helper(intended_fn.__name__)
 
         self.logger.info(f"Calling `{intended_fn.__name__}` ...")
         fn_response = intended_fn(**kwargs)
@@ -273,7 +277,7 @@ class CalendarState(State):
         self.logger.debug(llm_prompt)
 
         # Open the html link
-        self.api.open_html_link(response=fn_response)
+        #self.api.open_html_link(response=fn_response)
 
         response = self.llm_client.get_response(prompt=llm_prompt)
         if self.history:
