@@ -9,6 +9,7 @@ from huggingface_hub import InferenceClient
 
 from src.classifier.base_classifier import BaseClassifier
 from src.classifier.few_shot_text_generation_classifier import FewShotTextGenerationClassifier
+from src.classifier.ollama_classifier import OllamaClassifier
 from src.config.asr_llm_config import AsrLlmConfig
 from src.intent.intent import CALENDAR, LECTURE
 from src.intent.intent_manager import IntentManager
@@ -116,6 +117,13 @@ def few_shot_classifier(intent_manager_with_unknown_intent, llama2_client) -> Ba
     return FewShotTextGenerationClassifier(
         llm_client=llama2_client,
         intent_manager=intent_manager_with_unknown_intent,
+    )
+
+
+@pytest.fixture(scope="session")
+def ollama_classifier(intent_manager_with_unknown_intent) -> BaseClassifier:
+    return OllamaClassifier(
+        intent_manager_with_unknown_intent
     )
 
 
