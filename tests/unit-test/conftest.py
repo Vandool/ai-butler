@@ -40,6 +40,11 @@ one_off_test_data = [
     ("get_next_appointment13.mp3", "Hey butler, can you tell me my next event?", CALENDAR.name),
     ("get_next_appointment14.mp3", "Okay butler, what's the next thing on my schedule?", CALENDAR.name),
     ("get_next_appointment15.mp3", "Hey butler, what's coming up next in my calendar?", CALENDAR.name),
+    ("get_next_appointment16.mp3", "Okay butler, when is my next event?", CALENDAR.name),
+    ("get_next_appointment17.mp3", "Hey butler, what is my next scheduled event?", CALENDAR.name),
+    ("get_next_appointment18.mp3", "Okay butler, what do I have coming up next?", CALENDAR.name),
+    ("get_next_appointment19.mp3", "Hey butler, can you tell me my next calendar event?", CALENDAR.name),
+    ("get_next_appointment20.mp3", "Okay butler, what is the next event on my calendar?", CALENDAR.name),
 
     # Google Calendar list_this_weeks_appointments
     ("list_this_weeks_appointments0.mp3", "Hey butler, what events do I have this week?", CALENDAR.name),
@@ -59,7 +64,11 @@ one_off_test_data = [
     ("list_this_weeks_appointments13.mp3", "Hey butler, can you show me my plans for the week?", CALENDAR.name),
     ("list_this_weeks_appointments14.mp3", "Okay butler, what are my appointments this week?", CALENDAR.name),
     ("list_this_weeks_appointments15.mp3", "Hey butler, what do I have planned for this week?", CALENDAR.name),
-
+    ("list_this_weeks_appointments16.mp3", "Okay butler, what are my appointments for this week?", CALENDAR.name),
+    ("list_this_weeks_appointments17.mp3", "Hey butler, show me my schedule for this week.", CALENDAR.name),
+    ("list_this_weeks_appointments18.mp3", "Okay butler, what meetings do I have this week?", CALENDAR.name),
+    ("list_this_weeks_appointments19.mp3", "Hey butler, can you list my events for this week?", CALENDAR.name),
+    ("list_this_weeks_appointments20.mp3", "Okay butler, tell me what I have planned for the week.", CALENDAR.name),
 
     # Google Calendar delete_next_appointment
     ("delete_next_appointment0.mp3", "Hey butler, I would like to delete my next appointment.", CALENDAR.name),
@@ -79,6 +88,12 @@ one_off_test_data = [
     ("delete_next_appointment13.mp3", "Hey butler, can you cancel my next scheduled meeting?", CALENDAR.name),
     ("delete_next_appointment14.mp3", "Okay butler, please remove my next calendar event.", CALENDAR.name),
     ("delete_next_appointment15.mp3", "Hey butler, delete the next thing on my calendar.", CALENDAR.name),
+    ("delete_next_appointment16.mp3", "Hey butler, please delete my upcoming appointment.", CALENDAR.name),
+    ("delete_next_appointment17.mp3", "Okay butler, can you cancel the next event?", CALENDAR.name),
+    ("delete_next_appointment18.mp3", "Hey butler, I need to cancel my next meeting.", CALENDAR.name),
+    ("delete_next_appointment19.mp3", "Okay butler, please remove the next appointment from my calendar.",
+     CALENDAR.name),
+    ("delete_next_appointment20.mp3", "Hey butler, delete my next scheduled event.", CALENDAR.name),
 
     # Google Calendar list_todays_appointments
     ("list_todays_appointments0.mp3", "Hey butler, what appointments do I have today?", CALENDAR.name),
@@ -97,6 +112,11 @@ one_off_test_data = [
     ("list_todays_appointments13.mp3", "Hey butler, can you tell me today's appointments?", CALENDAR.name),
     ("list_todays_appointments14.mp3", "Okay butler, what's planned for today?", CALENDAR.name),
     ("list_todays_appointments15.mp3", "Hey butler, what do I have on my calendar for today?", CALENDAR.name),
+    ("list_todays_appointments16.mp3", "Okay butler, list all my events for today.", CALENDAR.name),
+    ("list_todays_appointments17.mp3", "Hey butler, tell me what I have on my schedule today.", CALENDAR.name),
+    ("list_todays_appointments18.mp3", "Okay butler, what appointments do I have lined up today?", CALENDAR.name),
+    ("list_todays_appointments19.mp3", "Hey butler, show me today's calendar events.", CALENDAR.name),
+    ("list_todays_appointments20.mp3", "Okay butler, what's my agenda for today?", CALENDAR.name),
 
     # Google Calendar delete_all_appointments_today
     ("delete_all_appointments_today0.mp3", "Hey butler, delete all my appointments for today.", CALENDAR.name),
@@ -116,6 +136,11 @@ one_off_test_data = [
     ("delete_all_appointments_today13.mp3", "Hey butler, remove all the meetings I have today.", CALENDAR.name),
     ("delete_all_appointments_today14.mp3", "Okay butler, delete all the scheduled events today.", CALENDAR.name),
     ("delete_all_appointments_today15.mp3", "Hey butler, cancel all today's appointments.", CALENDAR.name),
+    ("delete_all_appointments_today16.mp3", "Hey butler, cancel all my events for today.", CALENDAR.name),
+    ("delete_all_appointments_today17.mp3", "Okay butler, clear today's schedule.", CALENDAR.name),
+    ("delete_all_appointments_today18.mp3", "Hey butler, please remove all today's appointments.", CALENDAR.name),
+    ("delete_all_appointments_today19.mp3", "Okay butler, delete every appointment for today.", CALENDAR.name),
+    ("delete_all_appointments_today20.mp3", "Hey butler, I need you to cancel all today's events.", CALENDAR.name),
 ]
 
 
