@@ -16,9 +16,9 @@ from src.prompt_generator.prompt_generator import PromptType
 from src.state.state import InitialState, State, CalendarState
 from unittest import mock
 
-# one_off_test_data = pytest.one_off_test_data
+one_off_test_data = pytest.one_off_test_data
 # one_off_test_data = [pytest.one_off_test_data[1]]
-one_off_test_data = pytest.one_off_test
+# one_off_test_data = pytest.one_off_test
 
 
 @pytest.mark.parametrize("the_input, input_text, _", one_off_test_data)
@@ -28,6 +28,7 @@ def test_text_only_few_shot(the_input, input_text,_, capture_output_for_report):
 
 
 @pytest.mark.parametrize("the_input, input_text, intent_name", one_off_test_data)
+@pytest.mark.report_test()  # Custom marker to include this test in the report
 def test_audio_few_shot(the_input, input_text, intent_name, capture_output_for_report):
     test_with_audio(the_input, input_text, PromptType.FEW_SHOT_DETAILED, capture_output_for_report)
 
@@ -38,7 +39,7 @@ def start_thread(asr_module):
 
 
 def test_with_audio(input_file, input_text, prompt_type, capture_output_for_report):
-    function_name = re.match(r"([a-zA-Z_]+)(\d+)\.mp3$", input_file).group(1)
+    expected_function_name = re.match(r"([a-zA-Z_]+)(\d+)\.mp3$", input_file).group(1)
 
     sys.argv = [sys.argv[0]]
     arguments = get_asr_llm_config()
@@ -69,12 +70,14 @@ def test_with_audio(input_file, input_text, prompt_type, capture_output_for_repo
         start_time = time.monotonic()
         asr_module.read_text(start_time, True)
 
+        called_function_name = function_name_helper_wrapper.call_args.args[0]
+        capture_output_for_report(output=called_function_name, llm_output=None, expected=expected_function_name)
         function_name_helper_wrapper.assert_called_once()
-        assert function_name_helper_wrapper.call_args.args[0] == function_name
+        assert called_function_name == expected_function_name
 
 
 def test_text_only(input_file, input_text, prompt_type, capture_output_for_report):
-    function_name = re.match(r"([a-zA-Z_]+)(\d+)\.mp3$", input_file).group(1)
+    expected_function_name = re.match(r"([a-zA-Z_]+)(\d+)\.mp3$", input_file).group(1)
 
     sys.argv = [sys.argv[0]]
     arguments = get_asr_llm_config()
@@ -98,8 +101,8 @@ def test_text_only(input_file, input_text, prompt_type, capture_output_for_repor
             ],
         )
 
+        called_function_name = function_name_helper_wrapper.call_args.args[0]
+        capture_output_for_report(output=called_function_name, llm_output=None, expected=expected_function_name)
         function_name_helper_wrapper.assert_called_once()
-        test_result = function_name_helper_wrapper.call_args.args[0] == function_name
-        capture_output_for_report(output=test_result, llm_output=function_name)
-        assert test_result
+        assert called_function_name == expected_function_name
 

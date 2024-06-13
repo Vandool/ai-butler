@@ -16,6 +16,8 @@ test_data = [
     ("calendar6.mp3", "Book a time slot for my presentation", CALENDAR.name),
     ("calendar7.mp3", "Arrange a call with John", CALENDAR.name),
     ("calendar8.mp3", "Can you add a meeting to my calendar?", CALENDAR.name),
+    ("calendar9.mp3", "Please tell me my next appointment?", CALENDAR.name),
+    ("calendar10.mp3", "What's up today?", CALENDAR.name),
     # Unknown
     ("unknown1.mp3", "Zibber blorf zibber blorf", UNKNOWN.name),
     ("unknown2.mp3", "Why is the sky blue?", UNKNOWN.name),
@@ -39,10 +41,38 @@ test_data = [
     ("lecture9.mp3", "Provide a text version of the lecture", LECTURE.name),
     ("lecture10.mp3", "Create study notes from the lecture", LECTURE.name),
 ]
+
+
+additional_test_data = [
+    # Unknown
+    ("What is the fastest land animal?", UNKNOWN.name),
+    ("How does photosynthesis work?", UNKNOWN.name),
+    ("Tell me an interesting fact", UNKNOWN.name),
+    ("What is the population of New York City?", UNKNOWN.name),
+    ("Explain the theory of relativity", UNKNOWN.name),
+    ("How do airplanes fly?", UNKNOWN.name),
+    ("Who wrote 'To Kill a Mockingbird'?", UNKNOWN.name),
+    ("What's the tallest mountain in the world?", UNKNOWN.name),
+    ("What's the latest news today?", UNKNOWN.name),
+    ("Can you recommend a good book?", UNKNOWN.name),
+
+    # Lecture Translator general
+    ("Summarize the key concepts from the lecture", LECTURE.name),
+    ("Translate these lecture notes", LECTURE.name),
+    ("Can you provide an outline of the lecture?", LECTURE.name),
+    ("Generate a brief of today's lecture", LECTURE.name),
+    ("Create a summary for this seminar", LECTURE.name),
+    ("Transcribe the audio from the class", LECTURE.name),
+    ("Can you create a study guide from this lecture?", LECTURE.name),
+    ("Provide the main ideas discussed in the lecture", LECTURE.name),
+    ("Make a transcript of the professor's talk", LECTURE.name),
+    ("Translate the notes from today's class", LECTURE.name),
+]
+
 # Remove audio_file for current implementation of tests
 test_data = [(b, c) for _, b, c in test_data]
 
-test_data = test_data + [(b, c) for _, b, c in pytest.one_off_test_data]
+test_data = test_data + additional_test_data + [(b, c) for _, b, c in pytest.one_off_test_data][:10]
 
 
 @pytest.mark.parametrize("the_input, expected_output", test_data)

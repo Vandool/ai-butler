@@ -186,41 +186,6 @@ def pytest_runtest_makereport(item, call):  # noqa: ARG001
         }
         test_results[test_func_name].append(result)
 
-
-def calculate_weighted_f1_score(results) -> float:
-    classes = list(set(result["expected"] for result in results))
-    class_counts = {cls: {'tp': 0, 'fp': 0, 'fn': 0} for cls in classes}
-
-    for result in results:
-        predicted = result["output"]
-        actual = result["expected"]
-
-        for cls in classes:
-            if predicted == cls and actual == cls:
-                class_counts[cls]['tp'] += 1
-            elif predicted == cls and actual != cls:
-                class_counts[cls]['fp'] += 1
-            elif predicted != cls and actual == cls:
-                class_counts[cls]['fn'] += 1
-
-    f1_scores = {}
-    total_instances = sum(sum(counts.values()) for counts in class_counts.values())
-
-    for cls, counts in class_counts.items():
-        tp = counts['tp']
-        fp = counts['fp']
-        fn = counts['fn']
-
-        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-        f1_scores[cls] = f1
-
-    weighted_f1 = sum((sum(class_counts[cls].values()) / total_instances) * f1_scores[cls] for cls in classes)
-
-    return weighted_f1 * 100
-
-
 def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
     report_dir = Path(os.getenv("PROJECT_DIR")) / "reports"
     report_dir.mkdir(parents=True, exist_ok=True)
@@ -230,10 +195,8 @@ def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
 
     for test_func_name, results in test_results.items():
         total = len(results)
-        correct = sum(1 for result in results if result["output"])
+        correct = sum(1 for result in results if result["output"] == result["expected"])
         accuracy = correct / total * 100 if total > 0 else 0
-
-        weighted_f1_score = calculate_weighted_f1_score(results)
 
         report_lines.extend(
             [
@@ -241,7 +204,6 @@ def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
                 f"**Total Tests:** {total}",
                 f"**Correct:** {correct}",
                 f"**Accuracy:** {accuracy:.2f}%",
-                f"**Weighted F1-Score:** {weighted_f1_score:.2f}%"
                 f"",
                 #"### Detailed Results",
                 #"",
