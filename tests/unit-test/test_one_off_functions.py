@@ -16,19 +16,20 @@ from src.prompt_generator.prompt_generator import PromptType
 from src.state.state import InitialState, State, CalendarState
 from unittest import mock
 
-one_off_test_data = pytest.one_off_test_data
+# one_off_test_data = pytest.one_off_test_data
 # one_off_test_data = [pytest.one_off_test_data[1]]
-# one_off_test_data = pytest.one_off_test
+one_off_test_data = pytest.one_off_test
 
-@pytest.mark.parametrize("input_file, input_text, intent_name", one_off_test_data)
+
+@pytest.mark.parametrize("the_input, input_text, _", one_off_test_data)
 @pytest.mark.report_test()  # Custom marker to include this test in the report
-def test_text_only_few_shot(input_file, input_text, intent_name, capture_output_for_report):
-    test_text_only(input_file, input_text, PromptType.FEW_SHOT_DETAILED)
+def test_text_only_few_shot(the_input, input_text,_, capture_output_for_report):
+    test_text_only(the_input, input_text, PromptType.FEW_SHOT_DETAILED, capture_output_for_report)
 
 
-@pytest.mark.parametrize("input_file, input_text, intent_name", one_off_test_data)
-def test_audio_few_shot(input_file, input_text, intent_name, capture_output_for_report):
-    test_with_audio(input_file, input_text, PromptType.FEW_SHOT_DETAILED)
+@pytest.mark.parametrize("the_input, input_text, intent_name", one_off_test_data)
+def test_audio_few_shot(the_input, input_text, intent_name, capture_output_for_report):
+    test_with_audio(the_input, input_text, PromptType.FEW_SHOT_DETAILED, capture_output_for_report)
 
 
 def start_thread(asr_module):
@@ -36,7 +37,7 @@ def start_thread(asr_module):
     asr_module.send_session()
 
 
-def test_with_audio(input_file, input_text, prompt_type):
+def test_with_audio(input_file, input_text, prompt_type, capture_output_for_report):
     function_name = re.match(r"([a-zA-Z_]+)(\d+)\.mp3$", input_file).group(1)
 
     sys.argv = [sys.argv[0]]
@@ -72,7 +73,7 @@ def test_with_audio(input_file, input_text, prompt_type):
         assert function_name_helper_wrapper.call_args.args[0] == function_name
 
 
-def test_text_only(input_file, input_text, prompt_type):
+def test_text_only(input_file, input_text, prompt_type, capture_output_for_report):
     function_name = re.match(r"([a-zA-Z_]+)(\d+)\.mp3$", input_file).group(1)
 
     sys.argv = [sys.argv[0]]
@@ -98,5 +99,7 @@ def test_text_only(input_file, input_text, prompt_type):
         )
 
         function_name_helper_wrapper.assert_called_once()
-        assert function_name_helper_wrapper.call_args.args[0] == function_name
+        test_result = function_name_helper_wrapper.call_args.args[0] == function_name
+        capture_output_for_report(output=test_result, llm_output=function_name)
+        assert test_result
 

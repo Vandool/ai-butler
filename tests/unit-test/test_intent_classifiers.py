@@ -161,7 +161,7 @@ def handle_test(
     response = few_shot_classifier.classify(input_text=the_input)
     if response.llm_response is not None:
         test_result = response.intent.name.lower() == expected_output.lower()
-        capture_output_for_report(output=test_result, llm_output=response.llm_response)
+        capture_output_for_report(output=response.intent.name.lower(), llm_output=response.llm_response, expected=expected_output.lower())
         assert test_result
     else:
         capture_output_for_report(output=False, llm_output=response.llm_response)

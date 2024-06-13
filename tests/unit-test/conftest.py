@@ -179,6 +179,7 @@ def pytest_runtest_makereport(item, call):  # noqa: ARG001
             "test_name": item.name,
             "input": item.funcargs.get("the_input"),
             "expected_output": item.funcargs.get("expected_output"),
+            "expected": getattr(item, "_expected", None),
             "outcome": report.outcome,
             "output": getattr(item, "_output", None),  # Retrieve the output_intent from the item
             "llm_output": getattr(item, "_llm_output", None),  # Retrieve the output_intent from the item
@@ -186,17 +187,38 @@ def pytest_runtest_makereport(item, call):  # noqa: ARG001
         test_results[test_func_name].append(result)
 
 
-def calculate_f1_score(results):
-    tp = sum(1 for result in results if result["output"] and result["expected_output"])
-    fp = sum(1 for result in results if result["output"] and not result["expected_output"])
-    fn = sum(1 for result in results if not result["output"] and result["expected_output"])
+def calculate_weighted_f1_score(results) -> float:
+    classes = list(set(result["expected"] for result in results))
+    class_counts = {cls: {'tp': 0, 'fp': 0, 'fn': 0} for cls in classes}
 
-    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+    for result in results:
+        predicted = result["output"]
+        actual = result["expected"]
 
-    f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+        for cls in classes:
+            if predicted == cls and actual == cls:
+                class_counts[cls]['tp'] += 1
+            elif predicted == cls and actual != cls:
+                class_counts[cls]['fp'] += 1
+            elif predicted != cls and actual == cls:
+                class_counts[cls]['fn'] += 1
 
-    return f1_score * 100
+    f1_scores = {}
+    total_instances = sum(sum(counts.values()) for counts in class_counts.values())
+
+    for cls, counts in class_counts.items():
+        tp = counts['tp']
+        fp = counts['fp']
+        fn = counts['fn']
+
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+        f1_scores[cls] = f1
+
+    weighted_f1 = sum((sum(class_counts[cls].values()) / total_instances) * f1_scores[cls] for cls in classes)
+
+    return weighted_f1 * 100
 
 
 def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
@@ -211,7 +233,7 @@ def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
         correct = sum(1 for result in results if result["output"])
         accuracy = correct / total * 100 if total > 0 else 0
 
-        f1_score = calculate_f1_score(results)
+        weighted_f1_score = calculate_weighted_f1_score(results)
 
         report_lines.extend(
             [
@@ -219,8 +241,8 @@ def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
                 f"**Total Tests:** {total}",
                 f"**Correct:** {correct}",
                 f"**Accuracy:** {accuracy:.2f}%",
-                f"**F1-Score:** {f1_score:.2f}%"
-                "",
+                f"**Weighted F1-Score:** {weighted_f1_score:.2f}%"
+                f"",
                 #"### Detailed Results",
                 #"",
             ],
@@ -246,10 +268,12 @@ def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
 
 @pytest.fixture()
 def capture_output_for_report(request):
-    def setter(output, llm_output):
+    def setter(output, llm_output, expected):
         request.node._output = output  # noqa: SLF001
         request.node._llm_output = llm_output  # noqa: SLF001
+        request.node._expected = expected
 
     request.node._output = None  # noqa: SLF001
     request.node._llm_output = None  # noqa: SLF001
+    request.node._expected = None  # noqa: SLF001
     return setter
