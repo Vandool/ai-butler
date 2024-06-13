@@ -186,6 +186,19 @@ def pytest_runtest_makereport(item, call):  # noqa: ARG001
         test_results[test_func_name].append(result)
 
 
+def calculate_f1_score(results):
+    tp = sum(1 for result in results if result["output"] and result["expected_output"])
+    fp = sum(1 for result in results if result["output"] and not result["expected_output"])
+    fn = sum(1 for result in results if not result["output"] and result["expected_output"])
+
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+
+    f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+
+    return f1_score * 100
+
+
 def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
     report_dir = Path(os.getenv("PROJECT_DIR")) / "reports"
     report_dir.mkdir(parents=True, exist_ok=True)
@@ -198,31 +211,34 @@ def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
         correct = sum(1 for result in results if result["output"])
         accuracy = correct / total * 100 if total > 0 else 0
 
+        f1_score = calculate_f1_score(results)
+
         report_lines.extend(
             [
                 f"## {test_func_name}",
                 f"**Total Tests:** {total}",
                 f"**Correct:** {correct}",
                 f"**Accuracy:** {accuracy:.2f}%",
+                f"**F1-Score:** {f1_score:.2f}%"
                 "",
-                "### Detailed Results",
-                "",
+                #"### Detailed Results",
+                #"",
             ],
         )
 
-        for i, result in enumerate(results):
-            report_lines.extend(
-                [
-                    f"#### Test Nr. {i + 1}",
-                    f"- **Test Name:** {result['test_name']}",
-                    f"- **Input:** {result['input']}",
-                    f"- **LLM Output:** {result['llm_output']}",
-                    f"- **Expected Intent:** {result['expected_output']}",
-                    f"- **Output Intent:** {result['output']}",
-                    f"- **Outcome:** {result['outcome']}",
-                    "",
-                ],
-            )
+        # for i, result in enumerate(results):
+        #     report_lines.extend(
+        #         [
+        #             f"#### Test Nr. {i + 1}",
+        #             f"- **Test Name:** {result['test_name']}",
+        #             f"- **Input:** {result['input']}",
+        #             f"- **LLM Output:** {result['llm_output']}",
+        #             f"- **Expected Intent:** {result['expected_output']}",
+        #             f"- **Output Intent:** {result['output']}",
+        #             f"- **Outcome:** {result['outcome']}",
+        #             "",
+        #         ],
+        #     )
 
     with report_file.open("w") as f:
         f.write("\n".join(report_lines))

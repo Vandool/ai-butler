@@ -7,6 +7,7 @@ import re
 
 from threading import Thread
 from src.asr_butler.asr_butler import ASRModule
+from src.classifier.base_classifier import BaseClassifier
 from src.config.asr_llm_config import get_asr_llm_config
 from src.llm_client.llm_client import LLMClient
 from huggingface_hub import InferenceClient
@@ -15,26 +16,24 @@ from src.prompt_generator.prompt_generator import PromptType
 from src.state.state import InitialState, State, CalendarState
 from unittest import mock
 
-# one_off_test_data = pytest.one_off_test_data
+one_off_test_data = pytest.one_off_test_data
 # one_off_test_data = [pytest.one_off_test_data[1]]
-one_off_test_data = pytest.one_off_test
+# one_off_test_data = pytest.one_off_test
 
+@pytest.mark.parametrize("input_file, input_text, intent_name", one_off_test_data)
+@pytest.mark.report_test()  # Custom marker to include this test in the report
+def test_text_only_few_shot(input_file, input_text, intent_name, capture_output_for_report):
+    test_text_only(input_file, input_text, PromptType.FEW_SHOT_DETAILED)
+
+
+@pytest.mark.parametrize("input_file, input_text, intent_name", one_off_test_data)
+def test_audio_few_shot(input_file, input_text, intent_name, capture_output_for_report):
+    test_with_audio(input_file, input_text, PromptType.FEW_SHOT_DETAILED)
 
 
 def start_thread(asr_module):
     time.sleep(1)
     asr_module.send_session()
-
-
-@pytest.mark.parametrize("input_file, input_text, intent_name", one_off_test_data)
-@pytest.mark.report_test()  # Custom marker to include this test in the report
-def test_text_only_few_shot(input_file, input_text, intent_name, capture_output_for_report):
-    test_text_only(input_file, input_text, None)
-
-
-@pytest.mark.parametrize("input_file, input_text, intent_name", one_off_test_data)
-def test_audio_few_shot(input_file, input_text, intent_name, capture_output_for_report):
-    test_with_audio(input_file, input_text, None)
 
 
 def test_with_audio(input_file, input_text, prompt_type):
@@ -53,6 +52,8 @@ def test_with_audio(input_file, input_text, prompt_type):
         history=None,
         start_state=InitialState(llm_client=llm_client_, tts_client=None)
     )
+
+    BaseClassifier.set_prompt_type(prompt_type)
 
     asr_module.set_graph()
 
@@ -84,6 +85,8 @@ def test_text_only(input_file, input_text, prompt_type):
         history=None,
         start_state=InitialState(llm_client=llm_client_, tts_client=None)
     )
+
+    BaseClassifier.set_prompt_type(prompt_type)
 
     with (
         mock.patch('src.state.state.CalendarState._function_name_helper', wrarps=CalendarState._function_name_helper) as function_name_helper_wrapper

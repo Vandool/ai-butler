@@ -42,6 +42,8 @@ test_data = [
 # Remove audio_file for current implementation of tests
 test_data = [(b, c) for _, b, c in test_data]
 
+test_data = test_data + [(b, c) for _, b, c in pytest.one_off_test_data]
+
 
 @pytest.mark.parametrize("the_input, expected_output", test_data)
 @pytest.mark.report_test()  # Custom marker to include this test in the report
