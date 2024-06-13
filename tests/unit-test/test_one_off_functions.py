@@ -27,13 +27,14 @@ def start_thread(asr_module):
 
 
 @pytest.mark.parametrize("input_file, input_text, intent_name", one_off_test_data)
+@pytest.mark.report_test()  # Custom marker to include this test in the report
 def test_text_only_few_shot(input_file, input_text, intent_name, capture_output_for_report):
-    test_text_only(input_file, input_text, PromptType.FEW_SHOT)
+    test_text_only(input_file, input_text, None)
 
 
 @pytest.mark.parametrize("input_file, input_text, intent_name", one_off_test_data)
 def test_audio_few_shot(input_file, input_text, intent_name, capture_output_for_report):
-    test_with_audio(input_file, input_text, PromptType.FEW_SHOT)
+    test_with_audio(input_file, input_text, None)
 
 
 def test_with_audio(input_file, input_text, prompt_type):
