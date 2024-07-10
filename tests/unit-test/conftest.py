@@ -19,7 +19,7 @@ from src.llm_client.llm_client import LLMClient
 
 load_dotenv()
 
-one_off_test = ("get_next_appointment13.mp3", "Hey butler, whats up next?", CALENDAR.name),
+one_off_test = (("get_next_appointment13.mp3", "Hey butler, whats up next?", CALENDAR.name),)
 
 one_off_test_data = [
     # path_to_audio_file, text, intent
@@ -45,7 +45,6 @@ one_off_test_data = [
     ("get_next_appointment18.mp3", "Okay butler, what do I have coming up next?", CALENDAR.name),
     ("get_next_appointment19.mp3", "Hey butler, can you tell me my next calendar event?", CALENDAR.name),
     ("get_next_appointment20.mp3", "Okay butler, what is the next event on my calendar?", CALENDAR.name),
-
     # Google Calendar list_this_weeks_appointments
     ("list_this_weeks_appointments0.mp3", "Hey butler, what events do I have this week?", CALENDAR.name),
     ("list_this_weeks_appointments1.mp3", "Hey butler, what commitments do I have this week?", CALENDAR.name),
@@ -53,8 +52,11 @@ one_off_test_data = [
     ("list_this_weeks_appointments3.mp3", "Hey butler, what appointments do I have lined up this week?", CALENDAR.name),
     ("list_this_weeks_appointments4.mp3", "Okay butler, list my schedule for the current week.", CALENDAR.name),
     ("list_this_weeks_appointments5.mp3", "Hey butler, can you tell me my meetings for this week?", CALENDAR.name),
-    ("list_this_weeks_appointments6.mp3", "Okay butler, I need to know all the appointments I have this week.",
-     CALENDAR.name),
+    (
+        "list_this_weeks_appointments6.mp3",
+        "Okay butler, I need to know all the appointments I have this week.",
+        CALENDAR.name,
+    ),
     ("list_this_weeks_appointments7.mp3", "Hey butler, what are my plans for this week?", CALENDAR.name),
     ("list_this_weeks_appointments8.mp3", "Okay butler, please list my engagements for this week.", CALENDAR.name),
     ("list_this_weeks_appointments9.mp3", "Hey butler, tell me my schedule for this week.", CALENDAR.name),
@@ -69,13 +71,15 @@ one_off_test_data = [
     ("list_this_weeks_appointments18.mp3", "Okay butler, what meetings do I have this week?", CALENDAR.name),
     ("list_this_weeks_appointments19.mp3", "Hey butler, can you list my events for this week?", CALENDAR.name),
     ("list_this_weeks_appointments20.mp3", "Okay butler, tell me what I have planned for the week.", CALENDAR.name),
-
     # Google Calendar delete_next_appointment
     ("delete_next_appointment0.mp3", "Hey butler, I would like to delete my next appointment.", CALENDAR.name),
     ("delete_next_appointment1.mp3", "Hey butler, I want to cancel my next appointment.", CALENDAR.name),
     ("delete_next_appointment2.mp3", "Okay butler, can you please cancel the next meeting?", CALENDAR.name),
-    ("delete_next_appointment3.mp3",
-     "Hey butler, oh, I am already tired from all these meetings, can you please remove the next one?", CALENDAR.name),
+    (
+        "delete_next_appointment3.mp3",
+        "Hey butler, oh, I am already tired from all these meetings, can you please remove the next one?",
+        CALENDAR.name,
+    ),
     ("delete_next_appointment4.mp3", "Okay butler, please delete my next appointment.", CALENDAR.name),
     ("delete_next_appointment5.mp3", "Hey butler, cancel my next meeting.", CALENDAR.name),
     ("delete_next_appointment6.mp3", "Okay butler, can you remove my upcoming appointment?", CALENDAR.name),
@@ -91,10 +95,12 @@ one_off_test_data = [
     ("delete_next_appointment16.mp3", "Hey butler, please delete my upcoming appointment.", CALENDAR.name),
     ("delete_next_appointment17.mp3", "Okay butler, can you cancel the next event?", CALENDAR.name),
     ("delete_next_appointment18.mp3", "Hey butler, I need to cancel my next meeting.", CALENDAR.name),
-    ("delete_next_appointment19.mp3", "Okay butler, please remove the next appointment from my calendar.",
-     CALENDAR.name),
+    (
+        "delete_next_appointment19.mp3",
+        "Okay butler, please remove the next appointment from my calendar.",
+        CALENDAR.name,
+    ),
     ("delete_next_appointment20.mp3", "Hey butler, delete my next scheduled event.", CALENDAR.name),
-
     # Google Calendar list_todays_appointments
     ("list_todays_appointments0.mp3", "Hey butler, what appointments do I have today?", CALENDAR.name),
     ("list_todays_appointments1.mp3", "Hey butler, please list today's events.", CALENDAR.name),
@@ -117,7 +123,6 @@ one_off_test_data = [
     ("list_todays_appointments18.mp3", "Okay butler, what appointments do I have lined up today?", CALENDAR.name),
     ("list_todays_appointments19.mp3", "Hey butler, show me today's calendar events.", CALENDAR.name),
     ("list_todays_appointments20.mp3", "Okay butler, what's my agenda for today?", CALENDAR.name),
-
     # Google Calendar delete_all_appointments_today
     ("delete_all_appointments_today0.mp3", "Hey butler, delete all my appointments for today.", CALENDAR.name),
     ("delete_all_appointments_today1.mp3", "Hey butler, erase all today's appointments.", CALENDAR.name),
@@ -129,8 +134,11 @@ one_off_test_data = [
     ("delete_all_appointments_today7.mp3", "Hey butler, can you delete all today's appointments?", CALENDAR.name),
     ("delete_all_appointments_today8.mp3", "Okay butler, remove all events for today.", CALENDAR.name),
     ("delete_all_appointments_today9.mp3", "Hey butler, please delete all today's meetings.", CALENDAR.name),
-    ("delete_all_appointments_today10.mp3", "Okay butler, I want to cancel all my appointments for today.",
-     CALENDAR.name),
+    (
+        "delete_all_appointments_today10.mp3",
+        "Okay butler, I want to cancel all my appointments for today.",
+        CALENDAR.name,
+    ),
     ("delete_all_appointments_today11.mp3", "Hey butler, delete everything on my schedule today.", CALENDAR.name),
     ("delete_all_appointments_today12.mp3", "Okay butler, erase today's events.", CALENDAR.name),
     ("delete_all_appointments_today13.mp3", "Hey butler, remove all the meetings I have today.", CALENDAR.name),
@@ -159,14 +167,14 @@ def intent_manager_with_unknown_intent() -> IntentManager:
 
 
 @pytest.fixture(scope="session")
-def llama2_client() -> LLMClient:
+def llm_client() -> LLMClient:
     return LLMClient(client=InferenceClient(AsrLlmConfig.llm_url))
 
 
 @pytest.fixture(scope="session")
-def few_shot_classifier(intent_manager_with_unknown_intent, llama2_client) -> BaseClassifier:
+def few_shot_classifier(intent_manager_with_unknown_intent, llm_client) -> BaseClassifier:
     return FewShotTextGenerationClassifier(
-        llm_client=llama2_client,
+        llm_client=llm_client,
         intent_manager=intent_manager_with_unknown_intent,
     )
 
@@ -174,7 +182,7 @@ def few_shot_classifier(intent_manager_with_unknown_intent, llama2_client) -> Ba
 @pytest.fixture(scope="session")
 def ollama_classifier(intent_manager_with_unknown_intent) -> BaseClassifier:
     return OllamaClassifier(
-        intent_manager_with_unknown_intent
+        intent_manager_with_unknown_intent,
     )
 
 
@@ -211,6 +219,7 @@ def pytest_runtest_makereport(item, call):  # noqa: ARG001
         }
         test_results[test_func_name].append(result)
 
+
 def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
     report_dir = Path(os.getenv("PROJECT_DIR")) / "reports"
     report_dir.mkdir(parents=True, exist_ok=True)
@@ -229,25 +238,25 @@ def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
                 f"**Total Tests:** {total}",
                 f"**Correct:** {correct}",
                 f"**Accuracy:** {accuracy:.2f}%",
-                f"",
-                #"### Detailed Results",
-                #"",
+                "",
+                "### Detailed Results",
+                "",
             ],
         )
 
-        # for i, result in enumerate(results):
-        #     report_lines.extend(
-        #         [
-        #             f"#### Test Nr. {i + 1}",
-        #             f"- **Test Name:** {result['test_name']}",
-        #             f"- **Input:** {result['input']}",
-        #             f"- **LLM Output:** {result['llm_output']}",
-        #             f"- **Expected Intent:** {result['expected_output']}",
-        #             f"- **Output Intent:** {result['output']}",
-        #             f"- **Outcome:** {result['outcome']}",
-        #             "",
-        #         ],
-        #     )
+        for i, result in enumerate(results):
+            report_lines.extend(
+                [
+                    f"#### Test Nr. {i + 1}",
+                    f"- **Test Name:** {result['test_name']}",
+                    f"- **Input:** {result['input']}",
+                    f"- **LLM Output:** {result['llm_output']}",
+                    f"- **Expected Intent:** {result['expected_output']}",
+                    f"- **Output Intent:** {result['output']}",
+                    f"- **Outcome:** {result['outcome']}",
+                    "",
+                ],
+            )
 
     with report_file.open("w") as f:
         f.write("\n".join(report_lines))

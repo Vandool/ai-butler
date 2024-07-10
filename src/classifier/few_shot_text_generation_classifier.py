@@ -5,7 +5,7 @@ from src.intent.intent_manager import IntentManager
 from src.llm_client.llm_client import LLMClient
 from src.prompt_generator.prompt_generator import PromptType
 
-MAX_NEW_TOKENS = 128
+MAX_NEW_TOKENS = 16
 
 
 class FewShotTextGenerationClassifier(BaseClassifier):
@@ -18,7 +18,7 @@ class FewShotTextGenerationClassifier(BaseClassifier):
     def name(self) -> str:
         return "few_shot_text_generation_classifier"
 
-    def _get_llm_response(self, input_text: str, prompt_type: PromptType) -> str:
+    def _get_llm_response(self, input_text: str, prompt_type: PromptType, history: list[dict] | None = None) -> str:
         generated_text = self.llm_client.get_response(
             prompt=self._prompt_generator.generate_prompt(input_text, prompt_type=prompt_type),
             max_new_tokens=MAX_NEW_TOKENS,

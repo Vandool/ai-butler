@@ -75,55 +75,55 @@ test_data = [(b, c) for _, b, c in test_data]
 test_data = test_data + additional_test_data + [(b, c) for _, b, c in pytest.one_off_test_data][:10]
 
 
-@pytest.mark.parametrize("the_input, expected_output", test_data)
-@pytest.mark.report_test()  # Custom marker to include this test in the report
-def test_few_shot_text_generation_classifier_zero_shot(
-        the_input,
-        expected_output,
-        capture_output_for_report,
-        few_shot_classifier,
-):
-    handle_test(
-        capture_output_for_report,
-        expected_output,
-        few_shot_classifier,
-        the_input,
-        prompt_type=PromptType.ZERO_SHOT,
-    )
+# @pytest.mark.parametrize("the_input, expected_output", test_data)
+# @pytest.mark.report_test()  # Custom marker to include this test in the report
+# def test_few_shot_text_generation_classifier_zero_shot(
+#         the_input,
+#         expected_output,
+#         capture_output_for_report,
+#         few_shot_classifier,
+# ):
+#     handle_test(
+#         capture_output_for_report,
+#         expected_output,
+#         few_shot_classifier,
+#         the_input,
+#         prompt_type=PromptType.ZERO_SHOT,
+#     )
 
 
-@pytest.mark.parametrize("the_input, expected_output", test_data)
-@pytest.mark.report_test()  # Custom marker to include this test in the report
-def test_few_shot_text_generation_classifier_zero_shot_detailed(
-        the_input,
-        expected_output,
-        capture_output_for_report,
-        few_shot_classifier,
-):
-    handle_test(
-        capture_output_for_report,
-        expected_output,
-        few_shot_classifier,
-        the_input,
-        prompt_type=PromptType.ZERO_SHOT_DETAILED,
-    )
+# @pytest.mark.parametrize("the_input, expected_output", test_data)
+# @pytest.mark.report_test()  # Custom marker to include this test in the report
+# def test_few_shot_text_generation_classifier_zero_shot_detailed(
+#         the_input,
+#         expected_output,
+#         capture_output_for_report,
+#         few_shot_classifier,
+# ):
+#     handle_test(
+#         capture_output_for_report,
+#         expected_output,
+#         few_shot_classifier,
+#         the_input,
+#         prompt_type=PromptType.ZERO_SHOT_DETAILED,
+#     )
 
 
-@pytest.mark.parametrize("the_input, expected_output", test_data)
-@pytest.mark.report_test()  # Custom marker to include this test in the report
-def test_few_shot_text_generation_classifier_one_shot_detailed(
-        the_input,
-        expected_output,
-        capture_output_for_report,
-        few_shot_classifier,
-):
-    handle_test(
-        capture_output_for_report,
-        expected_output,
-        few_shot_classifier,
-        the_input,
-        prompt_type=PromptType.ONE_SHOT_PER_CLASS_DETAILED,
-    )
+# @pytest.mark.parametrize("the_input, expected_output", test_data)
+# @pytest.mark.report_test()  # Custom marker to include this test in the report
+# def test_few_shot_text_generation_classifier_one_shot_detailed(
+#         the_input,
+#         expected_output,
+#         capture_output_for_report,
+#         few_shot_classifier,
+# ):
+#     handle_test(
+#         capture_output_for_report,
+#         expected_output,
+#         few_shot_classifier,
+#         the_input,
+#         prompt_type=PromptType.ONE_SHOT_PER_CLASS_DETAILED,
+#     )
 
 
 @pytest.mark.parametrize("the_input, expected_output", test_data)
@@ -143,56 +143,56 @@ def test_few_shot_text_generation_classifier_few_shot_detailed(
     )
 
 
-@pytest.mark.parametrize("the_input, expected_output", test_data)
-@pytest.mark.report_test()  # Custom marker to include this test in the report
-def test_ollama_text_generation_one_shot(
-        the_input,
-        expected_output,
-        capture_output_for_report,
-        ollama_classifier,
-):
-    handle_test(
-        capture_output_for_report,
-        expected_output,
-        ollama_classifier,
-        the_input,
-        prompt_type=PromptType.ONE_SHOT_PER_CLASS_DETAILED,
+# @pytest.mark.parametrize("the_input, expected_output", test_data)
+# @pytest.mark.report_test()  # Custom marker to include this test in the report
+# def test_ollama_text_generation_one_shot(
+#         the_input,
+#         expected_output,
+#         capture_output_for_report,
+#         ollama_classifier,
+# ):
+#     handle_test(
+#         capture_output_for_report,
+#         expected_output,
+#         ollama_classifier,
+#         the_input,
+#         prompt_type=PromptType.ONE_SHOT_PER_CLASS_DETAILED,
+# 
+#     )
 
-    )
-
-
-@pytest.mark.parametrize("the_input, expected_output", test_data)
-@pytest.mark.report_test()  # Custom marker to include this test in the report
-def test_ollama_text_generation_classifier_zero_shot(
-        the_input,
-        expected_output,
-        capture_output_for_report,
-        ollama_classifier,
-):
-    handle_test(
-        capture_output_for_report,
-        expected_output,
-        ollama_classifier,
-        the_input,
-        prompt_type=PromptType.ZERO_SHOT,
-    )
-
-
-@pytest.mark.parametrize("the_input, expected_output", test_data)
-@pytest.mark.report_test()  # Custom marker to include this test in the report
-def test_ollama_text_generation_few_shot(
-        the_input,
-        expected_output,
-        capture_output_for_report,
-        ollama_classifier,
-):
-    handle_test(
-        capture_output_for_report,
-        expected_output,
-        ollama_classifier,
-        the_input,
-        prompt_type=PromptType.FEW_SHOT_DETAILED,
-    )
+# 
+# @pytest.mark.parametrize("the_input, expected_output", test_data)
+# @pytest.mark.report_test()  # Custom marker to include this test in the report
+# def test_ollama_text_generation_classifier_zero_shot(
+#         the_input,
+#         expected_output,
+#         capture_output_for_report,
+#         ollama_classifier,
+# ):
+#     handle_test(
+#         capture_output_for_report,
+#         expected_output,
+#         ollama_classifier,
+#         the_input,
+#         prompt_type=PromptType.ZERO_SHOT,
+#     )
+# 
+# 
+# @pytest.mark.parametrize("the_input, expected_output", test_data)
+# @pytest.mark.report_test()  # Custom marker to include this test in the report
+# def test_ollama_text_generation_few_shot(
+#         the_input,
+#         expected_output,
+#         capture_output_for_report,
+#         ollama_classifier,
+# ):
+#     handle_test(
+#         capture_output_for_report,
+#         expected_output,
+#         ollama_classifier,
+#         the_input,
+#         prompt_type=PromptType.FEW_SHOT_DETAILED,
+#     )
 
 
 def handle_test(

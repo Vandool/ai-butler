@@ -1,2 +1,2 @@
-class LectureTranslatorApi:
+class LectureTranslatorAPI:
     pass

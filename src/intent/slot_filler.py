@@ -20,7 +20,7 @@ from src.web_handler.calendar_api import CalendarAPI
 @dataclass
 class Slot:
     name: str
-    param_type: type
+    param_type: str
     is_required: bool
     # Idea: based on the attempts made we can modify the prompt to ask more specific question
     attempts: int = 0
@@ -28,8 +28,25 @@ class Slot:
     is_set: bool = field(default=False, init=False)
 
     def set_value(self, value: Any):
-        # TODO(Arvand): Here we neeed type checking, we need a proper setter, maybe using llm
-        self.value = value
+        """
+        :raises: ValueError, TypeError
+        """
+        if self.value == "None":
+            self.value = None
+        elif "str" in self.param_type:
+            if any(v in self.name for v in ["date", "time"]):
+                self.value = utils.ensure_iso_8601_format(date_str=value)
+            else:
+                self.value = str(value)
+        elif "int" in self.param_type:
+            self.value = int(value)
+        elif "float" in self.param_type:
+            self.value = float(value)
+        elif "bool" in self.param_type:
+            self.value = bool(value)
+        else:
+            self.value = value
+
         self.is_set = True
         self.attempts += 1
 
@@ -50,24 +67,6 @@ def extract_slots_from_function(func) -> list[Slot]:
         required = param.default is param.empty
         slots.append(Slot(param.name, param.annotation, required))
     return slots
-
-
-_GREETING_PROMPT_FMT = """
-<s>[INST] <<SYS>>
-You are a professional python developer specialised in the package datetime.
-You can convert natural language dates into datetime functions
-
-Example:
-text: today at 9 o'clock
-answer: Alright, let's create an appointment.
-
-Greet them with one very short sentence.
-Do not ask user any question! I repeat, do not ask any questions.
-
-Text: {purpose}
-<</SYS>> [/INST]
-Assistant:
-"""
 
 
 class SlotFillerSimple:
@@ -94,21 +93,6 @@ Current conversation:
 Current Slots:
 {slots}
 User: {input}
-<</SYS>> [/INST]
-Assistant:
-"""
-    _GREETING_PROMPT_FMT = """
-<s>[INST] <<SYS>>
-You are an AI assistant and welcome the human to the conversation and greet them very briefly.
-
-Example:
-text: create_an_appointment
-Assist: Alright, let's create an appointment.
-
-Greet them with one very short sentence.
-Do not ask user any question! I repeat, do not ask any questions.
-
-Text: {purpose}
 <</SYS>> [/INST]
 Assistant:
 """
@@ -154,8 +138,12 @@ Assistant:
         if not self.is_just_started:
             self.fill_slot(user_input=user_input)
             self.history.add_message(
-                Message(text=user_input, role=Role.USER, current_state=self.__class__.__name__,
-                        intent_name=self.purpose)
+                Message(
+                    text=user_input,
+                    role=Role.USER,
+                    current_state=self.__class__.__name__,
+                    intent_name=self.purpose,
+                ),
             )
         else:
             self.is_just_started = False
@@ -263,5 +251,52 @@ output: Given the current time "{now}" and the input "{user_input}", the ISO 860
     return prompt_fmt.format(now=now, user_input=user_input)
 
 
-if __name__ == "__main__":
-    run_slot_filler()
+class SlotFillerAdvanced:
+    _SYS_FMT = (
+        "You are an AI assistant helping a human to complete all the slots required for a function call. "
+        "Given a function definition, and a current status of a function call and the user input, and some hints, your job is to ask the right question to fill all the required None slots and provide the next function call. "
+        "For time reference:"
+        "Now: {now} "
+        "You will use the reference time to create an ISO 8601 formatted string output in UTC and set for the slots which are datetime related."
+        "For example given the current time '2024-06-01T18:56:15.900521+00:00' and the input 'tomorrow at 8 o'clock pm', the ISO 8601 formatted string output in UTC would be: 2024-06-02T20:00:00+00:00"
+        "You always reply with the following format:"
+        '{{"text": "<your textual response>", "function_call": "<the function call>"}} '
+        "You exctract all the information from the user_input and update the parameters in previous_function_call"
+        "If no information about a slot is available, you will set it as None. "
+        "You only set the function parameters based in the latest user input"
+        # "Do not repeat the human's response! "
+        # "Do not output the Current Slots! "
+        # "Do not tell the user why you are asking a question about the appointment. "
+        # "Do not suggest the user how they should reply. "
+    )
+
+    def __init__(
+        self,
+        func: Callable,
+        function_params: list[str] | None = None,
+    ):
+        self.slots: list[Slot] = extract_slots_from_function(func)
+        if function_params:
+            self._update_slots(slots=function_params)
+
+    @property
+    def is_done(self) -> bool:
+        return all((slot.is_set or not slot.is_required) for slot in self.slots)
+
+    @property
+    def _next_slot(self) -> Slot | None:
+        for slot in self.slots:
+            if not slot.is_set:
+                return slot
+        return None
+
+    def _update_slots(self, slots: list[str]) -> None:
+        for new, old in zip(slots, self.slots, strict=False):
+            if new != "None":
+                old.set_value(new)
+
+    def get_kwargs(self) -> dict:
+        kwargs = {}
+        for slot in self.slots:
+            kwargs.update(slot.get_kwarg())
+        return kwargs

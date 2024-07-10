@@ -1,10 +1,10 @@
 from src.intent.intent import CALENDAR, LECTURE, UNKNOWN
 from src.web_handler.calendar_api import CalendarAPI
-from src.web_handler.lecture_translator_api import LectureTranslatorApi
+from src.web_handler.lecture_translator_api import LectureTranslatorAPI
 
 intent_map = {
     CALENDAR: CalendarAPI(),
-    LECTURE: LectureTranslatorApi(),
+    LECTURE: LectureTranslatorAPI(),
     UNKNOWN: None,
 }
 
