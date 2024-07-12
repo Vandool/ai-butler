@@ -1,4 +1,5 @@
 from src.web_handler.calendar_api import CalendarAPI
+from src.web_handler.lecture_translator_api import LectureTranslatorApi
 
 GET_NEXT_APPOINTMENT = """
 You are a help desk client.
@@ -415,6 +416,17 @@ user: {last_utterance}
 answer:
 """
 
+
+LECTURE_QA = """
+You are a help desk client.
+Your job is to answer questions about the content of a lecture given as a transcript.
+
+user: {last_utterance}
+data: {function_response}
+answer:
+"""
+
+
 calendar_api_respond_prompts: dict[str, str] = {
     CalendarAPI.create_new_appointment.__name__: CREATE_NEW_APPOINTMENT,
     CalendarAPI.get_next_appointment.__name__: GET_NEXT_APPOINTMENT,
@@ -424,9 +436,20 @@ calendar_api_respond_prompts: dict[str, str] = {
     CalendarAPI.delete_all_appointments_today.__name__: DELETE_ALL_APPOINTMENTS_TODAY,
 }
 
+lecture_api_respond_prompts: dict[str, str] = {
+    LectureTranslatorApi.get_lecture_content.__name__: LECTURE_QA,
+}
+
 
 def get_calendar_api_respond_prompts(function: str) -> str:
     if function not in calendar_api_respond_prompts:
         err_msg = f"Respond Prompt for '{function}' is not registered yet."
         raise ValueError(err_msg)
     return calendar_api_respond_prompts[function]
+
+
+def get_lecture_api_respond_prompts(function: str) -> str:
+    if function not in lecture_api_respond_prompts:
+        err_msg = f"Respond Prompt for '{function}' is not registered yet."
+        raise ValueError(err_msg)
+    return lecture_api_respond_prompts[function]
