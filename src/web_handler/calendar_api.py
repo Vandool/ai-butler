@@ -217,7 +217,13 @@ class CalendarAPI:
     @staticmethod
     @catch_http_exception
     def am_i_free(time: str | None = None) -> bool:
-        """Determine if I have no appointments among the specified time."""
+        """Determine if I have no appointments among the specified time.
+
+        Examples:
+            - Do I have anything scheduled this coming Sunday at 4 PM?
+            - Am I available next Friday at 3 PM?
+            - Okay butler, do I have any plans in 6 hours?
+        """
         return (
             len(
                 CalendarAPI.list_appointments(

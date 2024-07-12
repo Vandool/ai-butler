@@ -9,7 +9,7 @@ from huggingface_hub import InferenceClient
 
 from src.classifier.base_classifier import BaseClassifier
 from src.classifier.few_shot_text_generation_classifier import FewShotTextGenerationClassifier
-from src.classifier.ollama_classifier import OllamaClassifier
+#from src.classifier.ollama_classifier import OllamaClassifier
 from src.config.asr_llm_config import AsrLlmConfig
 from src.intent.intent import CALENDAR, LECTURE
 from src.intent.intent_manager import IntentManager
@@ -20,6 +20,98 @@ from src.llm_client.llm_client import LLMClient
 load_dotenv()
 
 one_off_test = ("get_next_appointment13.mp3", "Hey butler, whats up next?", CALENDAR.name),
+
+dialog_test_data = [
+    [("create_appointment0_0.mp3",
+      "Hey butler, please create an appointment tomorrow from 10 to 11 titled 'Team Meeting' in the Conference Room.")],
+    [("create_appointment1_0.mp3",
+      "Hey butler, schedule an appointment next Monday from 2 PM to 3 PM titled 'Project Review'.")],
+    [("create_appointment2_0.mp3",
+      "Hey butler, set up a meeting next Friday from 9 AM to 10 AM titled 'Weekly Sync' with description 'Weekly team sync-up'.")],
+
+    # Dialogs where the end time is provided after the initial request
+    [("create_appointment3_0.mp3", "Hey butler, create an appointment tomorrow at 10 titled 'Client Call'."),
+     ("create_appointment3_1.mp3", "It ends at 11.")],
+    [("create_appointment4_0.mp3",
+      "Hey butler, schedule an appointment next Monday at 2 PM titled 'Doctor's Appointment'."),
+     ("create_appointment4_1.mp3", "It should end at 3 PM.")],
+
+    # Dialogs where the system asks for the end time after some optional parameters are provided
+    [("create_appointment5_0.mp3", "Hey butler, create an appointment tomorrow at 10."),
+     ("create_appointment5_1.mp3", "Title it 'Team Sync'."),
+     ("create_appointment5_2.mp3", "It should end at 11.")],
+
+    [("create_appointment6_0.mp3", "Hey butler, schedule a meeting next Tuesday at 1 PM."),
+     ("create_appointment6_1.mp3", "Description is 'Project Discussion'."),
+     ("create_appointment6_2.mp3", "It ends at 2 PM.")],
+
+    # Dialogs with additional optional parameters provided in the initial request
+    [("create_appointment7_0.mp3",
+      "Hey butler, create an appointment tomorrow from 10 to 11 titled 'Team Meeting' with description 'Discuss project updates'.")],
+    [("create_appointment8_0.mp3",
+      "Hey butler, schedule an appointment next Monday from 2 PM to 3 PM with title 'Project Discussion' at 'Conference Room'.")],
+    [("create_appointment9_0.mp3",
+      "Hey butler, set up a meeting next Friday from 9 AM to 10 AM titled 'Strategy Session' with location 'Meeting Room 1'.")],
+
+    # Dialogs with only the start time initially, followed by optional parameters, then the end time
+    [("create_appointment10_0.mp3", "Hey butler, create an appointment tomorrow at 10."),
+     ("create_appointment10_1.mp3", "Title it 'Team Meeting'."),
+     ("create_appointment10_2.mp3", "It should end at 11.")],
+
+    [("create_appointment11_0.mp3", "Hey butler, schedule an appointment next Monday at 2 PM."),
+     ("create_appointment11_1.mp3", "Location is 'Conference Room'."),
+     ("create_appointment11_2.mp3", "It ends at 3 PM.")],
+
+    # Dialogs with title given first, then start time, followed by optional parameters and end time
+    [("create_appointment12_0.mp3", "Hey butler, create an appointment titled 'Team Sync'."),
+     ("create_appointment12_1.mp3", "It starts tomorrow at 10."),
+     ("create_appointment12_2.mp3", "Description is 'Weekly team sync-up'."),
+     ("create_appointment12_3.mp3", "It should end at 11.")],
+
+    [("create_appointment13_0.mp3", "Hey butler, schedule a meeting titled 'Client Presentation'."),
+     ("create_appointment13_1.mp3", "It starts next Monday at 2 PM."),
+     ("create_appointment13_2.mp3", "Location is 'Main Hall'."),
+     ("create_appointment13_3.mp3", "It should end at 3 PM.")],
+
+    # Longer dialogs with multiple interactions for all parameters
+    [("create_appointment14_0.mp3", "Hey butler, create an appointment titled 'Team Sync'."),
+     ("create_appointment14_1.mp3", "It starts tomorrow at 10."),
+     ("create_appointment14_2.mp3", "Description is 'Weekly team sync-up'."),
+     ("create_appointment14_3.mp3", "Location is 'Office Room 1'."),
+     ("create_appointment14_4.mp3", "It ends at 11.")],
+
+    [("create_appointment15_0.mp3", "Hey butler, schedule an appointment titled 'Client Meeting'."),
+     ("create_appointment15_1.mp3", "It starts next Monday at 2 PM."),
+     ("create_appointment15_2.mp3", "Description is 'Discuss quarterly report'."),
+     ("create_appointment15_3.mp3", "Location is 'Meeting Room 2'."),
+     ("create_appointment15_4.mp3", "It ends at 3 PM.")],
+
+    [("create_appointment16_0.mp3", "Hey butler, set up a meeting titled 'Project Kickoff'."),
+     ("create_appointment16_1.mp3", "It starts next Friday at 9 AM."),
+     ("create_appointment16_2.mp3", "Description is 'Kickoff for the new project'."),
+     ("create_appointment16_3.mp3", "Location is 'Conference Hall'."),
+     ("create_appointment16_4.mp3", "It should end at 10 AM.")],
+
+    [("create_appointment17_0.mp3", "Hey butler, please create an appointment on Wednesday from 3 PM to 4 PM titled 'Budget Meeting' in Room 5.")],
+
+    [("create_appointment18_0.mp3", "Hey butler, create an appointment on Thursday at 11 AM."),
+     ("create_appointment18_1.mp3", "Title it 'HR Meeting'."),
+     ("create_appointment18_2.mp3", "Description is 'Discuss new hires'."),
+     ("create_appointment18_3.mp3", "It should end at 12 PM.")],
+
+    # Dialogs where title is given first, then start time, followed by end time and other optional parameters
+    [("create_appointment19_0.mp3", "Hey butler, create an appointment titled 'One-on-One Meeting'."),
+     ("create_appointment19_1.mp3", "It starts next Thursday at 2 PM."),
+     ("create_appointment19_3.mp3", "Description is 'Weekly one-on-one with manager'."),
+     ("create_appointment19_4.mp3", "Location is 'Manager's Office'."),
+     ("create_appointment19_2.mp3", "It should end at 3 PM.")],
+
+    # Dialogs where the end time is provided after the initial request
+    [("create_appointment20_0.mp3", "Hey butler, schedule an appointment next Friday at 10 AM."),
+     ("create_appointment20_1.mp3", "Title it 'Team Check-In'."),
+     ("create_appointment20_2.mp3", "Location is 'Conference Room A'."),
+     ("create_appointment20_3.mp3", "It ends at 11 AM.")]
+]
 
 one_off_test_data = [
     # path_to_audio_file, text, intent
@@ -142,6 +234,60 @@ one_off_test_data = [
     ("delete_all_appointments_today19.mp3", "Okay butler, delete every appointment for today.", CALENDAR.name),
     ("delete_all_appointments_today20.mp3", "Hey butler, I need you to cancel all today's events.", CALENDAR.name),
 ]
+
+bruh = [
+    # Google Calendar am_i_free
+    ("am_i_free0.mp3", "Hey butler, am I free tomorrow at 3 PM?", CALENDAR.name),
+    ("am_i_free1.mp3", "Okay butler, do I have any appointments in 5 hours?", CALENDAR.name),
+    ("am_i_free2.mp3", "Hey butler, am I free next Monday at 10 AM?", CALENDAR.name),
+    ("am_i_free3.mp3", "Okay butler, do I have anything scheduled for next week at 2 PM?", CALENDAR.name),
+    ("am_i_free4.mp3", "Hey butler, am I free this Friday at noon?", CALENDAR.name),
+    ("am_i_free5.mp3", "Okay butler, do I have any meetings in 3 days at 4 PM?", CALENDAR.name),
+    ("am_i_free6.mp3", "Hey butler, am I available in 7 hours?", CALENDAR.name),
+    ("am_i_free7.mp3", "Okay butler, do I have anything booked next Tuesday at 9 AM?", CALENDAR.name),
+    ("am_i_free8.mp3", "Hey butler, am I free next weekend at 1 PM?", CALENDAR.name),
+    ("am_i_free9.mp3", "Okay butler, do I have any plans in two weeks at 11 AM?", CALENDAR.name),
+    ("am_i_free10.mp3", "Hey butler, am I free in 48 hours?", CALENDAR.name),
+    ("am_i_free11.mp3", "Okay butler, do I have anything on my schedule for next month at 3 PM?", CALENDAR.name),
+    ("am_i_free12.mp3", "Hey butler, am I free in 10 days at 6 PM?", CALENDAR.name),
+    ("am_i_free13.mp3", "Okay butler, do I have any appointments next Thursday at 7 AM?", CALENDAR.name),
+    ("am_i_free14.mp3", "Hey butler, am I available this Saturday at 5 PM?", CALENDAR.name),
+    ("am_i_free15.mp3", "Okay butler, do I have anything scheduled in one week at 2 PM?", CALENDAR.name),
+    ("am_i_free16.mp3", "Hey butler, am I free next Wednesday at 8 AM?", CALENDAR.name),
+    ("am_i_free17.mp3", "Okay butler, do I have any meetings in 15 days at 9 PM?", CALENDAR.name),
+    ("am_i_free18.mp3", "Hey butler, am I free in three days at 10 AM?", CALENDAR.name),
+    ("am_i_free19.mp3", "Okay butler, do I have anything planned this coming Friday at 11 PM?", CALENDAR.name),
+    ("am_i_free20.mp3", "Hey butler, am I free in 12 hours?", CALENDAR.name),
+
+    # Lecture get_lecture_content
+    ("get_lecture_content0.mp3", "Hey butler, can you get the content of the last lecture?", LECTURE.name),
+    ("get_lecture_content1.mp3", "Okay butler, what was discussed in the recent lecture?", LECTURE.name),
+    ("get_lecture_content2.mp3", "Hey butler, please give me the transcript of the previous lecture.", LECTURE.name),
+    ("get_lecture_content3.mp3", "Okay butler, could you fetch the content of yesterday's lecture?", LECTURE.name),
+    ("get_lecture_content4.mp3", "Hey butler, can you show me the details of the last lecture?", LECTURE.name),
+    ("get_lecture_content5.mp3", "Okay butler, what topics were covered in the last lecture?", LECTURE.name),
+    ("get_lecture_content6.mp3", "Hey butler, give me the notes from the recent lecture.", LECTURE.name),
+    ("get_lecture_content7.mp3", "Okay butler, please provide the content of the last lecture session.", LECTURE.name),
+    ("get_lecture_content8.mp3", "Hey butler, what did the professor talk about in the last lecture?", LECTURE.name),
+    ("get_lecture_content9.mp3", "Okay butler, what was the lecture about last time?", LECTURE.name),
+    ("get_lecture_content10.mp3", "Hey butler, can you provide the last lecture transcript?", LECTURE.name),
+    ("get_lecture_content11.mp3", "Okay butler, what was the main content of the previous lecture?", LECTURE.name),
+    ("get_lecture_content12.mp3", "Hey butler, summarize the content of the last lecture for me.", LECTURE.name),
+    ("get_lecture_content13.mp3", "Okay butler, I need the details from the last lecture.", LECTURE.name),
+    ("get_lecture_content14.mp3", "Hey butler, what was the last lecture about?", LECTURE.name),
+    ("get_lecture_content15.mp3", "Okay butler, tell me what the previous lecture covered.", LECTURE.name),
+    ("get_lecture_content16.mp3", "Hey butler, I need to know what was discussed in the last lecture.", LECTURE.name),
+    ("get_lecture_content17.mp3", "Okay butler, can you get me the last lecture content?", LECTURE.name),
+    ("get_lecture_content18.mp3", "Hey butler, provide me the last lecture details.", LECTURE.name),
+    ("get_lecture_content19.mp3", "Okay butler, what was the topic of the last lecture?", LECTURE.name),
+    ("get_lecture_content20.mp3", "Hey butler, please get the previous lecture's transcript.", LECTURE.name)
+]
+#     ("get_lecture_content21.mp3", "Okay butler, what was the focus of the last lecture?", LECTURE.name),
+#     ("get_lecture_content22.mp3", "Hey butler, I need the lecture notes from the last session.", LECTURE.name),
+#     ("get_lecture_content23.mp3", "Okay butler, can you summarize the last lecture's content?", LECTURE.name)
+# ]
+
+
 
 
 def pytest_configure():

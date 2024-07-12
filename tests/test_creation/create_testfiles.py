@@ -7,6 +7,9 @@ client = Client("mrfakename/MeloTTS")
 class CALENDAR:
     name = ""
 
+class LECTURE:
+    name = ""
+
 get_next_appointment = [
     # path_to_audio_file, text, intent
     # Google Calendar get_next_appointment
@@ -81,14 +84,74 @@ delete_all_appointments_today = [
      CALENDAR.name),
 ]
 
-for i, test in enumerate(delete_all_appointments_today):
-    result = client.predict(
-        text=test[1],
-        speaker="EN-Default",
-        speed=1,
-        language="EN",
-        api_name="/synthesize"
-    )
+am_i_free = [
+    ("am_i_free0.mp3", "Hey butler, am I free tomorrow at 3 PM?", CALENDAR.name),
+    ("am_i_free1.mp3", "Okay butler, do I have any appointments in 5 hours?", CALENDAR.name),
+    ("am_i_free2.mp3", "Hey butler, am I free next Monday at 10 AM?", CALENDAR.name),
+    ("am_i_free3.mp3", "Okay butler, do I have anything scheduled for next week at 2 PM?", CALENDAR.name),
+    ("am_i_free4.mp3", "Hey butler, am I free this Friday at noon?", CALENDAR.name),
+    ("am_i_free5.mp3", "Okay butler, do I have any meetings in 3 days at 4 PM?", CALENDAR.name),
+    ("am_i_free6.mp3", "Hey butler, am I available in 7 hours?", CALENDAR.name),
+    ("am_i_free7.mp3", "Okay butler, do I have anything booked next Tuesday at 9 AM?", CALENDAR.name),
+    ("am_i_free8.mp3", "Hey butler, am I free next weekend at 1 PM?", CALENDAR.name),
+    ("am_i_free9.mp3", "Okay butler, do I have any plans in two weeks at 11 AM?", CALENDAR.name),
+]
 
-    shutil.copy(result, "../test_data/" + test[0].split(".mp3")[0][:-1] + str(i+1) + ".mp3")
-    print(test[1])
+get_lecture_content = [
+    ("get_lecture_content0.mp3", "Hey butler, can you get the content of the last lecture?", LECTURE.name),
+    ("get_lecture_content1.mp3", "Okay butler, what was discussed in the recent lecture?", LECTURE.name),
+    ("get_lecture_content2.mp3", "Hey butler, please give me the transcript of the previous lecture.", LECTURE.name),
+    ("get_lecture_content3.mp3", "Okay butler, could you fetch the content of yesterday's lecture?", LECTURE.name),
+    ("get_lecture_content4.mp3", "Hey butler, can you show me the details of the last lecture?", LECTURE.name),
+    ("get_lecture_content5.mp3", "Okay butler, what topics were covered in the last lecture?", LECTURE.name),
+    ("get_lecture_content6.mp3", "Hey butler, give me the notes from the recent lecture.", LECTURE.name),
+    ("get_lecture_content7.mp3", "Okay butler, please provide the content of the last lecture session.", LECTURE.name),
+    ("get_lecture_content8.mp3", "Hey butler, what did the professor talk about in the last lecture?", LECTURE.name),
+    ("get_lecture_content9.mp3", "Okay butler, what was the lecture about last time?", LECTURE.name),
+]
+
+create_appointment = [
+    [("create_appointment0_0.mp3",
+      "Hey butler, please create an appointment tomorrow from 10 to 11 titled 'Team Meeting' in the Conference Room.")],
+    [("create_appointment1_0.mp3",
+      "Hey butler, schedule an appointment next Monday from 2 PM to 3 PM titled 'Project Review'.")],
+    [("create_appointment2_0.mp3",
+      "Hey butler, set up a meeting next Friday from 9 AM to 10 AM titled 'Weekly Sync' with description 'Weekly team sync-up'.")],
+
+    # Dialogs where the end time is provided after the initial request
+    [("create_appointment3_0.mp3", "Hey butler, create an appointment tomorrow at 10 titled 'Client Call'."),
+     ("create_appointment3_1.mp3", "It ends at 11.")],
+    [("create_appointment4_0.mp3",
+      "Hey butler, schedule an appointment next Monday at 2 PM titled 'Doctor's Appointment'."),
+     ("create_appointment4_1.mp3", "It should end at 3 PM.")],
+
+    # Dialogs where the system asks for the end time after some optional parameters are provided
+    [("create_appointment5_0.mp3", "Hey butler, create an appointment tomorrow at 10."),
+     ("create_appointment5_1.mp3", "Title it 'Team Sync'."),
+     ("create_appointment5_2.mp3", "It should end at 11.")],
+
+    [("create_appointment6_0.mp3", "Hey butler, schedule a meeting next Tuesday at 1 PM."),
+     ("create_appointment6_1.mp3", "Description is 'Project Discussion'."),
+     ("create_appointment6_2.mp3", "It ends at 2 PM.")],
+
+    # Dialogs with additional optional parameters provided in the initial request
+    [("create_appointment7_0.mp3",
+      "Hey butler, create an appointment tomorrow from 10 to 11 titled 'Team Meeting' with description 'Discuss project updates'.")],
+    [("create_appointment8_0.mp3",
+      "Hey butler, schedule an appointment next Monday from 2 PM to 3 PM with title 'Project Discussion' at 'Conference Room'.")],
+    [("create_appointment9_0.mp3",
+      "Hey butler, set up a meeting next Friday from 9 AM to 10 AM titled 'Strategy Session' with location 'Meeting Room 1'.")]
+]
+
+for i, dialog in enumerate(create_appointment):
+    for i, test in enumerate(dialog):
+        result = client.predict(
+            text=test[1],
+            speaker="EN-Default",
+            speed=1,
+            language="EN",
+            api_name="/synthesize"
+        )
+
+        shutil.copy(result, "../test_data_temp/" + test[0].split(".mp3")[0][:-1] + str(i+1) + ".mp3")
+        print(test[1])
