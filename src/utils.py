@@ -3,9 +3,13 @@ import inspect
 import json
 import logging
 import os
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Final
+
+import pytz
 
 
 class CustomLogger(logging.Logger):
@@ -30,6 +34,7 @@ def get_logger(module_name: str) -> CustomLogger:
         logger.propagate = False
 
     return logger
+
 
 logger = get_logger("UTILS")
 
@@ -77,6 +82,7 @@ def parse_docstring(docstring) -> (str, list[str]):
 
     return description, examples
 
+
 def decorator_test(func):
     """Decorator that checks the status code of an HTTP response and logs any errors."""
 
@@ -87,6 +93,7 @@ def decorator_test(func):
         return response
 
     return wrapper
+
 
 class TestObjCall:
     def __init__(self):
@@ -105,3 +112,109 @@ class TestObjCall:
 
     def func_d(self, a: str, b: str, c: str, d: str) -> str:
         return f"{a} = {b} = {c} = {self.c} = {d}"
+
+
+def extract_json(text: str) -> dict[str, Any]:
+    """
+    :raises: json.JSONDecodeError
+    :raises: ValeError
+    """
+    return json.loads(extract_first_curly(text))
+
+
+def escape_all_inner_quotes(json_str: str) -> str:
+    def replace_inner_quotes(match):
+        # Only replace inner quotes within the value of a key-value pair
+        value = match.group(0)
+        return value.replace('"', '\\"')
+
+    # Regex to find all values within quotes
+    pattern = r'(?<=": ")[^"]*(?=")'
+
+    escaped_str = re.sub(pattern, replace_inner_quotes, json_str)
+    return escaped_str
+
+
+def extract_first_curly(text: str) -> str:
+    # Regular expression to match content within braces including the braces
+    pattern = re.compile(r"\{[^}]*\}")
+
+    # Search for the first occurrence of the pattern in the input string
+    match = pattern.search(text)
+
+    # Extract and print the matched string
+    if match:
+        return match.group()
+
+    raise ValueError("No curly brackets found in text")
+
+
+@dataclass
+class FunctionCall:
+    function_name: str
+    parameters: list[str]
+
+
+def parse_function_call(text: str) -> FunctionCall:
+    first_split = text.split("(")
+    function_name = first_split[0].strip()
+    params_str = [s.strip().replace('"', "").replace("'", "") for s in first_split[1].strip(")").split(",")]
+
+    return FunctionCall(function_name=function_name, parameters=params_str)
+
+
+def get_function_def(function: Callable) -> str:
+    source_code = inspect.getsource(function)
+    def_index = source_code.find("def ")
+    if def_index == -1:
+        err_msg = "Function definition not found in the source code"
+        raise ValueError(err_msg)
+
+    # Remove the examples and the actual function implementation
+    source_code = source_code[def_index:]
+
+    return f"{source_code.split('Examples')[0].strip()}\n\"\"\"\n    pass\n"
+
+
+def get_candidates(module: object) -> str:
+    return [
+        get_function_def(obj)
+        for _, obj in inspect.getmembers(module)
+        if inspect.isfunction(obj) and getattr(obj, _IS_MARKED_ATTR, False)
+    ]
+
+
+def ensure_iso_8601_format(date_str: str) -> str:
+    berlin_tz = pytz.timezone("Europe/Berlin")
+    try:
+        # Try to parse the string to a datetime object in the correct format
+        dt = datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S%z")
+        # Convert to Berlin time
+        dt = dt.astimezone(berlin_tz)
+        return dt.isoformat()
+    except ValueError:
+        # If parsing fails, try to convert the string to the correct format
+        try:
+            # Attempt to parse the string with a common format
+            dt = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S%z")
+            # Convert to Berlin time
+            dt = dt.astimezone(berlin_tz)
+            return dt.isoformat()
+        except ValueError:
+            raise ValueError("The provided date string is not in a recognizable format.")
+
+
+if __name__ == "__main__":
+    text = """{"text": "I'll set the meeting for you", "function_call": "create_new_appointment('Meeting with Supervisor', '2024-07-02 10:00:00+00:00', None, 'Final Presentation Discussion', 'Office')"}assistant
+
+Note: I assumed the current date is 2024-06-30, so the meeting is set for 2024-07-02.assistant
+
+{"text": "I'll set the meeting for you", "function_call": "create_new_appointment('Meeting with Supervisor', '2024-07-02"""
+    print(extract_first_curly(text))
+    json = extract_json(text)
+    print(json)
+    print(json["text"])
+    print(json["function_call"])
+    print(parse_function_call(json["function_call"]))
+    text = '{"text": "I\'d be happy to help you with that", "function_call": "create_new_appointment("Appointment", "2024-07-03 10:00:00+00:00", None)"}'
+    print(escape_all_inner_quotes(text))

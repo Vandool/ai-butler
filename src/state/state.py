@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 import datetime
 import os
+import json
 from typing import ClassVar, TypeAlias
 
 from fuzzywuzzy import fuzz
@@ -10,14 +11,14 @@ from huggingface_hub import InferenceClient
 
 from src import utils
 from src.classifier.base_classifier import BaseClassifier
-from src.classifier.classifier_generator import generate_classifier
+from src.classifier.classifier_generator import generate_classifier, generate_function_caller_classifier
 from src.classifier.few_shot_text_generation_classifier import FewShotTextGenerationClassifier
 from src.config.asr_llm_config import AsrLlmConfig
 from src.history.chathistory import ChatHistory, Message, Role
 from src.intent import intent
-from src.intent.intent import Intent
+from src.intent.intent import UNKNOWN, Intent
 from src.intent.intent_manager import IntentManagerFactory
-from src.intent.slot_filler import SlotFillerSimple
+from src.intent.slot_filler import SlotFillerAdvanced, SlotFillerSimple
 from src.llm_client.llm_client import LLMClient
 from src.prompt_generator import respond_prompts
 from src.prompt_generator.prompt_generator import PromptType
@@ -29,7 +30,7 @@ from src.web_handler.lecture_translator_api import LectureTranslatorApi
 FunctionName: TypeAlias = str
 
 
-def _add_time_now_to(fn_response):
+def add_time_now_to(fn_response):
     fn_response.update({"now": datetime.datetime.now(datetime.UTC)})
     return fn_response
 
@@ -73,7 +74,7 @@ class State(abc.ABC):
 
         if self.history:
             self.history.add_message(
-                Message(text=llm_response, role=Role.ASSISTANT, current_state=self.__class__.__name__),
+                Message(text=llm_response, role=Role.ASSISTANT),
             )
 
         self.text_to_speech(llm_response)
@@ -99,6 +100,8 @@ class InitialState(State):
         llm_client: LLMClient,
         tts_client: TextToSpeech | None = None,
         history: ChatHistory | None = None,
+        *,
+        use_function_caller: bool = False,
     ):
         super().__init__(
             llm_client=llm_client,
@@ -109,7 +112,8 @@ class InitialState(State):
             tts_client=tts_client,
             history=history,
         )
-        self.message = Message(current_state=self.__class__.__name__)
+        self.message = Message()
+        self.use_function_caller = use_function_caller
 
     def process(self, user_input: str) -> State:
         next_state = self
@@ -148,17 +152,44 @@ class InitialState(State):
         self.logger.info(f"\tIntention Class: {classifier_response.intent.name}")
 
         if self.history:
-            self.message = self.message.set_intent_name(classifier_response.intent.name)
+            self.message = self.message.set_classifier_response_level_0(classifier_response)
             self.history.add_message(self.message)
-
-        if classifier_response.intent == intent.CALENDAR:
-            return CalendarState(llm_client=self.llm_client, tts_client=self.tts_client, history=self.history).process(
-                user_input,
-            )
-        if classifier_response.intent == intent.LECTURE:
-            return LectureState(llm_client=self.llm_client, tts_client=self.tts_client, history=self.history).process(
-                user_input,
-            )
+        if not self.use_function_caller:
+            if classifier_response.intent == intent.CALENDAR:
+                return CalendarState(
+                    llm_client=self.llm_client,
+                    tts_client=self.tts_client,
+                    history=self.history,
+                ).process(
+                    user_input,
+                )
+            if classifier_response.intent == intent.LECTURE:
+                return LectureState(
+                    llm_client=self.llm_client,
+                    tts_client=self.tts_client,
+                    history=self.history,
+                ).process(
+                    user_input,
+                )
+        else:
+            if classifier_response.intent == intent.CALENDAR:
+                return FunctionCallerState(
+                    llm_client=self.llm_client,
+                    tts_client=self.tts_client,
+                    history=self.history,
+                    module=CalendarAPI,
+                ).process(
+                    user_input,
+                )
+            if classifier_response.intent == intent.LECTURE:
+                return FunctionCallerState(
+                    llm_client=self.llm_client,
+                    tts_client=self.tts_client,
+                    history=self.history,
+                    module=LectureTranslatorAPI,
+                ).process(
+                    user_input,
+                )
 
         self.clarify(last_input=user_input)
         return self
@@ -189,7 +220,7 @@ class CalendarState(State):
         )
         self._current_intent: Intent | None = None
         if self.history:
-            self.message = Message().set_current_state(self.__class__.__name__)
+            self.message = Message()
 
     @property
     def current_intent(self) -> Intent:
@@ -232,7 +263,7 @@ class CalendarState(State):
 
         self.current_intent = classifier_response.intent
         if self.history:
-            self.message = Message().set_intent_name(self.current_intent.name)
+            self.message = Message()
 
         if self._slot_filling_required(fn_name=self.current_intent.name):
             self._start_slot_filling(user_input)
@@ -269,9 +300,9 @@ class CalendarState(State):
         fn_response = intended_fn(**kwargs)
 
         if isinstance(fn_response, dict):
-            fn_response = _add_time_now_to(fn_response)
+            fn_response = add_time_now_to(fn_response)
         elif isinstance(fn_response, list):
-            fn_response = [_add_time_now_to(res) for res in fn_response]
+            fn_response = [add_time_now_to(res) for res in fn_response]
 
         llm_prompt = respond_prompts.get_calendar_api_respond_prompts(self.current_intent.name).format(
             last_utterance=user_input,
@@ -280,7 +311,7 @@ class CalendarState(State):
         self.logger.debug(llm_prompt)
 
         # Open the html link
-        #self.api.open_html_link(response=fn_response)
+        # self.api.open_html_link(response=fn_response)
 
         response = self.llm_client.get_response(prompt=llm_prompt)
         if self.history:
@@ -395,6 +426,149 @@ class LectureState(State):
             )
 
         self.output(response=response)
+
+
+class FunctionCallerState(State):
+    def __init__(
+        self,
+        llm_client: LLMClient,
+        tts_client: TextToSpeech | None = None,
+        history: ChatHistory | None = None,
+        module: object | None = None,
+    ):
+        self.api = module
+        super().__init__(
+            llm_client=llm_client,
+            classifier=generate_function_caller_classifier(module=self.api, llm_client=llm_client),
+            tts_client=tts_client,
+            history=history,
+        )
+        self.slot_filler: SlotFillerSimple | None = None
+        self.function_info: dict[FunctionName, FunctionInfo] | None = utils.get_marked_functions_and_docstrings(
+            module=self.api,
+        )
+        self._current_intent: Intent | None = None
+
+    @property
+    def current_intent(self) -> Intent:
+        return self._current_intent
+
+    @current_intent.setter
+    def current_intent(self, user_intent: Intent):
+        self._current_intent = user_intent
+
+    def process(self, user_input: str) -> State:
+        if self.slot_filler is not None and self.history is not None:
+            self.history.add_message(Message().set_text(user_input).set_role(Role.USER))
+
+        classifier_response = self.classifier.classify(
+            input_text=user_input,
+            prompt_type=PromptType.FEW_SHOT_DETAILED,
+            history=self.history.get_level_1_history(),
+        )
+        self.logger.info("------------LLM Response--------------------")
+        self.logger.info(classifier_response.llm_response)
+        self.logger.info("------------Intent Class--------------------")
+        self.logger.info(classifier_response.intent.name)
+        self.logger.info("--------------------------------------------")
+
+        try:
+            llm_json = utils.extract_json(classifier_response.llm_response)
+        except (json.decoder.JSONDecodeError, TypeError, ValueError):
+            # if self.found_no_intent(current_intent=classifier_response.intent):
+            self.clarify(last_input=user_input)
+            return self
+
+        # Remove assert later
+        self.current_intent = classifier_response.intent
+        function_call_info = utils.parse_function_call(llm_json["function_call"])
+
+        if self.history:
+            self.history.set_classifier_response_level_1(classifier_response=classifier_response)
+
+        # Handle Unknown case
+        if classifier_response.intent == UNKNOWN:
+            output = llm_json["text"]
+            if self.history:
+                self.history.add_message(Message().set_text(output).set_role(Role.ASSISTANT))
+            self.output(response=output)
+            return InitialState(llm_client=self.llm_client, tts_client=self.tts_client, use_function_caller=True)
+
+        if self.slot_filler is not None or self._slot_filling_required(
+            fn_name=self.current_intent.name,
+        ):
+            self.slot_filler = SlotFillerAdvanced(
+                func=self.get_intended_function(),
+                function_params=function_call_info.parameters,
+            )
+            if self.slot_filler.is_done:
+                self._call_intended_function(user_input, **self.slot_filler.get_kwargs())
+                return InitialState(llm_client=self.llm_client, tts_client=self.tts_client, use_function_caller=True)
+
+            output = llm_json["text"]
+            if self.history:
+                self.history.add_message(Message().set_text(output).set_role(Role.ASSISTANT))
+            self.output(response=output)
+            return self
+
+        self._call_intended_function(user_input)
+        return InitialState(llm_client=self.llm_client, tts_client=self.tts_client, use_function_caller=True)
+
+    def get_intended_function(self):
+        if self.current_intent is None:
+            msg = "No current intent set."
+            raise ValueError(msg)
+        return getattr(self.api, self.current_intent.name)
+
+    def _in_slot_filling_process(self):
+        return self.slot_filler is not None
+
+    def _function_name_helper(self, fn_name):
+        pass
+
+    def _call_intended_function(self, user_input: str, **kwargs) -> None:
+        intended_fn = self.get_intended_function()
+        self._function_name_helper(intended_fn.__name__)
+
+        self.logger.info(f"Calling `{intended_fn.__name__}` ...")
+        fn_response = intended_fn(**kwargs)
+
+        if isinstance(fn_response, dict):
+            fn_response = add_time_now_to(fn_response)
+        elif isinstance(fn_response, list):
+            fn_response = [add_time_now_to(res) for res in fn_response]
+
+        llm_prompt = respond_prompts.get_calendar_api_respond_prompts(self.current_intent.name).format(
+            last_utterance=user_input,
+            function_response=fn_response,
+        )
+        self.logger.debug(llm_prompt)
+
+        # Open the html link
+        self.api.open_html_link(response=fn_response)
+
+        response = self.llm_client.get_response(prompt=llm_prompt)
+        if self.history:
+            self.history.add_message(
+                Message()
+                .set_text(text=response)
+                .set_role(Role.ASSISTANT)
+                .set_function_call(function_call=self.current_intent.name)
+                .set_function_args(kwargs.items())
+                .set_function_response(fn_response),
+            )
+
+        self.output(response=response)
+
+    def get_clarify_prompt(self, last_input: str) -> None:
+        return respond_prompts.INIT_STATE_REPEAT_FMT.format(
+            last_utterance=last_input,
+        )
+
+    def _slot_filling_required(self, fn_name: str) -> bool:
+        if fn_name in self.function_info:
+            return self.function_info[fn_name].has_slots
+        return False
 
 
 if __name__ == "__main__":

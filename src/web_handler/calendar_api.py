@@ -43,7 +43,7 @@ class CalendarAPI:
     @catch_http_exception
     @utils.mark_intent
     def create_new_appointment(
-        summary: str,
+        title: str,
         start_time: str,
         end_time: str,
         description: str | None = None,
@@ -51,13 +51,20 @@ class CalendarAPI:
     ):
         """Create a new appointment in the calendar using the specified parameters.
 
+        Parameters:
+            - title (str): A brief description or the tile of the appointment.
+            - start_time (str): The start time of the appointment in ISO 8601 format.
+            - end_time (str): The end time of the appointment in ISO 8601 format.
+            - description (str, optional): Additional details about the appointment. Default is None.
+            - location (str, optional): The hint to a location, or the exact location, where the appointment will take place. Default is None.
+
         Examples:
             - I'd like to schedule a new appointment.
             - Please create a new appointment in my calendar.
             - Can you set up a meeting for me?
         """
         event = {
-            "summary": summary,
+            "summary": title,
             "location": location,
             "description": description,
             "start": {
@@ -138,7 +145,7 @@ class CalendarAPI:
     @catch_http_exception
     @utils.mark_intent
     def list_this_weeks_appointments():
-        """list all appointments in the calendar for this week.
+        """List all appointments in the calendar for this week.
 
         Examples:
             - How does this week look like in my calendar?
@@ -260,7 +267,7 @@ class CalendarAPI:
 
     @staticmethod
     def open_html_link(response: dict) -> None:
-        if link := response.get("htmlLink"):
+        if isinstance(response, dict) and (link := response.get("htmlLink")):
             # Open the link in the default web browser
             webbrowser.open(link)
 
@@ -273,14 +280,14 @@ def format_datetime(dt: datetime) -> str:
 if __name__ == "__main__":
     test_calendar = True
     if test_calendar:
-        # new_event = CalendarAPI.create_new_appointment(
-        #     summary="Team Meeting",
-        #     start_time=format_datetime(datetime.datetime.now(datetime.UTC)),
-        #     end_time=format_datetime(datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)),
-        #     description="Discuss project updates",
-        #     location="Conference Room",
-        # )
-        # CalendarAPI.open_html_link(new_event)
+        new_event = CalendarAPI.create_new_appointment(
+            title="Team Meeting",
+            start_time=utils.ensure_iso_8601_format("2024-07-04 14:00:00+00:00"),
+            end_time=utils.ensure_iso_8601_format("2024-07-04 14:30:00+00:00"),
+            description=None,
+            location=None,
+        )
+        CalendarAPI.open_html_link(new_event)
         # print("New Event Created:", new_event)
         #
         # next_appointment = CalendarAPI.get_next_appointment()

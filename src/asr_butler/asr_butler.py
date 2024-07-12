@@ -18,7 +18,6 @@ from huggingface_hub import InferenceClient
 from sseclient import SSEClient
 
 from src import utils
-from src.classifier.base_classifier import BaseClassifier
 from src.config.asr_llm_config import get_asr_llm_config
 from src.history.chathistory import ChatHistory
 from src.llm_client.llm_client import LLMClient
@@ -27,7 +26,7 @@ from src.pythonrecordingclient.ffmpegStreamAdapter import FfmpegStream
 from src.pythonrecordingclient.helper import BugException
 from src.pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
 from src.state.state import InitialState, State
-from src.text2speech.microsoft_speecht5_tts import TextToSpeech
+from src.text2speech.microsoft_speecht5_tts import MicrosoftSpeechT5TTS, TextToSpeech
 from src.web_handler.my_web_utils import check_status_code, return_json
 
 logger = utils.get_logger("ASRModule")
@@ -569,7 +568,10 @@ class ASRModule:
 
     def run_cli_interface(self):
         while True:
-            self.process_command(user_input=input("User Input :"))
+            user_input = input("User Input :")
+            if user_input.lower() in ["exit", "quit"]:
+                break
+            self.process_command(user_input=user_input)
 
     def run_text_interface(self, user_inputs: list[str]):
         for user_input in user_inputs:
@@ -584,7 +586,7 @@ class TheButler(ASRModule):
 if __name__ == "__main__":
     arguments = get_asr_llm_config()
     llm_client_ = LLMClient(client=InferenceClient(arguments.llm_url))
-    # tts = MicrosoftSpeechT5TTS(model_path=Path.cwd() / "models" / "speecht5_tts.pt")
+    tts = MicrosoftSpeechT5TTS(model_path=Path.cwd() / "models" / "speecht5_tts.pt")
     asr_module = TheButler(
         args=arguments,
         history=ChatHistory(),
@@ -592,24 +594,20 @@ if __name__ == "__main__":
         start_state=InitialState(
             llm_client=llm_client_,
             # tts_client=tts
+            use_function_caller=True,
         ),
         # tts_client=tts,
         is_text_interface=True,
     )
     # asr_module.run_session()
-    # asr_module.run_cli_interface()
-    asr_module.run_text_interface(
-        [
-            "Hey butler can we create a meeting?",
-            "Skateboarding",
-            "Today at 20",
-            "Today at 21",
-            "Get some ollies done",
-            "Skatepark",
-        ],
-    )
+    asr_module.run_cli_interface()
+    # asr_module.run_text_interface(
+    #     [
+    #         "Hey butler, what's my next appointment?",
+    #     ],
+    # )
     # Setup Global Prompt Type
-    BaseClassifier.set_prompt_type(PromptType.ZERO_SHOT)
+    # BaseClassifier.set_prompt_type(PromptType.ZERO_SHOT)
 
-    for msg in asr_module.history:
-        print(msg.__dict__)
+    print("---HISTORY---")
+    print(asr_module.history)

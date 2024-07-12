@@ -4,32 +4,31 @@ import os
 
 from dotenv import load_dotenv
 from huggingface_hub import HfFolder
-from transformers import LlamaTokenizer
+from transformers import AutoTokenizer
 
-from src import utils
-from src.intent.intent import CALENDAR, LECTURE
 from src.intent.intent_manager import IntentManager
 from src.prompt_generator.prompt_generator import PromptType, create_or_list
 
 load_dotenv()
 access_token = os.getenv("HUGGINGFACE_ACCESS_TOKEN", default="<TOKEN>")
-chat_template_model = os.getenv("HUGGINGFACE_CHAT_TEMPLATE_MODEL", default="meta-llama/Llama-2-7b-chat-hf")
+chat_template_model = os.getenv("HUGGINGFACE_CHAT_TEMPLATE_MODEL", default="meta-llama/Meta-Llama-3-8B-Instruct")
 
 # Save the token to the Hugging Face cache
 HfFolder.save_token(access_token)
 
 
-class Llama2PromptGenerator:
-    def __init__(self, intent_manager: IntentManager, num_shots: int = 1):
+class Llama3PromptGenerator:
+    def __init__(self, intent_manager: IntentManager | None = None, num_shots: int = 1):
         self.intent_manager = intent_manager
         self.num_shots = num_shots
-        self.tokenizer = LlamaTokenizer.from_pretrained(
+        self.tokenizer = AutoTokenizer.from_pretrained(
             chat_template_model,
             token=access_token,
         )
         self._validate_func_names()
-        self.classes = create_or_list(self.intent_manager.list_intent_names())
-        self.classes_detailed = str({intent.name: intent.description for intent in self.intent_manager})
+        if intent_manager:
+            self.classes = create_or_list(self.intent_manager.list_intent_names())
+            self.classes_detailed = str({intent.name: intent.description for intent in self.intent_manager})
 
     def generate_prompt(self, input_text: str, prompt_type: PromptType = PromptType.ZERO_SHOT) -> str:
         """Generate a prompt based on the type specified."""
@@ -47,7 +46,7 @@ class Llama2PromptGenerator:
         """Generate a simple classification prompt with class descriptions."""
         messages = [
             {"role": "system", "content": "Classify the text into one of the following classes:"},
-            {"role": "user", "content": f"{input_text} Class:"},
+            {"role": "user", "content": f"{input_text}"},
         ]
         return self.apply_chat_template(messages)
 
@@ -93,19 +92,3 @@ class Llama2PromptGenerator:
     def apply_chat_template(self, messages):
         """Use Hugging Face's apply_chat_template method to format messages."""
         return self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-
-
-if __name__ == "__main__":
-    intent_manager = IntentManager()
-    intent_manager.add_intent(CALENDAR)
-    intent_manager.add_intent(LECTURE)
-    intent_manager.use_unknown_intent = True
-    prompt_generator = Llama2PromptGenerator(intent_manager)
-    logger = utils.get_logger("Llama2PromptGenerator")
-
-    input_text = "I would like to make an appointment"
-
-    for p_type in PromptType:
-        logger.info(f"---{p_type.name.upper()} Prompt---")
-        logger.info(prompt_generator.generate_prompt(input_text=input_text, prompt_type=p_type))
-        logger.info("")

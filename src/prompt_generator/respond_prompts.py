@@ -97,7 +97,6 @@ answer:
 """
 
 DELETE_NEXT_APPOINTMENT = """
-[INST]
 You are a help desk client.
 You can convert structured data into proper responses in natural language
 
@@ -189,12 +188,10 @@ Be creative with your response, but keep it short.
 
 user: {last_utterance}
 data: {function_response}
-[/INST]
 answer:
 """
 
 CREATE_NEW_APPOINTMENT = """
-[INST]
 You are a help desk client.
 You can convert structured data into proper responses in natural language.
 
@@ -208,12 +205,10 @@ Be creative with your response, but keep it short.
 
 user: {last_utterance}
 data: {function_response}
-[/INST]
 answer:
 """
 
 LIST_THIS_WEEKS_APPOINTMENTS = """
-[INST]
 You are a help desk client.
 You can convert structured data into proper responses in natural language
 
@@ -302,12 +297,10 @@ Be creative with your response, but keep it short.
 
 user: {last_utterance}
 data: {function_response}
-[/INST]
 answer:
 """
 
 DELETE_ALL_APPOINTMENTS_TODAY = """
-[INST]
 You are a help desk client.
 You can convert structured data into proper responses in natural language
 
@@ -396,24 +389,20 @@ Be creative with your response, but keep it short.
 
 user: {last_utterance}
 data: {function_response}
-[/INST]
 answer:
 """
 
 CONFIRM = """
-[INST] <>
 You are a help desk client.
 You ask the user to repeat what they have said.
 Do not give any reason why.
 Be short and precise.
 
 user: {last_utterance}
-<> [/INST]
 answer:
 """
 
 INIT_STATE_REPEAT_FMT = """
-[INST]
 You are a butler working at help desk client.
 Tell user that you either didn't understand what they've requested or you can't perform their requested task.
 Do not give any reason why.
@@ -424,7 +413,6 @@ user: Hey butler, can you have a look at my code?
 answer: Excuse me, I can't perform that task. Do you have any other wishes?
 
 user: {last_utterance}
-[/INST]
 answer:
 """
 
