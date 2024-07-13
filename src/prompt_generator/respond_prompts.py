@@ -392,6 +392,20 @@ data: {function_response}
 answer:
 """
 
+AM_I_FREE = """
+You are a help desk client.
+You answer to the question if the user is free at a specific time.
+
+Example:
+user: Am I free in 2 hours?
+data: True
+answer: Yes! You have nothing scheduled in 2 hours.
+
+user: {last_utterance}
+data: {function_response}
+answer:
+"""
+
 CONFIRM = """
 You are a help desk client.
 You ask the user to repeat what they have said.
@@ -409,7 +423,7 @@ Do not give any reason why.
 Be short and precise.
 
 Example:
-user: Hey butler, can you have a look at my code?
+user: Can you have a look at my code?
 answer: Excuse me, I can't perform that task. Do you have any other wishes?
 
 user: {last_utterance}
@@ -418,10 +432,20 @@ answer:
 
 LECTURE_QA = """
 You are a help desk client.
-Your job is to answer questions about the content of a lecture given as a transcript.
+Your job is to answer questions about the content of the last lecture given as a transcript.
+
+Example:
+user: What was the focus of the last lecture?
+data: "Today we will delve into the principles of thermodynamics. We'll start with the first law, which is essentially the law of energy conservation. It states that energy cannot be created or destroyed, only transferred or converted from one form to another. Next, we'll move on to the second law of thermodynamics, which introduces the concept of entropy. This law explains why certain processes occur spontaneously and why others do not. Both of these laws have significant applications in real-world scenarios, such as in engines, refrigerators, and even in biological systems."
+answer: The focus of the last lecture was on the principles of thermodynamics, including the first and second laws, and their applications in real-world scenarios.
+
+Example2:
+user: I need the lecture notes from the last session
+data: "In this session, we're going to explore the fascinating world of quantum mechanics. We'll begin with wave-particle duality, which is the concept that particles like electrons exhibit both wave-like and particle-like properties. This duality is fundamental to understanding quantum behavior. Then we'll discuss the Schrödinger equation, a key equation in quantum mechanics that describes how the quantum state of a physical system changes over time. These principles are crucial for understanding phenomena at the atomic and subatomic levels."
+answer: The focus of the last lecture was on the principles of quantum mechanics, including wave-particle duality and the Schrödinger equation.
 
 user: {last_utterance}
-data: {function_response}
+data: "{function_response}"
 answer:
 """
 

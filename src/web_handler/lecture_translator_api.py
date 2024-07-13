@@ -1,12 +1,8 @@
 from __future__ import annotations
 
-import datetime
-import json
 import webbrowser
-from typing import Any
 
 from src import utils
-from src.web_handler.my_web_utils import catch_http_exception
 
 logger = utils.get_logger("LectureAPI")
 
@@ -27,12 +23,12 @@ class LectureTranslatorAPI:
     def get_lecture_content():
         """Get content of the lecture.
 
-                Examples:
-                    - I'd like to summarize the last lecture.
-                    - Please give me the content of the last lecture.
-                    - Can you give me the content of the last lecture?
+        Examples:
+            - I'd like to summarize the last lecture.
+            - Please give me the content of the last lecture.
+            - Can you give me the content of the last lecture?
         """
-        f = open("C:\\Users\\namid\\PycharmProjects\\NLP_practical\\lecture.txt", "r")
+        f = open("C:\\Users\\namid\\PycharmProjects\\NLP_practical\\lecture.txt")
         lecture_content = f.read()
         return lecture_content
 
@@ -40,12 +36,12 @@ class LectureTranslatorAPI:
 if __name__ == "__main__":
     lecture_api = LectureTranslatorAPI()
     print(lecture_api.get_lecture_content())
-    #link = "https://lt2srv-backup.iar.kit.edu/archivesession/%252F%252Fhome%252Fadmin%2540example.com%252FLecture"
-    #r = requests.get(link)
-    #print(r.text)
+    # link = "https://lt2srv-backup.iar.kit.edu/archivesession/%252F%252Fhome%252Fadmin%2540example.com%252FLecture"
+    # r = requests.get(link)
+    # print(r.text)
 
 # do something else
 
 
-#lectureTranslatorApi = LectureTranslatorApi()
-#lectureTranslatorApi.login_lt("utzpi", "123")
+# lectureTranslatorApi = LectureTranslatorApi()
+# lectureTranslatorApi.login_lt("utzpi", "123")
