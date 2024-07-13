@@ -25,6 +25,8 @@ class MicrosoftSpeechT5TTS(TextToSpeech):
         embedding_dataset="Matthijs/cmu-arctic-xvectors",
         model_path: Path | None = None,
     ):
+        if model_path and not model_path.parent.exists():
+            model_path.parent.mkdir(parents=True)
         if model_path and self.__model_exists(model_path):
             self.synthesiser = self.__load_model(model_path)
         else:
