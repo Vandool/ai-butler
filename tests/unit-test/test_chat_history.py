@@ -23,7 +23,7 @@ test_tuples = [
 
 
 @pytest.mark.parametrize("input, expected_outputs", test_tuples)
-def test_chat_history_text_only(input, expected_outputs, chat_history):
+def test_chat_history_text_only(input, expected_outputs, chat_history, capture_output_for_report):
     sys.argv = [sys.argv[0]]
     arguments = get_asr_llm_config()
 
@@ -36,7 +36,8 @@ def test_chat_history_text_only(input, expected_outputs, chat_history):
             history.add_message(
                 Message(
                     role=Role.USER,
-                    classifier_response_level_1=ClassifierResponse(llm_response=chat_history[i]["content"]),
+                    text=chat_history[i + 1]["content"],
+                    classifier_response_level_1=ClassifierResponse(llm_response=chat_history[i + 1]["content"]),
                 ),
             )
             history.add_message(Message(role=Role.ASSISTANT, text=chat_history[i + 1]["content"]))
@@ -59,11 +60,11 @@ def test_chat_history_text_only(input, expected_outputs, chat_history):
             [input],
         )
 
-        print(butler_output)
-        # called_function_name = butler_outpe.call_args.args[0]
-        # capture_output_for_report(output=called_function_name, llm_output=None, expected=expected_function_name)
+        butler_response = butler_output.call_args[1]["response"]
+        if not any(correct_response in butler_response for correct_response in expected_outputs):
+            pytest.fail(f"Butler Response: {butler_response}, Excepted indicators: {expected_outputs!s}")
+        capture_output_for_report(output=butler_response, llm_output=None, expected=expected_outputs)
         # butler_outpe.assert_called_once()
         # assert called_function_name == expected_function_name
 
-
-#
+        #

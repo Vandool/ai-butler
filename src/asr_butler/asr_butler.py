@@ -13,7 +13,6 @@ import time
 from pathlib import Path
 from threading import Thread
 
-import pytz
 import requests
 from huggingface_hub import InferenceClient
 from sseclient import SSEClient
@@ -110,7 +109,7 @@ class ASRModule:
         stream_adapter.print_all_devices()
         while True:
             try:
-                #selected_device = int(input("Please select the audio device number: "))
+                # selected_device = int(input("Please select the audio device number: "))
                 selected_device = 1
                 if selected_device in available_devices:
                     self.args.audio_device = selected_device
@@ -145,7 +144,7 @@ class ASRModule:
             if input_ is None:
                 logger.info("The ffmpeg backend requires an url/file via the '-f' parameter")
                 sys.exit(1)
-            elif not os.path.isfile(input_):# and not input_.startswith("rtsp"):
+            elif not os.path.isfile(input_):  # and not input_.startswith("rtsp"):
                 logger.info(f"File {input_} does not exist")
                 sys.exit(1)
         else:
@@ -590,179 +589,11 @@ class TheButler(ASRModule):
     """ASRModule is the butler, the butler is ASR"""
 
 
-def chat_history():
-    now_utc = datetime.datetime.now(datetime.UTC)
-    berlin_tz = pytz.timezone("Europe/Berlin")
-    now = now_utc.astimezone(berlin_tz)
-    now = now.replace(minute=0, second=0, microsecond=0)
-    tmw = now + datetime.timedelta(days=1)
-    tmw_14 = datetime.datetime(
-        year=tmw.year,
-        month=tmw.month,
-        day=tmw.day,
-        hour=14,
-        minute=0,
-        second=0,
-        tzinfo=berlin_tz,
-    )
-    next_week = now + datetime.timedelta(days=7)
-    next_week_10 = datetime.datetime(
-        year=next_week.year,
-        month=next_week.month,
-        day=next_week.day,
-        hour=10,
-        minute=0,
-        second=0,
-        tzinfo=berlin_tz,
-    )
-
-    return [
-        {
-            "role": "user",
-            "content": "I want to create an appointment for a Project Meeting tomorrow afternoon at 2 o'clock, it should take 2 hours of my time.",
-        },
-        {
-            "role": "assistant",
-            "content": f'{{"text": "Alright, I will create the appointment", "function_call": "create_new_appointment(\'Project Meeting\', \'{tmw_14.isoformat()!s}\', \'{(tmw_14 + datetime.timedelta(hours=2)).isoformat()!s}\')"}}',
-        },
-        {
-            "role": "user",
-            "content": "Can you delete my next appointment?",
-        },
-        {
-            "role": "assistant",
-            "content": '{"text": "Sure, I will delete your next appointment.", "function_call": "delete_next_appointment()"}',
-        },
-        {
-            "role": "user",
-            "content": "What appointments do I have today?",
-        },
-        {
-            "role": "assistant",
-            "content": '{"text": "Let me check your appointments for today.", "function_call": "list_todays_appointments()"}',
-        },
-        {
-            "role": "user",
-            "content": "Am I free tomorrow at 3 PM?",
-        },
-        {
-            "role": "assistant",
-            "content": f'{{"text": "I will check your availability for tomorrow at 3 PM.", "function_call": "am_i_free(\'{(tmw_14 + datetime.timedelta(hours=1)).isoformat()!s}\')"}}',
-        },
-        {
-            "role": "user",
-            "content": "Delete all appointments for today.",
-        },
-        {
-            "role": "assistant",
-            "content": '{"text": "I will delete all your appointments for today.", "function_call": "delete_all_appointments_today()"}',
-        },
-        {
-            "role": "user",
-            "content": "What content is in the next lecture?",
-        },
-        {
-            "role": "assistant",
-            "content": '{"text": "I will retrieve the content of the next lecture for you.", "function_call": "get_lecture_content()"}',
-        },
-        {
-            "role": "user",
-            "content": "List my appointments for this week.",
-        },
-        {
-            "role": "assistant",
-            "content": '{"text": "Here are all your appointments for this week.", "function_call": "list_this_weeks_appointments()"}',
-        },
-        {
-            "role": "user",
-            "content": "I want to create an appointment.",
-        },
-        {
-            "role": "assistant",
-            "content": '{"text": "Okey, can you tell me when should it start and end?", "function_call": "create_new_appointment(\'Appointment\', None, None)"}',
-        },
-        {
-            "role": "user",
-            "content": "I want to create a Doctor Appointment for next week at 10 o'clock.",
-        },
-        {
-            "role": "assistant",
-            "content": f'{{"text": "Okey, can you tell me when should it end?", "function_call": "create_new_appointment(\'Doctor Appointment\', \'{next_week_10.isoformat()!s}\', None)"}}',
-        },
-        {
-            "role": "user",
-            "content": "user: What was the focus of the last lecture?",
-        },
-        {
-            "role": "assistant",
-            "content": '{"text": "Alright, I will retrieve the content of the last lecture for you.", "function_call": "get_lecture_content()"}',
-        },
-        {
-            "role": "user",
-            "content": "I think the appointment would take one hour maximum.",
-        },
-        {
-            "role": "assistant",
-            "content": f'{{"text": "Gotcha, I can now set the appointment for you", "function_call": "create_new_appointment(\'Doctor Appointment\', \'{next_week_10.isoformat()!s}\', \'{(next_week_10 + datetime.timedelta(hours=1)).isoformat()!s}\')"}}',
-        },
-        {
-            "role": "user",
-            "content": "What is the timezone of my calendar?",
-        },
-        {
-            "role": "assistant",
-            "content": '{"text": "I assume the timezone should be by default your local timezone", "function_call": "irrelevant_function()"}',
-        },
-        {
-            "role": "user",
-            "content": "When is my next appointment?",
-        },
-        {
-            "role": "assistant",
-            "content": '{"text": "I will check when your next appointment is.", "function_call": "get_next_appointment()"}',
-        },
-        {
-            "role": "user",
-            "content": "I want to create an appointment for a one hour Team Meeting tomorrow at 9 AM.",
-        },
-        {
-            "role": "assistant",
-            "content": f'{{"text": "Alright, I will create the appointment for the team meeting.", "function_call": "create_new_appointment(\'Team Meeting\', \'{(tmw_14 - datetime.timedelta(hours=5)).isoformat()!s}\', \'{(tmw_14 - datetime.timedelta(hours=4)).isoformat()!s}\')"}}',
-        },
-        {
-            "role": "user",
-            "content": "Create an appointment for a one hour Client Call next Monday at 11 AM.",
-        },
-        {
-            "role": "assistant",
-            "content": f'{{"text": "Sure, I will create the appointment for the client call.", "function_call": "create_new_appointment(\'Client Call\', \'{(next_week - datetime.timedelta(days=5, hours=3)).isoformat()!s}\', \'{(next_week - datetime.timedelta(days=5, hours=2)).isoformat()!s}\')"}}',
-        },
-        {
-            "role": "user",
-            "content": "I need the lecture notes from the last session",
-        },
-        {
-            "role": "assistant",
-            "content": '{"text": "Sure, I will retrieve the transcript now.", "function_call": "get_lecture_content()"}',
-        },
-    ]
-
-
 if __name__ == "__main__":
     arguments = get_asr_llm_config()
     llm_client_ = LLMClient(client=InferenceClient(arguments.llm_url))
     tts = MicrosoftSpeechT5TTS(model_path=Path.cwd() / "models" / "speecht5_tts.pt")
     history = ChatHistory()
-    chat_history = chat_history()
-    # for i, _ in enumerate(chat_history):
-    #     if i % 2 == 0:
-    #         history.add_message(
-    #             Message(
-    #                 role=Role.USER,
-    #                 classifier_response_level_1=ClassifierResponse(llm_response=chat_history[i]["content"]),
-    #             ),
-    #         )
-    #         history.add_message(Message(role=Role.ASSISTANT, text=chat_history[i + 1]["content"]))
     asr_module = TheButler(
         args=arguments,
         history=history,
@@ -781,7 +612,7 @@ if __name__ == "__main__":
         [
             "Butler, create an appointment tomorrow at 10.",
             "Title at TeamSynced.",
-            "It should end at 11."
+            "It should end at 11.",
         ],
     )
     # Setup Global Prompt Type

@@ -188,7 +188,7 @@ class InitialState(State):
                     llm_client=self.llm_client,
                     tts_client=self.tts_client,
                     history=self.history,
-                    api=LectureTranslatorApi(),
+                    api=LectureTranslatorAPI(),
                 ).process(
                     user_input,
                 )
