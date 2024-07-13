@@ -141,8 +141,8 @@ Assistant:
                 Message(
                     text=user_input,
                     role=Role.USER,
-                    current_state=self.__class__.__name__,
-                    intent_name=self.purpose,
+                    #current_state=self.__class__.__name__,
+                    #intent_name=self.purpose,
                 ),
             )
         else:
@@ -155,7 +155,8 @@ Assistant:
         self.logger.info(f"Handling user input '{user_input}' ...")
 
         llm_response = self.llm_client.get_response(prompt=self._generate_prompt(user_input))
-        self.history.add_message(Message(text=llm_response, role=Role.ASSISTANT, current_state=self.__class__.__name__))
+        #self.history.add_message(Message(text=llm_response, role=Role.ASSISTANT, current_state=self.__class__.__name__))
+        self.history.add_message(Message(text=llm_response, role=Role.ASSISTANT))
 
         self.logger.info(llm_response)
         self.text_to_speech(llm_response)
