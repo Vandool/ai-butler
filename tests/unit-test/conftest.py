@@ -143,13 +143,12 @@ dialog_test_data = [
         ("create_appointment18_3.mp3", "It should end at 12 PM."),
     ],
     # Dialogs where title is given first, then start time, followed by end time and other optional parameters
-    [
-        ("create_appointment19_0.mp3", "Hey butler, create an appointment titled 'One-on-One Meeting'."),
-        ("create_appointment19_1.mp3", "It starts next Thursday at 2 PM."),
-        ("create_appointment19_3.mp3", "Description is 'Weekly one-on-one with manager'."),
-        ("create_appointment19_4.mp3", "Location is 'Manager's Office'."),
-        ("create_appointment19_2.mp3", "It should end at 3 PM."),
-    ],
+    [("create_new_appointment19_0.mp3", "Hey butler, create an appointment titled 'One-on-One Meeting'."),
+     ("create_new_appointment19_1.mp3", "It starts next Thursday at 2 PM."),
+     ("create_new_appointment19_2.mp3", "Description is 'Weekly one-on-one with manager'."),
+     ("create_new_appointment19_3.mp3", "Location is 'Manager's Office'."),
+     ("create_new_appointment19_4.mp3", "It should end at 3 PM.")],
+
     # Dialogs where the end time is provided after the initial request
     [
         ("create_appointment20_0.mp3", "Hey butler, schedule an appointment next Friday at 10 AM."),

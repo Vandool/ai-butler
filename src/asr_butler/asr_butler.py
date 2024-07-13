@@ -110,7 +110,8 @@ class ASRModule:
         stream_adapter.print_all_devices()
         while True:
             try:
-                selected_device = int(input("Please select the audio device number: "))
+                #selected_device = int(input("Please select the audio device number: "))
+                selected_device = 1
                 if selected_device in available_devices:
                     self.args.audio_device = selected_device
                     logger.info(f"Selected audio device: {available_devices[selected_device]}")
@@ -144,7 +145,7 @@ class ASRModule:
             if input_ is None:
                 logger.info("The ffmpeg backend requires an url/file via the '-f' parameter")
                 sys.exit(1)
-            elif not os.path.isfile(input_) and not input_.startswith("rtsp"):
+            elif not os.path.isfile(input_):# and not input_.startswith("rtsp"):
                 logger.info(f"File {input_} does not exist")
                 sys.exit(1)
         else:
@@ -221,10 +222,11 @@ class ASRModule:
             sys.exit(1)
         logger.info("Video successfully sent.")
 
-    def send_session(self):
+    def send_session(self, multi_turn=False):
         try:
             start_time = time.time()
-            self.send_start()
+            if not multi_turn:
+                self.send_start()
             if self.args.memory_words is not None:
                 self.send_memory(self.args.memory_words)
             if self.args.translate_link:
@@ -243,9 +245,10 @@ class ASRModule:
             logger.info("Caught KeyboardInterrupt")
 
         time.sleep(1)
-        self.send_end()
+        if not multi_turn:
+            self.send_end()
 
-    def read_text(self, start_time: float, read_one: bool = False) -> None:
+    def read_text(self, start_time: float, read_one: bool = False, multi_turn: bool = False) -> None:
         send_from = None
         if self.args.titanic_ip is not None:
             server_port = (self.args.titanic_ip, 8005)
@@ -315,14 +318,17 @@ class ASRModule:
                             full_sentence = self.transcript_buffer.strip()
                             self.transcript_buffer = ""
                             logger.info("full sentence: %s", full_sentence)
-                            self.stop_processing_messages()
-                            self.stop_audio()
+                            if not multi_turn:
+                                self.stop_processing_messages()
+                                self.stop_audio()
                             self.process_command(user_input=full_sentence)
                             if read_one:
-                                self.send_end()
+                                if not multi_turn:
+                                    self.send_end()
                                 return
-                            self.start_audio()
-                            self.start_processing_messages()
+                            if not multi_turn:
+                                self.start_audio()
+                                self.start_processing_messages()
 
                     elif data.get("linkedData"):
                         for v in data.values():
@@ -775,7 +781,7 @@ if __name__ == "__main__":
         [
             "Butler, create an appointment tomorrow at 10.",
             "Title at TeamSynced.",
-            "It should end at 11.",
+            "It should end at 11."
         ],
     )
     # Setup Global Prompt Type
