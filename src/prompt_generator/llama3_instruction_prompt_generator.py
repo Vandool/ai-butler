@@ -13,7 +13,7 @@ from transformers import AutoTokenizer
 from src import utils
 from src.prompt_generator.prompt_generator import PromptType
 from src.web_handler.calendar_api import CalendarAPI
-from src.web_handler.lecture_translator_api import LectureTranslatorAPI
+from src.web_handler.lecture_translator_api import LectureTranslatorApi
 
 load_dotenv()
 access_token = os.getenv("HUGGINGFACE_ACCESS_TOKEN", default="<TOKEN>")
@@ -307,9 +307,9 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
         return messages
 
 
-def get_prompt_generator(api: CalendarAPI | LectureTranslatorAPI | None) -> PromptGeneratorLLama3Instruct:
+def get_prompt_generator(api: CalendarAPI | LectureTranslatorApi | None) -> PromptGeneratorLLama3Instruct:
     if isinstance(api, CalendarAPI):
         return CalendarAPIPromptGenerator(module=api)
-    if isinstance(api, LectureTranslatorAPI):
+    if isinstance(api, LectureTranslatorApi):
         return LectureAPIPromptGenerator(module=api)
     return QAPromptGenerator()
