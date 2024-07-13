@@ -8,7 +8,7 @@ from src.intent.intent_manager import IntentManager
 from src.llm_client.llm_client import LLMClient
 from src.prompt_generator.llama3_instruction_prompt_generator import get_prompt_generator
 from src.web_handler.calendar_api import CalendarAPI
-from src.web_handler.lecture_translator_api import LectureTranslatorAPI
+from src.web_handler.lecture_translator_api import LectureTranslatorApi
 
 
 def generate_classifier(
@@ -35,7 +35,7 @@ def generate_classifier(
 
 
 def generate_function_caller_classifier(
-    api: CalendarAPI | LectureTranslatorAPI | None,
+    api: CalendarAPI | LectureTranslatorApi | None,
     llm_client: LLMClient,
     *,
     use_unknown: bool = True,

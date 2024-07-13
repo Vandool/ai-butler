@@ -12,13 +12,17 @@ from huggingface_hub import InferenceClient
 from src.asr_butler.asr_butler import ASRModule
 from src.classifier.base_classifier import BaseClassifier
 from src.config.asr_llm_config import get_asr_llm_config
+from src.history.chathistory import ChatHistory
 from src.llm_client.llm_client import LLMClient
 from src.prompt_generator.prompt_generator import PromptType
 from src.state.state import CalendarState, InitialState
+from src.state.state import InitialState, State, CalendarState, FunctionCallerState
+from unittest import mock
 
 dialog_test_data = pytest.dialog_test_data[81:84]
 
 
+dialog_test_data = pytest.dialog_test_data[5:6]
 # one_off_test_data = [pytest.one_off_test_data[1]]
 # one_off_test_data = pytest.one_off_test
 
@@ -41,9 +45,9 @@ def start_thread(asr_module):
 
 
 def test_with_audio(inputs, prompt_type, capture_output_for_report):
-    input_files = inputs[:][0]
+    input_files = file_names = [test[0][0] for test in inputs]
 
-    expected_function_name = re.match(r"([a-zA-Z_]+)_\d+_\d+\.mp3$", inputs[0][0]).group(1)
+    expected_function_name = re.match(r"([a-zA-Z_]+)\d+_\d+\.mp3$",  inputs[0][0]).group(1)
 
     sys.argv = [sys.argv[0]]
     arguments = get_asr_llm_config()
@@ -80,9 +84,9 @@ def test_with_audio(inputs, prompt_type, capture_output_for_report):
 
 
 def test_text_only(inputs, prompt_type, capture_output_for_report):
-    input_texts = inputs[:][1]
+    input_texts = [part[1] for part in inputs]
 
-    expected_function_name = re.match(r"([a-zA-Z_]+)_\d+_\d+\.mp3$", inputs[0][0]).group(1)
+    expected_function_name = re.match(r"([a-zA-Z_]+)\d+_\d+\.mp3$",  inputs[0][0]).group(1)
 
     sys.argv = [sys.argv[0]]
     arguments = get_asr_llm_config()
@@ -91,15 +95,15 @@ def test_text_only(inputs, prompt_type, capture_output_for_report):
     asr_module = ASRModule(
         args=arguments,
         llm_client=llm_client_,
-        history=None,
-        start_state=InitialState(llm_client=llm_client_, tts_client=None),
+        history=ChatHistory(),
+        start_state=InitialState(llm_client=llm_client_, tts_client=None, use_function_caller=True)
     )
 
     BaseClassifier.set_prompt_type(prompt_type)
 
-    with mock.patch(
-        "src.state.state.CalendarState._function_name_helper", wrarps=CalendarState._function_name_helper
-    ) as function_name_helper_wrapper:
+    with (
+        mock.patch('src.state.state.FunctionCallerState._function_name_helper', wrarps=FunctionCallerState._function_name_helper) as function_name_helper_wrapper
+    ):
         asr_module.run_text_interface(
             input_texts,
         )

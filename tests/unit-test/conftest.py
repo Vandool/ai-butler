@@ -346,6 +346,7 @@ bruh = [
 def pytest_configure():
     pytest.one_off_test_data = one_off_test_data
     pytest.one_off_test = one_off_test
+    pytest.dialog_test_data = dialog_test_data
 
 
 @pytest.fixture(scope="session")
