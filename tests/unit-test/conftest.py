@@ -4,12 +4,14 @@ import os
 from pathlib import Path
 
 import pytest
+import pytz
 from dotenv import load_dotenv
 from huggingface_hub import InferenceClient
 
 from src.classifier.base_classifier import BaseClassifier
 from src.classifier.few_shot_text_generation_classifier import FewShotTextGenerationClassifier
-#from src.classifier.ollama_classifier import OllamaClassifier
+from src.classifier.ollama_classifier import OllamaClassifier
+# from src.classifier.ollama_classifier import OllamaClassifier
 from src.config.asr_llm_config import AsrLlmConfig
 from src.intent.intent import CALENDAR, LECTURE
 from src.intent.intent_manager import IntentManager
@@ -22,95 +24,139 @@ load_dotenv()
 one_off_test = (("get_next_appointment13.mp3", "Hey butler, whats up next?", CALENDAR.name),)
 
 dialog_test_data = [
-    [("create_appointment0_0.mp3",
-      "Hey butler, please create an appointment tomorrow from 10 to 11 titled 'Team Meeting' in the Conference Room.")],
-    [("create_appointment1_0.mp3",
-      "Hey butler, schedule an appointment next Monday from 2 PM to 3 PM titled 'Project Review'.")],
-    [("create_appointment2_0.mp3",
-      "Hey butler, set up a meeting next Friday from 9 AM to 10 AM titled 'Weekly Sync' with description 'Weekly team sync-up'.")],
-
+    [
+        (
+            "create_appointment0_0.mp3",
+            "Hey butler, please create an appointment tomorrow from 10 to 11 titled 'Team Meeting' in the Conference Room.",
+        ),
+    ],
+    [
+        (
+            "create_appointment1_0.mp3",
+            "Hey butler, schedule an appointment next Monday from 2 PM to 3 PM titled 'Project Review'.",
+        ),
+    ],
+    [
+        (
+            "create_appointment2_0.mp3",
+            "Hey butler, set up a meeting next Friday from 9 AM to 10 AM titled 'Weekly Sync' with description 'Weekly team sync-up'.",
+        ),
+    ],
     # Dialogs where the end time is provided after the initial request
-    [("create_appointment3_0.mp3", "Hey butler, create an appointment tomorrow at 10 titled 'Client Call'."),
-     ("create_appointment3_1.mp3", "It ends at 11.")],
-    [("create_appointment4_0.mp3",
-      "Hey butler, schedule an appointment next Monday at 2 PM titled 'Doctor's Appointment'."),
-     ("create_appointment4_1.mp3", "It should end at 3 PM.")],
-
+    [
+        ("create_appointment3_0.mp3", "Hey butler, create an appointment tomorrow at 10 titled 'Client Call'."),
+        ("create_appointment3_1.mp3", "It ends at 11."),
+    ],
+    [
+        (
+            "create_appointment4_0.mp3",
+            "Hey butler, schedule an appointment next Monday at 2 PM titled 'Doctor's Appointment'.",
+        ),
+        ("create_appointment4_1.mp3", "It should end at 3 PM."),
+    ],
     # Dialogs where the system asks for the end time after some optional parameters are provided
-    [("create_appointment5_0.mp3", "Hey butler, create an appointment tomorrow at 10."),
-     ("create_appointment5_1.mp3", "Title it 'Team Sync'."),
-     ("create_appointment5_2.mp3", "It should end at 11.")],
-
-    [("create_appointment6_0.mp3", "Hey butler, schedule a meeting next Tuesday at 1 PM."),
-     ("create_appointment6_1.mp3", "Description is 'Project Discussion'."),
-     ("create_appointment6_2.mp3", "It ends at 2 PM.")],
-
+    [
+        ("create_appointment5_0.mp3", "Hey butler, create an appointment tomorrow at 10."),
+        ("create_appointment5_1.mp3", "Title it 'Team Sync'."),
+        ("create_appointment5_2.mp3", "It should end at 11."),
+    ],
+    [
+        ("create_appointment6_0.mp3", "Hey butler, schedule a meeting next Tuesday at 1 PM."),
+        ("create_appointment6_1.mp3", "Description is 'Project Discussion'."),
+        ("create_appointment6_2.mp3", "It ends at 2 PM."),
+    ],
     # Dialogs with additional optional parameters provided in the initial request
-    [("create_appointment7_0.mp3",
-      "Hey butler, create an appointment tomorrow from 10 to 11 titled 'Team Meeting' with description 'Discuss project updates'.")],
-    [("create_appointment8_0.mp3",
-      "Hey butler, schedule an appointment next Monday from 2 PM to 3 PM with title 'Project Discussion' at 'Conference Room'.")],
-    [("create_appointment9_0.mp3",
-      "Hey butler, set up a meeting next Friday from 9 AM to 10 AM titled 'Strategy Session' with location 'Meeting Room 1'.")],
-
+    [
+        (
+            "create_appointment7_0.mp3",
+            "Hey butler, create an appointment tomorrow from 10 to 11 titled 'Team Meeting' with description 'Discuss project updates'.",
+        ),
+    ],
+    [
+        (
+            "create_appointment8_0.mp3",
+            "Hey butler, schedule an appointment next Monday from 2 PM to 3 PM with title 'Project Discussion' at 'Conference Room'.",
+        ),
+    ],
+    [
+        (
+            "create_appointment9_0.mp3",
+            "Hey butler, set up a meeting next Friday from 9 AM to 10 AM titled 'Strategy Session' with location 'Meeting Room 1'.",
+        ),
+    ],
     # Dialogs with only the start time initially, followed by optional parameters, then the end time
-    [("create_appointment10_0.mp3", "Hey butler, create an appointment tomorrow at 10."),
-     ("create_appointment10_1.mp3", "Title it 'Team Meeting'."),
-     ("create_appointment10_2.mp3", "It should end at 11.")],
-
-    [("create_appointment11_0.mp3", "Hey butler, schedule an appointment next Monday at 2 PM."),
-     ("create_appointment11_1.mp3", "Location is 'Conference Room'."),
-     ("create_appointment11_2.mp3", "It ends at 3 PM.")],
-
+    [
+        ("create_appointment10_0.mp3", "Hey butler, create an appointment tomorrow at 10."),
+        ("create_appointment10_1.mp3", "Title it 'Team Meeting'."),
+        ("create_appointment10_2.mp3", "It should end at 11."),
+    ],
+    [
+        ("create_appointment11_0.mp3", "Hey butler, schedule an appointment next Monday at 2 PM."),
+        ("create_appointment11_1.mp3", "Location is 'Conference Room'."),
+        ("create_appointment11_2.mp3", "It ends at 3 PM."),
+    ],
     # Dialogs with title given first, then start time, followed by optional parameters and end time
-    [("create_appointment12_0.mp3", "Hey butler, create an appointment titled 'Team Sync'."),
-     ("create_appointment12_1.mp3", "It starts tomorrow at 10."),
-     ("create_appointment12_2.mp3", "Description is 'Weekly team sync-up'."),
-     ("create_appointment12_3.mp3", "It should end at 11.")],
-
-    [("create_appointment13_0.mp3", "Hey butler, schedule a meeting titled 'Client Presentation'."),
-     ("create_appointment13_1.mp3", "It starts next Monday at 2 PM."),
-     ("create_appointment13_2.mp3", "Location is 'Main Hall'."),
-     ("create_appointment13_3.mp3", "It should end at 3 PM.")],
-
+    [
+        ("create_appointment12_0.mp3", "Hey butler, create an appointment titled 'Team Sync'."),
+        ("create_appointment12_1.mp3", "It starts tomorrow at 10."),
+        ("create_appointment12_2.mp3", "Description is 'Weekly team sync-up'."),
+        ("create_appointment12_3.mp3", "It should end at 11."),
+    ],
+    [
+        ("create_appointment13_0.mp3", "Hey butler, schedule a meeting titled 'Client Presentation'."),
+        ("create_appointment13_1.mp3", "It starts next Monday at 2 PM."),
+        ("create_appointment13_2.mp3", "Location is 'Main Hall'."),
+        ("create_appointment13_3.mp3", "It should end at 3 PM."),
+    ],
     # Longer dialogs with multiple interactions for all parameters
-    [("create_appointment14_0.mp3", "Hey butler, create an appointment titled 'Team Sync'."),
-     ("create_appointment14_1.mp3", "It starts tomorrow at 10."),
-     ("create_appointment14_2.mp3", "Description is 'Weekly team sync-up'."),
-     ("create_appointment14_3.mp3", "Location is 'Office Room 1'."),
-     ("create_appointment14_4.mp3", "It ends at 11.")],
-
-    [("create_appointment15_0.mp3", "Hey butler, schedule an appointment titled 'Client Meeting'."),
-     ("create_appointment15_1.mp3", "It starts next Monday at 2 PM."),
-     ("create_appointment15_2.mp3", "Description is 'Discuss quarterly report'."),
-     ("create_appointment15_3.mp3", "Location is 'Meeting Room 2'."),
-     ("create_appointment15_4.mp3", "It ends at 3 PM.")],
-
-    [("create_appointment16_0.mp3", "Hey butler, set up a meeting titled 'Project Kickoff'."),
-     ("create_appointment16_1.mp3", "It starts next Friday at 9 AM."),
-     ("create_appointment16_2.mp3", "Description is 'Kickoff for the new project'."),
-     ("create_appointment16_3.mp3", "Location is 'Conference Hall'."),
-     ("create_appointment16_4.mp3", "It should end at 10 AM.")],
-
-    [("create_appointment17_0.mp3", "Hey butler, please create an appointment on Wednesday from 3 PM to 4 PM titled 'Budget Meeting' in Room 5.")],
-
-    [("create_appointment18_0.mp3", "Hey butler, create an appointment on Thursday at 11 AM."),
-     ("create_appointment18_1.mp3", "Title it 'HR Meeting'."),
-     ("create_appointment18_2.mp3", "Description is 'Discuss new hires'."),
-     ("create_appointment18_3.mp3", "It should end at 12 PM.")],
-
+    [
+        ("create_appointment14_0.mp3", "Hey butler, create an appointment titled 'Team Sync'."),
+        ("create_appointment14_1.mp3", "It starts tomorrow at 10."),
+        ("create_appointment14_2.mp3", "Description is 'Weekly team sync-up'."),
+        ("create_appointment14_3.mp3", "Location is 'Office Room 1'."),
+        ("create_appointment14_4.mp3", "It ends at 11."),
+    ],
+    [
+        ("create_appointment15_0.mp3", "Hey butler, schedule an appointment titled 'Client Meeting'."),
+        ("create_appointment15_1.mp3", "It starts next Monday at 2 PM."),
+        ("create_appointment15_2.mp3", "Description is 'Discuss quarterly report'."),
+        ("create_appointment15_3.mp3", "Location is 'Meeting Room 2'."),
+        ("create_appointment15_4.mp3", "It ends at 3 PM."),
+    ],
+    [
+        ("create_appointment16_0.mp3", "Hey butler, set up a meeting titled 'Project Kickoff'."),
+        ("create_appointment16_1.mp3", "It starts next Friday at 9 AM."),
+        ("create_appointment16_2.mp3", "Description is 'Kickoff for the new project'."),
+        ("create_appointment16_3.mp3", "Location is 'Conference Hall'."),
+        ("create_appointment16_4.mp3", "It should end at 10 AM."),
+    ],
+    [
+        (
+            "create_appointment17_0.mp3",
+            "Hey butler, please create an appointment on Wednesday from 3 PM to 4 PM titled 'Budget Meeting' in Room 5.",
+        ),
+    ],
+    [
+        ("create_appointment18_0.mp3", "Hey butler, create an appointment on Thursday at 11 AM."),
+        ("create_appointment18_1.mp3", "Title it 'HR Meeting'."),
+        ("create_appointment18_2.mp3", "Description is 'Discuss new hires'."),
+        ("create_appointment18_3.mp3", "It should end at 12 PM."),
+    ],
     # Dialogs where title is given first, then start time, followed by end time and other optional parameters
-    [("create_appointment19_0.mp3", "Hey butler, create an appointment titled 'One-on-One Meeting'."),
-     ("create_appointment19_1.mp3", "It starts next Thursday at 2 PM."),
-     ("create_appointment19_3.mp3", "Description is 'Weekly one-on-one with manager'."),
-     ("create_appointment19_4.mp3", "Location is 'Manager's Office'."),
-     ("create_appointment19_2.mp3", "It should end at 3 PM.")],
-
+    [
+        ("create_appointment19_0.mp3", "Hey butler, create an appointment titled 'One-on-One Meeting'."),
+        ("create_appointment19_1.mp3", "It starts next Thursday at 2 PM."),
+        ("create_appointment19_3.mp3", "Description is 'Weekly one-on-one with manager'."),
+        ("create_appointment19_4.mp3", "Location is 'Manager's Office'."),
+        ("create_appointment19_2.mp3", "It should end at 3 PM."),
+    ],
     # Dialogs where the end time is provided after the initial request
-    [("create_appointment20_0.mp3", "Hey butler, schedule an appointment next Friday at 10 AM."),
-     ("create_appointment20_1.mp3", "Title it 'Team Check-In'."),
-     ("create_appointment20_2.mp3", "Location is 'Conference Room A'."),
-     ("create_appointment20_3.mp3", "It ends at 11 AM.")]
+    [
+        ("create_appointment20_0.mp3", "Hey butler, schedule an appointment next Friday at 10 AM."),
+        ("create_appointment20_1.mp3", "Title it 'Team Check-In'."),
+        ("create_appointment20_2.mp3", "Location is 'Conference Room A'."),
+        ("create_appointment20_3.mp3", "It ends at 11 AM."),
+    ],
 ]
 
 one_off_test_data = [
@@ -266,7 +312,6 @@ bruh = [
     ("am_i_free18.mp3", "Hey butler, am I free in three days at 10 AM?", CALENDAR.name),
     ("am_i_free19.mp3", "Okay butler, do I have anything planned this coming Friday at 11 PM?", CALENDAR.name),
     ("am_i_free20.mp3", "Hey butler, am I free in 12 hours?", CALENDAR.name),
-
     # Lecture get_lecture_content
     ("get_lecture_content0.mp3", "Hey butler, can you get the content of the last lecture?", LECTURE.name),
     ("get_lecture_content1.mp3", "Okay butler, what was discussed in the recent lecture?", LECTURE.name),
@@ -288,14 +333,14 @@ bruh = [
     ("get_lecture_content17.mp3", "Okay butler, can you get me the last lecture content?", LECTURE.name),
     ("get_lecture_content18.mp3", "Hey butler, provide me the last lecture details.", LECTURE.name),
     ("get_lecture_content19.mp3", "Okay butler, what was the topic of the last lecture?", LECTURE.name),
-    ("get_lecture_content20.mp3", "Hey butler, please get the previous lecture's transcript.", LECTURE.name)
+    ("get_lecture_content20.mp3", "Hey butler, please get the previous lecture's transcript.", LECTURE.name),
 ]
+
+
 #     ("get_lecture_content21.mp3", "Okay butler, what was the focus of the last lecture?", LECTURE.name),
 #     ("get_lecture_content22.mp3", "Hey butler, I need the lecture notes from the last session.", LECTURE.name),
 #     ("get_lecture_content23.mp3", "Okay butler, can you summarize the last lecture's content?", LECTURE.name)
 # ]
-
-
 
 
 def pytest_configure():
@@ -419,3 +464,162 @@ def capture_output_for_report(request):
     request.node._llm_output = None  # noqa: SLF001
     request.node._expected = None  # noqa: SLF001
     return setter
+
+
+@pytest.fixture()
+def chat_history():
+    now_utc = datetime.datetime.now(datetime.UTC)
+    berlin_tz = pytz.timezone("Europe/Berlin")
+    now = now_utc.astimezone(berlin_tz)
+    now = now.replace(minute=0, second=0, microsecond=0)
+    tmw = now + datetime.timedelta(days=1)
+    tmw_14 = datetime.datetime(
+        year=tmw.year,
+        month=tmw.month,
+        day=tmw.day,
+        hour=14,
+        minute=0,
+        second=0,
+        tzinfo=berlin_tz,
+    )
+    next_week = now + datetime.timedelta(days=7)
+    next_week_10 = datetime.datetime(
+        year=next_week.year,
+        month=next_week.month,
+        day=next_week.day,
+        hour=10,
+        minute=0,
+        second=0,
+        tzinfo=berlin_tz,
+    )
+
+    return [
+        {
+            "role": "user",
+            "content": "I want to create an appointment for a Project Meeting tomorrow afternoon at 2 o'clock, it should take 2 hours of my time.",
+        },
+        {
+            "role": "assistant",
+            "content": f'{{"text": "Alright, I will create the appointment", "function_call": "create_new_appointment(\'Project Meeting\', \'{tmw_14.isoformat()!s}\', \'{(tmw_14 + datetime.timedelta(hours=2)).isoformat()!s}\')"}}',
+        },
+        {
+            "role": "user",
+            "content": "Can you delete my next appointment?",
+        },
+        {
+            "role": "assistant",
+            "content": '{"text": "Sure, I will delete your next appointment.", "function_call": "delete_next_appointment()"}',
+        },
+        {
+            "role": "user",
+            "content": "What appointments do I have today?",
+        },
+        {
+            "role": "assistant",
+            "content": '{"text": "Let me check your appointments for today.", "function_call": "list_todays_appointments()"}',
+        },
+        {
+            "role": "user",
+            "content": "Am I free tomorrow at 3 PM?",
+        },
+        {
+            "role": "assistant",
+            "content": f'{{"text": "I will check your availability for tomorrow at 3 PM.", "function_call": "am_i_free(\'{(tmw_14 + datetime.timedelta(hours=1)).isoformat()!s}\')"}}',
+        },
+        {
+            "role": "user",
+            "content": "Delete all appointments for today.",
+        },
+        {
+            "role": "assistant",
+            "content": '{"text": "I will delete all your appointments for today.", "function_call": "delete_all_appointments_today()"}',
+        },
+        {
+            "role": "user",
+            "content": "What content is in the next lecture?",
+        },
+        {
+            "role": "assistant",
+            "content": '{"text": "I will retrieve the content of the next lecture for you.", "function_call": "get_lecture_content()"}',
+        },
+        {
+            "role": "user",
+            "content": "List my appointments for this week.",
+        },
+        {
+            "role": "assistant",
+            "content": '{"text": "Here are all your appointments for this week.", "function_call": "list_this_weeks_appointments()"}',
+        },
+        {
+            "role": "user",
+            "content": "I want to create an appointment.",
+        },
+        {
+            "role": "assistant",
+            "content": '{"text": "Okey, can you tell me when should it start and end?", "function_call": "create_new_appointment(\'Appointment\', None, None)"}',
+        },
+        {
+            "role": "user",
+            "content": "I want to create a Doctor Appointment for next week at 10 o'clock.",
+        },
+        {
+            "role": "assistant",
+            "content": f'{{"text": "Okey, can you tell me when should it end?", "function_call": "create_new_appointment(\'Doctor Appointment\', \'{next_week_10.isoformat()!s}\', None)"}}',
+        },
+        {
+            "role": "user",
+            "content": "user: What was the focus of the last lecture?",
+        },
+        {
+            "role": "assistant",
+            "content": '{"text": "Alright, I will retrieve the content of the last lecture for you.", "function_call": "get_lecture_content()"}',
+        },
+        {
+            "role": "user",
+            "content": "I think the appointment would take one hour maximum.",
+        },
+        {
+            "role": "assistant",
+            "content": f'{{"text": "Gotcha, I can now set the appointment for you", "function_call": "create_new_appointment(\'Doctor Appointment\', \'{next_week_10.isoformat()!s}\', \'{(next_week_10 + datetime.timedelta(hours=1)).isoformat()!s}\')"}}',
+        },
+        {
+            "role": "user",
+            "content": "What is the timezone of my calendar?",
+        },
+        {
+            "role": "assistant",
+            "content": '{"text": "I assume the timezone should be by default your local timezone", "function_call": "irrelevant_function()"}',
+        },
+        {
+            "role": "user",
+            "content": "When is my next appointment?",
+        },
+        {
+            "role": "assistant",
+            "content": '{"text": "I will check when your next appointment is.", "function_call": "get_next_appointment()"}',
+        },
+        {
+            "role": "user",
+            "content": "I want to create an appointment for a one hour Team Meeting tomorrow at 9 AM.",
+        },
+        {
+            "role": "assistant",
+            "content": f'{{"text": "Alright, I will create the appointment for the team meeting.", "function_call": "create_new_appointment(\'Team Meeting\', \'{(tmw_14 - datetime.timedelta(hours=5)).isoformat()!s}\', \'{(tmw_14 - datetime.timedelta(hours=4)).isoformat()!s}\')"}}',
+        },
+        {
+            "role": "user",
+            "content": "Create an appointment for a one hour Client Call next Monday at 11 AM.",
+        },
+        {
+            "role": "assistant",
+            "content": f'{{"text": "Sure, I will create the appointment for the client call.", "function_call": "create_new_appointment(\'Client Call\', \'{(next_week - datetime.timedelta(days=5, hours=3)).isoformat()!s}\', \'{(next_week - datetime.timedelta(days=5, hours=2)).isoformat()!s}\')"}}',
+        },
+        {
+            "role": "user",
+            "content": "I need the lecture notes from the last session",
+        },
+        {
+            "role": "assistant",
+            "content": '{"text": "Sure, I will retrieve the transcript now.", "function_call": "get_lecture_content()"}',
+        },
+    ]

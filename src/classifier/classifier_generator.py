@@ -51,7 +51,7 @@ def generate_function_caller_classifier(
                     examples=examples,
                 ),
             )
-        intent_manager_.use_unknown_intent = use_unknown
+    intent_manager_.use_unknown_intent = use_unknown
 
     return FunctionCallClassifier(
         llm_client=llm_client,

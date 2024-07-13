@@ -87,7 +87,7 @@ class ChatHistory:
         messages = [{"role": msg.role.value, "message": msg.text} for msg in self if not msg.is_slot_filling]
         return messages[last_n:]
 
-    def get_annotated_history(self, last_n: int = 0):
+    def get_annotated_history(self, last_n: int  = 0):
         messages = [f"{msg.role.value}: {msg.text}" for msg in self]
         return "\n".join(messages[last_n:])
 

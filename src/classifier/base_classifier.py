@@ -17,7 +17,7 @@ from src.prompt_generator.prompt_generator import PromptGeneratorLlama2, PromptT
 
 @dataclass
 class ClassifierResponse:
-    intent: Intent
+    intent: Intent | None = None
     llm_response: str | None = None
 
 
@@ -56,7 +56,7 @@ class BaseClassifier(abc.ABC):
 
     @intent_manager.setter
     def intent_manager(self, intent_manager: IntentManager) -> None:
-        assert intent_manager.get_intent_length() > 1
+        # assert intent_manager.get_intent_length() > 1
         self._intent_manager = intent_manager
         self.__initialize_prompt_generator()
 

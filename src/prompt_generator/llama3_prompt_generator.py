@@ -26,7 +26,7 @@ class Llama3PromptGenerator:
             token=access_token,
         )
         self._validate_func_names()
-        if intent_manager:
+        if intent_manager and len(intent_manager.list_intent_names()) > 1:
             self.classes = create_or_list(self.intent_manager.list_intent_names())
             self.classes_detailed = str({intent.name: intent.description for intent in self.intent_manager})
 

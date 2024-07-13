@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import abc
 import datetime
-import os
 import json
 from typing import ClassVar, TypeAlias
 
@@ -26,7 +25,7 @@ from src.prompt_generator.prompt_generator import PromptType
 from src.text2speech.microsoft_speecht5_tts import TextToSpeech
 from src.utils import FunctionInfo
 from src.web_handler.calendar_api import CalendarAPI
-from src.web_handler.lecture_translator_api import LectureTranslatorApi
+from src.web_handler.lecture_translator_api import LectureTranslatorAPI
 
 FunctionName: TypeAlias = str
 
@@ -315,7 +314,7 @@ class CalendarState(State):
         elif isinstance(fn_response, list):
             fn_response = [add_time_now_to(res) for res in fn_response]
 
-        llm_prompt = respond_prompts.get_calendar_api_respond_prompts(self.current_intent.name).format(
+        llm_prompt = respond_prompts.get_api_respond_prompts(self.current_intent.name).format(
             last_utterance=user_input,
             function_response=fn_response,
         )
@@ -354,7 +353,7 @@ class LectureState(State):
         tts_client: TextToSpeech | None = None,
         history: ChatHistory | None = None,
     ):
-        self.api = LectureTranslatorApi()
+        self.api = LectureTranslatorAPI()
         super().__init__(
             llm_client=llm_client,
             classifier=generate_classifier(module=self.api, llm_client=llm_client),
@@ -391,7 +390,7 @@ class LectureState(State):
 
         self.current_intent = classifier_response.intent
         if self.history:
-            self.message = Message().set_intent_name(self.current_intent.name)
+            self.message = Message()
 
         self._call_intended_function(user_input)
         return InitialState(llm_client=self.llm_client, tts_client=self.tts_client)
@@ -413,9 +412,9 @@ class LectureState(State):
         fn_response = intended_fn(**kwargs)
 
         if isinstance(fn_response, dict):
-            fn_response = _add_time_now_to(fn_response)
+            fn_response = add_time_now_to(fn_response)
         elif isinstance(fn_response, list):
-            fn_response = [_add_time_now_to(res) for res in fn_response]
+            fn_response = [add_time_now_to(res) for res in fn_response]
 
         llm_prompt = respond_prompts.get_lecture_api_respond_prompts(self.current_intent.name).format(
             last_utterance=user_input,
@@ -424,7 +423,7 @@ class LectureState(State):
         self.logger.debug(llm_prompt)
 
         # Open the html link
-        #self.api.open_html_link(response=fn_response)
+        # self.api.open_html_link(response=fn_response)
 
         response = self.llm_client.get_response(prompt=llm_prompt)
         if self.history:
@@ -549,7 +548,7 @@ class FunctionCallerState(State):
         elif isinstance(fn_response, list):
             fn_response = [add_time_now_to(res) for res in fn_response]
 
-        llm_prompt = respond_prompts.get_calendar_api_respond_prompts(self.current_intent.name).format(
+        llm_prompt = respond_prompts.get_api_respond_prompts(self.current_intent.name).format(
             last_utterance=user_input,
             function_response=fn_response,
         )

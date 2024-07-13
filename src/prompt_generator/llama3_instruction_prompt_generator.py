@@ -44,7 +44,7 @@ class PromptGeneratorLLama3Instruct(ABC):
         "{candidates}"
         "def irrelevant_function(): ”’If user query is not related to any of the predefined functions, this function will be called. Args: Returns: if the user asks a questiong about the history of the conversation, the question will be answered”’"
         "For time reference:"
-        "Now: {now} which corresponds to {day_of_the_week}"
+        "Now: {now} which corresponds to {day_of_the_week}. "
         "You always reply with the following format:"
         '{{"text": "<your textual response>", "function_call": "<the function call>"}}'
         "You only reply with the above format and nothing else"
@@ -185,7 +185,7 @@ class CalendarAPIPromptGenerator(PromptGeneratorLLama3Instruct):
                     day_of_the_week=now.strftime("%A"),
                     n_candidates=len(candidates) + 1,
                     candidates="\n".join(candidates),
-                    examples="\n".join([f"{shot['role']}: {shot['content']}" for shot in shots]),
+                    examples="\n".join([f"{shot['role']}: {shot['content']}" for shot in shots[:num_shots]]),
                 ),
             },
         ]
@@ -203,10 +203,6 @@ class CalendarAPIPromptGenerator(PromptGeneratorLLama3Instruct):
 
 
 class LectureAPIPromptGenerator(PromptGeneratorLLama3Instruct):
-    now_utc = datetime.datetime.now(datetime.UTC)
-    now = now_utc.astimezone(pytz.timezone("Europe/Berlin"))
-    now = now.replace(minute=0, second=0, microsecond=0)
-
     def get_default_chat_messages(
         self,
         user_input: str,
@@ -214,7 +210,51 @@ class LectureAPIPromptGenerator(PromptGeneratorLLama3Instruct):
         extend_messages: list[dict] | None = None,
         num_shots: int = 0,
     ) -> list[dict]:
-        pass
+        now_utc = datetime.datetime.now(datetime.UTC)
+        now = now_utc.astimezone(pytz.timezone("Europe/Berlin"))
+        now = now.replace(minute=0, second=0, microsecond=0)
+        shots = [
+            {
+                "role": "user",
+                "content": "user: What was the focus of the last lecture?",
+            },
+            {
+                "role": "assistant",
+                "content": '{"text": "Alright, I will retrieve the content of the last lecture for you.", "function_call": "get_lecture_content()"}',
+            },
+            {
+                "role": "user",
+                "content": "I need the lecture notes from the last session",
+            },
+            {
+                "role": "assistant",
+                "content": '{"text": "Sure, I will retrieve the transcript now.", "function_call": "get_lecture_content()"}',
+            },
+        ]
+
+        messages = [
+            {
+                "role": "system",
+                "content": self._SYS_PROMPT_FMT.format(
+                    now=now.isoformat(),
+                    day_of_the_week=now.strftime("%A"),
+                    n_candidates=len(candidates) + 1,
+                    candidates="\n".join(candidates),
+                    examples="\n".join([f"{shot['role']}: {shot['content']}" for shot in shots[:num_shots]]),
+                ),
+            },
+        ]
+
+        if extend_messages:
+            messages.extend(extend_messages)
+
+        messages.append(
+            {
+                "role": "user",
+                "content": f"{user_input}",
+            },
+        )
+        return messages
 
 
 class QAPromptGenerator(PromptGeneratorLLama3Instruct):

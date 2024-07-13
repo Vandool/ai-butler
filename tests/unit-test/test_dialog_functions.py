@@ -1,22 +1,24 @@
 import os
 import pathlib
+import re
 import sys
 import time
-import pytest
-import re
-
 from threading import Thread
+from unittest import mock
+
+import pytest
+from huggingface_hub import InferenceClient
+
 from src.asr_butler.asr_butler import ASRModule
 from src.classifier.base_classifier import BaseClassifier
 from src.config.asr_llm_config import get_asr_llm_config
 from src.llm_client.llm_client import LLMClient
-from huggingface_hub import InferenceClient
-
 from src.prompt_generator.prompt_generator import PromptType
-from src.state.state import InitialState, State, CalendarState
-from unittest import mock
+from src.state.state import CalendarState, InitialState
 
 dialog_test_data = pytest.dialog_test_data[81:84]
+
+
 # one_off_test_data = [pytest.one_off_test_data[1]]
 # one_off_test_data = pytest.one_off_test
 
@@ -54,7 +56,7 @@ def test_with_audio(inputs, prompt_type, capture_output_for_report):
         args=arguments,
         llm_client=llm_client_,
         history=None,
-        start_state=InitialState(llm_client=llm_client_, tts_client=None)
+        start_state=InitialState(llm_client=llm_client_, tts_client=None),
     )
 
     BaseClassifier.set_prompt_type(prompt_type)
@@ -65,10 +67,9 @@ def test_with_audio(inputs, prompt_type, capture_output_for_report):
     t.daemon = True
     t.start()
 
-    with (
-        mock.patch('src.state.state.CalendarState._function_name_helper',
-                   wrarps=CalendarState._function_name_helper) as function_name_helper_wrapper
-    ):
+    with mock.patch(
+        "src.state.state.CalendarState._function_name_helper", wrarps=CalendarState._function_name_helper
+    ) as function_name_helper_wrapper:
         start_time = time.monotonic()
         asr_module.read_text(start_time, True)
 
@@ -91,14 +92,14 @@ def test_text_only(inputs, prompt_type, capture_output_for_report):
         args=arguments,
         llm_client=llm_client_,
         history=None,
-        start_state=InitialState(llm_client=llm_client_, tts_client=None)
+        start_state=InitialState(llm_client=llm_client_, tts_client=None),
     )
 
     BaseClassifier.set_prompt_type(prompt_type)
 
-    with (
-        mock.patch('src.state.state.CalendarState._function_name_helper', wrarps=CalendarState._function_name_helper) as function_name_helper_wrapper
-    ):
+    with mock.patch(
+        "src.state.state.CalendarState._function_name_helper", wrarps=CalendarState._function_name_helper
+    ) as function_name_helper_wrapper:
         asr_module.run_text_interface(
             input_texts,
         )
@@ -107,4 +108,3 @@ def test_text_only(inputs, prompt_type, capture_output_for_report):
         capture_output_for_report(output=called_function_name, llm_output=None, expected=expected_function_name)
         function_name_helper_wrapper.assert_called_once()
         assert called_function_name == expected_function_name
-

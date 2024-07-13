@@ -155,7 +155,7 @@ class CalendarAPI:
         today = datetime.date.today()
         start_of_week = (today - datetime.timedelta(days=today.weekday())).isoformat() + "T00:00:00Z"
         end_of_week = (today + datetime.timedelta(days=6 - today.weekday())).isoformat() + "T23:59:59Z"
-        return CalendarAPI.list_appointments(
+        return CalendarAPI.__list_appointments(
             time_start=start_of_week,
             time_end=end_of_week,
         )
@@ -171,42 +171,38 @@ class CalendarAPI:
             - Can you provide today's agenda?
             - What are we doing today?
         """
-        return CalendarAPI.list_appointments(
+        return CalendarAPI.__list_appointments(
             time_start=format_datetime(dt=datetime.datetime.combine(datetime.date.today(), datetime.time.min)),
             time_end=format_datetime(dt=datetime.datetime.combine(datetime.date.today(), datetime.time.max)),
         )
 
     @staticmethod
     @catch_http_exception
-    def delete_appointment_by_time(start_time: str):
-        """Delete the appointment with the specified start time."""
-        events_result = (
-            service.events()
-            .list(
-                calendarId=gc_config.calendar_id,
-                timeMin=start_time,
-                maxResults=1,
-                singleEvents=True,
-                orderBy="startTime",
+    @utils.mark_intent
+    def am_i_free(time: str) -> bool:
+        """Determine if I have no appointments among the specified time.
+
+        Parameters:
+            - time (str): The time to check for appointments, specified in ISO 8601 format.
+
+        Examples:
+            - Do I have anything scheduled this coming Sunday at 4 PM?
+            - Am I available next Friday at 3 PM?
+            - Okay butler, do I have any plans in 6 hours?
+        """
+        return (
+            len(
+                CalendarAPI.__list_appointments(
+                    time_start=time,
+                    time_end=time,
+                ),
             )
-            .execute()
+            == 0
         )
-        events = events_result.get("items", [])
-        if events:
-            event_id = events[0]["id"]
-            service.events().delete(calendarId=gc_config.calendar_id, eventId=event_id).execute()
-            return True
-        return False
 
     @staticmethod
     @catch_http_exception
-    def delete_appointment_by_id(appointment_id: int) -> bool:
-        service.events().delete(calendarId=gc_config.calendar_id, eventId=appointment_id).execute()
-        return True
-
-    @staticmethod
-    @catch_http_exception
-    def list_appointments(time_start: str, time_end: str) -> list:
+    def __list_appointments(time_start: str, time_end: str) -> list:
         """list all the appointments in the calendar."""
         events_result = (
             service.events()
@@ -220,50 +216,6 @@ class CalendarAPI:
             .execute()
         )
         return events_result.get("items", [])
-
-    @staticmethod
-    @catch_http_exception
-    def am_i_free(time: str | None = None) -> bool:
-        """Determine if I have no appointments among the specified time.
-
-        Examples:
-            - Do I have anything scheduled this coming Sunday at 4 PM?
-            - Am I available next Friday at 3 PM?
-            - Okay butler, do I have any plans in 6 hours?
-        """
-        return (
-            len(
-                CalendarAPI.list_appointments(
-                    time_start=time,
-                    time_end=time,
-                ),
-            )
-            == 0
-        )
-
-    @staticmethod
-    @catch_http_exception
-    def am_i_free_in_the_next(hours: int = 2) -> bool:
-        """Determine if I have no appointments in the next specified (defaults to 2) hours."""
-        return (
-            len(
-                CalendarAPI.list_appointments(
-                    time_start=format_datetime(dt=datetime.datetime.now(datetime.UTC)),
-                    time_end=format_datetime(dt=datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=hours)),
-                ),
-            )
-            == 0
-        )
-
-    @staticmethod
-    @catch_http_exception
-    def list_calendars() -> list:
-        """list all the calendars in the account."""
-        calendar_list = service.calendarList().list().execute()
-        calendars = calendar_list.get("items", [])
-        for calendar in calendars:
-            logger.info(f"ID: {calendar['id']}, Summary: {calendar['summary']}")
-        return calendars
 
     @staticmethod
     def open_html_link(response: dict) -> None:
@@ -287,10 +239,10 @@ if __name__ == "__main__":
             description=None,
             location=None,
         )
-        CalendarAPI.open_html_link(new_event)
+        # CalendarAPI.open_html_link(new_event)
         # print("New Event Created:", new_event)
         #
         # next_appointment = CalendarAPI.get_next_appointment()
         # print("Next Appointment:", json.dumps(next_appointment, indent=2))
-        this_week = CalendarAPI.list_this_weeks_appointments()
-        print("this_week Appointment:", json.dumps(this_week, indent=2))
+        response = CalendarAPI.am_i_free(time=utils.ensure_iso_8601_format("2024-07-04 14:00:00+00:00"))
+        print("this_week Appointment:", json.dumps(response, indent=2))

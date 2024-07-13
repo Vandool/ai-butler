@@ -31,7 +31,7 @@ def check_status_code(func):
             logging.exception(
                 "Error in function '%s': HTTP Error %s: %s",
                 func.__name__,
-                response.status_code,
+                response.status_code, 
                 response.text,
             )
             sys.exit(1)
