@@ -6,6 +6,7 @@ import os
 import json
 from typing import ClassVar, TypeAlias
 
+import pytz
 from fuzzywuzzy import fuzz
 from huggingface_hub import InferenceClient
 
@@ -31,7 +32,9 @@ FunctionName: TypeAlias = str
 
 
 def add_time_now_to(fn_response):
-    fn_response.update({"now": datetime.datetime.now(datetime.UTC)})
+    now_utc = datetime.datetime.now(datetime.UTC)
+    now = now_utc.astimezone(pytz.timezone("Europe/Berlin"))
+    fn_response.update({"now": now.replace(minute=0, second=0, microsecond=0)})
     return fn_response
 
 
@@ -177,7 +180,7 @@ class InitialState(State):
                     llm_client=self.llm_client,
                     tts_client=self.tts_client,
                     history=self.history,
-                    module=CalendarAPI,
+                    api=CalendarAPI(),
                 ).process(
                     user_input,
                 )
@@ -186,7 +189,15 @@ class InitialState(State):
                     llm_client=self.llm_client,
                     tts_client=self.tts_client,
                     history=self.history,
-                    module=LectureTranslatorApi,
+                    api=LectureTranslatorApi(),
+                ).process(
+                    user_input,
+                )
+            if classifier_response.intent == intent.CHAT_HISTORY:
+                return FunctionCallerState(
+                    llm_client=self.llm_client,
+                    tts_client=self.tts_client,
+                    history=self.history,
                 ).process(
                     user_input,
                 )
@@ -434,12 +445,12 @@ class FunctionCallerState(State):
         llm_client: LLMClient,
         tts_client: TextToSpeech | None = None,
         history: ChatHistory | None = None,
-        module: object | None = None,
+        api: CalendarAPI | LectureTranslatorAPI | None = None,
     ):
-        self.api = module
+        self.api = api
         super().__init__(
             llm_client=llm_client,
-            classifier=generate_function_caller_classifier(module=self.api, llm_client=llm_client),
+            classifier=generate_function_caller_classifier(api=self.api, llm_client=llm_client),
             tts_client=tts_client,
             history=history,
         )
@@ -545,7 +556,7 @@ class FunctionCallerState(State):
         self.logger.debug(llm_prompt)
 
         # Open the html link
-        self.api.open_html_link(response=fn_response)
+        # self.api.open_html_link(response=fn_response)
 
         response = self.llm_client.get_response(prompt=llm_prompt)
         if self.history:

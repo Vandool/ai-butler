@@ -7,9 +7,12 @@ from src import utils
 from src.intent.intent import Intent
 from src.intent.intent_manager import IntentManager
 from src.llm_client.llm_client import LLMClient
-from src.prompt_generator.llama3_instruction_prompt_generator import Llama3InstructFunctionCallPromptGenerator
+from src.prompt_generator.llama3_instruction_prompt_generator import (
+    CalendarAPIPromptGenerator,
+    PromptGeneratorLLama3Instruct,
+)
 from src.prompt_generator.llama3_prompt_generator import Llama3PromptGenerator
-from src.prompt_generator.prompt_generator import PromptGenerator, PromptType
+from src.prompt_generator.prompt_generator import PromptGeneratorLlama2, PromptType
 
 
 @dataclass
@@ -24,14 +27,14 @@ class BaseClassifier(abc.ABC):
     def __init__(self):
         self.logger = utils.get_logger(self.__class__.__name__)
         self._intent_manager: IntentManager | None = None
-        self._prompt_generator: PromptGenerator | Llama3InstructFunctionCallPromptGenerator | None = None
+        self._prompt_generator: PromptGeneratorLlama2 | CalendarAPIPromptGenerator | None = None
 
     @property
-    def prompt_generator(self) -> PromptGenerator | Llama3InstructFunctionCallPromptGenerator | None:
+    def prompt_generator(self) -> PromptGeneratorLlama2 | CalendarAPIPromptGenerator | None:
         return self._prompt_generator
 
     @prompt_generator.setter
-    def prompt_generator(self, prompt_generator: PromptGenerator | Llama3InstructFunctionCallPromptGenerator):
+    def prompt_generator(self, prompt_generator: PromptGeneratorLlama2 | CalendarAPIPromptGenerator):
         self._prompt_generator = prompt_generator
 
     @classmethod
@@ -108,14 +111,14 @@ class FewShotTextGenerationClassifier(BaseClassifier):
 class FunctionCallClassifier(BaseClassifier):
     def __init__(
         self,
+        prompt_generator: PromptGeneratorLLama3Instruct,
         llm_client: LLMClient,
         intent_manager: IntentManager | None = None,
-        module: object | None = None,
     ):
         super().__init__()
         self.llm_client = llm_client
         self.intent_manager = intent_manager
-        self.prompt_generator = Llama3InstructFunctionCallPromptGenerator(module=module)
+        self.prompt_generator = prompt_generator
 
     @property
     def name(self) -> str:

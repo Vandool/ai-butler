@@ -76,6 +76,7 @@ class IntentManagerFactory:
         intent_manager = IntentManager()
         intent_manager.add_intent(intent.CALENDAR)
         intent_manager.add_intent(intent.LECTURE)
+        intent_manager.add_intent(intent.CHAT_HISTORY)
         intent_manager.use_unknown_intent = True
         return intent_manager
 
