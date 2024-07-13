@@ -22,7 +22,7 @@ class PromptType(enum.Enum):
         return self.value[1]
 
 
-class PromptGenerator:
+class PromptGeneratorLlama2:
     def __init__(self, intent_manager: IntentManager, num_shots: int = 1):
         self.intent_manager = intent_manager
         self.num_shots = num_shots
@@ -98,7 +98,7 @@ def create_or_list(items: list[str]) -> str:
 
 if __name__ == "__main__":
     intent_manager = IntentManager()
-    prompt_generator = PromptGenerator(intent_manager)
+    prompt_generator = PromptGeneratorLlama2(intent_manager)
     intent_manager.add_intent(CALENDAR)
     intent_manager.add_intent(LECTURE)
     logger = utils.get_logger("PromptGenerator")

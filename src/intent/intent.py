@@ -40,6 +40,17 @@ LECTURE: Intent = Intent(
     "content, and creating study aids like Anki cards.",
 )
 
+CHAT_HISTORY: Intent = Intent(
+    name="ChatHistory",
+    examples=[
+        "What was the name of the first function that we've called?",
+        "At what time the last appointment we've created start?",
+        "What was the name of the first meeting we have scheduled?",
+    ],
+    description="Handles tasks related to lectures, including translating notes, transcribing audio, summarizing "
+    "content, and creating study aids like Anki cards.",
+)
+
 UNKNOWN: Intent = Intent(
     name="Unknown",
     examples=[
