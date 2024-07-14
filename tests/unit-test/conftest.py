@@ -2,6 +2,7 @@
 import datetime
 import os
 from pathlib import Path
+from unittest import mock
 
 import pytest
 import pytz
@@ -143,12 +144,13 @@ dialog_test_data = [
         ("create_new_appointment18_3.mp3", "It should end at 12 PM."),
     ],
     # Dialogs where title is given first, then start time, followed by end time and other optional parameters
-    [("create_new_appointment19_0.mp3", "Hey butler, create an appointment titled 'One-on-One Meeting'."),
-     ("create_new_appointment19_1.mp3", "It starts next Thursday at 2 PM."),
-     ("create_new_appointment19_2.mp3", "Description is 'Weekly one-on-one with manager'."),
-     ("create_new_appointment19_3.mp3", "Location is 'Manager's Office'."),
-     ("create_new_appointment19_4.mp3", "It should end at 3 PM.")],
-
+    [
+        ("create_new_appointment19_0.mp3", "Hey butler, create an appointment titled 'One-on-One Meeting'."),
+        ("create_new_appointment19_1.mp3", "It starts next Thursday at 2 PM."),
+        ("create_new_appointment19_2.mp3", "Description is 'Weekly one-on-one with manager'."),
+        ("create_new_appointment19_3.mp3", "Location is 'Manager's Office'."),
+        ("create_new_appointment19_4.mp3", "It should end at 3 PM."),
+    ],
     # Dialogs where the end time is provided after the initial request
     [
         ("create_new_appointment20_0.mp3", "Hey butler, schedule an appointment next Friday at 10 AM."),
@@ -467,6 +469,19 @@ def capture_output_for_report(request):
 
 
 @pytest.fixture()
+def mock_get_now_tz_berlin():
+    with mock.patch(
+        target="src.utils.get_now_tz_berlin",
+        return_value=(
+            datetime.fromisoformat("2024-01-01T00:00:00.00")
+            .replace(tzinfo=datetime.UTC)
+            .astimezone(pytz.timezone("Europe/Berlin"))
+        ),
+    ):
+        yield
+
+
+@pytest.fixture()
 def chat_history():
     now_utc = datetime.datetime.now(datetime.UTC)
     berlin_tz = pytz.timezone("Europe/Berlin")
@@ -568,19 +583,19 @@ def chat_history():
         },
         {
             "role": "user",
-            "content": "user: What was the focus of the last lecture?",
-        },
-        {
-            "role": "assistant",
-            "content": '{"text": "Alright, I will retrieve the content of the last lecture for you.", "function_call": "get_lecture_content()"}',
-        },
-        {
-            "role": "user",
             "content": "I think the appointment would take one hour maximum.",
         },
         {
             "role": "assistant",
             "content": f'{{"text": "Gotcha, I can now set the appointment for you", "function_call": "create_new_appointment(\'Doctor Appointment\', \'{next_week_10.isoformat()!s}\', \'{(next_week_10 + datetime.timedelta(hours=1)).isoformat()!s}\')"}}',
+        },
+        {
+            "role": "user",
+            "content": "user: What was the focus of the last lecture?",
+        },
+        {
+            "role": "assistant",
+            "content": '{"text": "Alright, I will retrieve the content of the last lecture for you.", "function_call": "get_lecture_content()"}',
         },
         {
             "role": "user",

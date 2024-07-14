@@ -1,7 +1,9 @@
 import sys
+from datetime import UTC, datetime
 from unittest import mock
 
 import pytest
+from freezegun import freeze_time
 from huggingface_hub import InferenceClient
 
 from src.asr_butler.asr_butler import ASRModule
@@ -14,15 +16,18 @@ from src.state.state import InitialState, State
 
 test_tuples = [
     # Questions, correct answers
-    ("Hey Butler, What was the name of the first appointment we've created?", ["Project Meeting"]),
-    ("Hey Butler, What was the name of the last appointment we've created?", ["Client Call"]),
-    ("Hey Butler, How many appointments did we actually create an appointment?", ["4", "four"]),
-    ("Hey Butler, How many times did I ask question regarding the lecture content?", ["2", "two", "twice"]),
-    ("Hey Butler, How long the last appointment that we've created last", ["one", "1", "once"]),
+    ("Hey Butler, hhat was the name of the first appointment we've created?", ["Project Meeting"]),
+    ("Hey Butler, what was the name of the last appointment we've created?", ["Client Call"]),
+    ("Hey Butler, how many appointments did we actually create an appointment?", ["4", "four"]),
+    ("Hey Butler, how many times did I ask question regarding the lecture content?", ["2", "two", "twice"]),
+    ("Hey Butler, how long the last appointment that we've created last", ["one", "1", "once"]),
+    ("Hey Butler, how many appointments did we delete so far?", ["one", "1", "once"]),
+    ("Hey Butler, at what time my doctor's appointment begin?", ["one", "1", "once"]),
 ]
 
 
 @pytest.mark.parametrize("input, expected_outputs", test_tuples)
+# @freeze_time(datetime.fromisoformat("2024-01-01T00:00:00.00").replace(tzinfo=UTC))
 def test_chat_history_text_only(input, expected_outputs, chat_history, capture_output_for_report):
     sys.argv = [sys.argv[0]]
     arguments = get_asr_llm_config()
@@ -60,8 +65,8 @@ def test_chat_history_text_only(input, expected_outputs, chat_history, capture_o
             [input],
         )
 
-        butler_response = butler_output.call_args[1]["response"]
-        if not any(correct_response in butler_response for correct_response in expected_outputs):
+        butler_response = str(butler_output.call_args[1]["response"]).lower()
+        if not any(correct_response.lower() in butler_response for correct_response in expected_outputs):
             pytest.fail(f"Butler Response: {butler_response}, Excepted indicators: {expected_outputs!s}")
         capture_output_for_report(output=butler_response, llm_output=None, expected=expected_outputs)
         # butler_outpe.assert_called_once()
