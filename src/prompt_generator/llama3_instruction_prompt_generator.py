@@ -267,21 +267,18 @@ class LectureAPIPromptGenerator(PromptGeneratorLLama3Instruct):
 
 class QAPromptGenerator(PromptGeneratorLLama3Instruct):
     _SYS_PROMPT_FMT: ClassVar[str] = (
-        "Below, you are presented with {n_candidates} candidate functions. Your task is to analyze a specific user input to "
-        "determine which of these functions most appropriately addresses the query. Then, construct the correct function"
-        " call with all necessary parameters, adhering to proper syntax. "
-        "Format for function call: function_name(param1, param2, ...) "
-        "Candidate Functions: \n"
-        "{candidates}"
-        "def irrelevant_function(): ”’If user query is not related to any of the predefined functions, this function will be called. Args: Returns: if the user asks a questiong about the history of the conversation, the question will be answered”’"
+        "Your job to answer question regarding the latest interactions with the user."
         "For time reference:"
         "Now: {now} which corresponds to {day_of_the_week}\n"
         "You always reply with the following format:"
-        '{{"text": "<your textual response>", "function_call": "<the function call>"}}'
+        '{{"text": "<your textual response>", "function_call": "irrelevant_function()"}}'
         "You only reply with the above format and nothing else"
-        "Ensure the output is a syntactically valid function call. If the user asks a question about the history of your conversation, you shoulld analyse the chat history and answer it based on the history.\n"
+        "If the user asks a question about the history of your conversation, you shoulld analyse the chat history and answer it based on the history.\n"
         "Remember a function is considered called when all it's parameters are known."
-        "Here are some examples:\n"
+        "Here are some examples.\n"
+        "Given the following Chat history:\n"
+        "{chat_history}\n"
+        "These are some example interactions:\n"
         "{examples}\n"
     )
 
@@ -306,7 +303,7 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
             second=0,
             tzinfo=berlin_tz,
         )
-        shots = [
+        history = [
             {
                 "role": "user",
                 "content": "I want to create an appointment with the name Meeting with proffessor for tomorrow afternoon at 2 o'clock, it should take 2 hours of my time.",
@@ -315,6 +312,8 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
                 "role": "assistant",
                 "content": f'{{"text": "Alright, I will create the appointment", "function_call": "create_new_appointment(\'Meeting with Proffessor\', \'{tmw_14.isoformat()!s}\', \'{(tmw_14 + datetime.timedelta(hours=2)).isoformat()!s}\')"}}',
             },
+        ]
+        shots = [
             {
                 "role": "user",
                 "content": "What was the name of the first appointment we've created?",
@@ -348,6 +347,7 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
                     day_of_the_week=now.strftime("%A"),
                     n_candidates=len(candidates) + 1,
                     candidates="\n".join(candidates) if candidates else "",
+                    chat_history="\n".join([f"{shot['role']}: {shot['content']}" for shot in history]),
                     examples="\n".join([f"{shot['role']}: {shot['content']}" for shot in shots]),
                 ),
             },
