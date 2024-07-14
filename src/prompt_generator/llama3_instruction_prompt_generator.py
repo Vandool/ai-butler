@@ -266,20 +266,19 @@ class LectureAPIPromptGenerator(PromptGeneratorLLama3Instruct):
 
 class QAPromptGenerator(PromptGeneratorLLama3Instruct):
     _SYS_PROMPT_FMT: ClassVar[str] = (
-        "Your job to answer question regarding the latest interactions with the user."
+        "Your job to answer question regarding the latest interactions with the user. "
         "For time reference:\n"
         "Now: {now} which corresponds to {day_of_the_week}.\n"
         "You always reply with the following format:"
         '{{"text": "<your textual response>", "function_call": "irrelevant_function()"}}'
         "You only reply with the above format and nothing else"
-        "If the user asks a question about the history of your conversation, you shoulld analyse the chat history and answer it based on the history.\n"
+        "If the user asks a question about the history of your conversation, you should analyse the chat history and answer it based on the history.\n"
         "Remember a function is considered called when all it's parameters are known."
         "Let's take a look at some examples:.\n"
         "The following is an imaginary chat history just as an example. Please do not reference these in the real questions:\n"
         "{chat_history}\n"
         "These are some example correct interactions based on the imaginary chat history:\n"
         "{examples}\n"
-        "The real chat history follows:"
     )
 
     def get_default_chat_messages(

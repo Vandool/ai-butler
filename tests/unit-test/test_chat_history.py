@@ -20,14 +20,14 @@ test_tuples = [
     ("Hey Butler, how many times did I ask question regarding the lecture content?", ["2", "two", "twice"]),
     ("Hey Butler, how long the last appointment that we've created last", ["one", "1", "once"]),
     ("Hey Butler, how many appointments did we delete so far?", ["one", "1", "once"]),
-    ("Hey Butler, at what time my doctor's appointment begin?", ["ten", "10"]),
+    ("Hey Butler, at what time my doctor's appointment which we have created together begins?", ["ten", "10"]),
     (
         "Hey Butler, which one of the appointments we have created starts first, the client call or team meeting?",
-        ["client call"],
+        ["team meeting"],
     ),
     ("Hey Butler, what was the last function that we have called?", ["get_lecture_content"]),
     (
-        "Hey Butler, when does my project meeting that ends?",
+        "Hey Butler, when does my project meeting which we have created together ends?",
         ["16", "four"],
     ),
 ]
