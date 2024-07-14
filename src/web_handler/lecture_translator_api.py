@@ -21,7 +21,7 @@ class LectureTranslatorAPI:
     @staticmethod
     @utils.mark_intent
     def get_lecture_content():
-        """Get content of the lecture.
+        """Get transcript of the last lecture in order to ask questions about its content.
 
         Examples:
             - I'd like to summarize the last lecture.

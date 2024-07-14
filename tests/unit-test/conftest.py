@@ -13,7 +13,7 @@ from src.classifier.few_shot_text_generation_classifier import FewShotTextGenera
 from src.classifier.ollama_classifier import OllamaClassifier
 # from src.classifier.ollama_classifier import OllamaClassifier
 from src.config.asr_llm_config import AsrLlmConfig
-from src.intent.intent import CALENDAR, LECTURE
+from src.intent.intent import CALENDAR, LECTURE, CHAT_HISTORY
 from src.intent.intent_manager import IntentManager
 from src.llm_client.llm_client import LLMClient
 
@@ -286,9 +286,7 @@ one_off_test_data = [
     ("delete_all_appointments_today18.mp3", "Hey butler, please remove all today's appointments.", CALENDAR.name),
     ("delete_all_appointments_today19.mp3", "Okay butler, delete every appointment for today.", CALENDAR.name),
     ("delete_all_appointments_today20.mp3", "Hey butler, I need you to cancel all today's events.", CALENDAR.name),
-]
 
-bruh = [
     # Google Calendar am_i_free
     ("am_i_free0.mp3", "Hey butler, am I free tomorrow at 3 PM?", CALENDAR.name),
     ("am_i_free1.mp3", "Okay butler, do I have any appointments in 5 hours?", CALENDAR.name),
@@ -353,6 +351,7 @@ def intent_manager_with_unknown_intent() -> IntentManager:
     intent_manager = IntentManager()
     intent_manager.add_intent(CALENDAR)
     intent_manager.add_intent(LECTURE)
+    intent_manager.add_intent(CHAT_HISTORY)
     intent_manager.use_unknown_intent = True
     return intent_manager
 

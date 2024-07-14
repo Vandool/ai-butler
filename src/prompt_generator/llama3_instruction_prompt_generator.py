@@ -43,12 +43,12 @@ class PromptGeneratorLLama3Instruct(ABC):
         "Candidate Functions: \n"
         "{candidates}"
         "def irrelevant_function(): ”’If user query is not related to any of the predefined functions, this function will be called. Args: Returns: if the user asks a questiong about the history of the conversation, the question will be answered”’"
-        "For time reference:"
+        "For time reference: "
         "Now: {now} which corresponds to {day_of_the_week}. "
-        "You always reply with the following format:"
-        '{{"text": "<your textual response>", "function_call": "<the function call>"}}'
-        "You only reply with the above format and nothing else"
-        "Your goal is to select the most suitable function out of the n_candidates candidates and generate an accurate function call that directly addresses the user's last input or the previous ones, if they are 100% related. Ensure the output is a syntactically valid function call. If the user asks a question about the history of your conversation, you can answer it based on the history.\n"
+        "You always reply with the following format: "
+        '{{"text": "<your textual response>", "function_call": "<the function call>"}} '
+        "You only reply with the above format and nothing else. "
+        "Your goal is to select the most suitable function out of the {n_candidates} candidates and generate an accurate function call that directly addresses the user's last input or the previous ones, if they are 100% related. Ensure the output is a syntactically valid function call. If the user asks a question about the history of your conversation, you can answer it based on the history.\n"
         "Here are some examples:\n"
         "{examples}\n"
     )
@@ -224,7 +224,7 @@ class LectureAPIPromptGenerator(PromptGeneratorLLama3Instruct):
         shots = [
             {
                 "role": "user",
-                "content": "user: What was the focus of the last lecture?",
+                "content": "What was the focus of the last lecture please summarize?",
             },
             {
                 "role": "assistant",
@@ -232,11 +232,11 @@ class LectureAPIPromptGenerator(PromptGeneratorLLama3Instruct):
             },
             {
                 "role": "user",
-                "content": "I need the lecture notes from the last session",
+                "content": "Please give me the main content of the last lecture.",
             },
             {
                 "role": "assistant",
-                "content": '{"text": "Sure, I will retrieve the transcript now.", "function_call": "get_lecture_content()"}',
+                "content": '{"text": "Let me retrieve the transcript of the last lecture now.", "function_call": "get_lecture_content()"}',
             },
         ]
 

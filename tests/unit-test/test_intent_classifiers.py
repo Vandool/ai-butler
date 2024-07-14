@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from src.classifier.base_classifier import BaseClassifier
-from src.intent.intent import CALENDAR, LECTURE, UNKNOWN
+from src.intent.intent import CALENDAR, LECTURE, UNKNOWN, CHAT_HISTORY
 from src.prompt_generator.prompt_generator import PromptType
 
 test_data = [
@@ -42,7 +42,6 @@ test_data = [
     ("lecture10.mp3", "Create study notes from the lecture", LECTURE.name),
 ]
 
-
 additional_test_data = [
     # Unknown
     ("What is the fastest land animal?", UNKNOWN.name),
@@ -67,6 +66,27 @@ additional_test_data = [
     ("Provide the main ideas discussed in the lecture", LECTURE.name),
     ("Make a transcript of the professor's talk", LECTURE.name),
     ("Translate the notes from today's class", LECTURE.name),
+    
+    ("what was the name of the first appointment we've created?", CHAT_HISTORY.name),
+    ("what was the name of the last appointment we've created?", CHAT_HISTORY.name),
+    ("how many appointments did we actually create?", CHAT_HISTORY.name),
+    ("how many times did I ask questions regarding the lecture content?", CHAT_HISTORY.name),
+    ("the appointment we just talked about, how long does it last?", CHAT_HISTORY.name),
+    ("how many appointments did we delete so far?", CHAT_HISTORY.name),
+    ("at what time did we set the doctors appointment earlier in our conversation?", CHAT_HISTORY.name),
+    ("based on our conversation, which appointment starts first, the client call or team meeting?", CHAT_HISTORY.name),
+    ("what was the last function that we called?", CHAT_HISTORY.name),
+    ("when does my project meeting end that we created together?", CHAT_HISTORY.name),
+    ("what time does the team meeting we scheduled start?", CHAT_HISTORY.name),
+    ("which appointment did we reschedule?", CHAT_HISTORY.name),
+    ("how many times have I asked about my schedule?", CHAT_HISTORY.name),
+    ("did i already ask you questions about the lecture?", CHAT_HISTORY.name),
+    ("based on our conversation, when does the client call we scheduled earlier end?", CHAT_HISTORY.name),
+    ("how many appointments are scheduled for tomorrow based on our conversation?", CHAT_HISTORY.name),
+    ("what appointment did we create lastly?", CHAT_HISTORY.name),
+    ("what time did we set for the project deadline?", CHAT_HISTORY.name),
+    ("how many appointments have we modified?", CHAT_HISTORY.name),
+    ("which appointment did I ask to be canceled?", CHAT_HISTORY.name),
 ]
 
 # Remove audio_file for current implementation of tests
@@ -74,56 +94,55 @@ test_data = [(b, c) for _, b, c in test_data]
 
 test_data = test_data + additional_test_data + [(b, c) for _, b, c in pytest.one_off_test_data][:10]
 
-
-# @pytest.mark.parametrize("the_input, expected_output", test_data)
-# @pytest.mark.report_test()  # Custom marker to include this test in the report
-# def test_few_shot_text_generation_classifier_zero_shot(
-#         the_input,
-#         expected_output,
-#         capture_output_for_report,
-#         few_shot_classifier,
-# ):
-#     handle_test(
-#         capture_output_for_report,
-#         expected_output,
-#         few_shot_classifier,
-#         the_input,
-#         prompt_type=PromptType.ZERO_SHOT,
-#     )
-
-
-# @pytest.mark.parametrize("the_input, expected_output", test_data)
-# @pytest.mark.report_test()  # Custom marker to include this test in the report
-# def test_few_shot_text_generation_classifier_zero_shot_detailed(
-#         the_input,
-#         expected_output,
-#         capture_output_for_report,
-#         few_shot_classifier,
-# ):
-#     handle_test(
-#         capture_output_for_report,
-#         expected_output,
-#         few_shot_classifier,
-#         the_input,
-#         prompt_type=PromptType.ZERO_SHOT_DETAILED,
-#     )
+@pytest.mark.parametrize("the_input, expected_output", test_data)
+@pytest.mark.report_test()  # Custom marker to include this test in the report
+def test_few_shot_text_generation_classifier_zero_shot(
+        the_input,
+        expected_output,
+        capture_output_for_report,
+        few_shot_classifier,
+):
+    handle_test(
+        capture_output_for_report,
+        expected_output,
+        few_shot_classifier,
+        the_input,
+        prompt_type=PromptType.ZERO_SHOT,
+    )
 
 
-# @pytest.mark.parametrize("the_input, expected_output", test_data)
-# @pytest.mark.report_test()  # Custom marker to include this test in the report
-# def test_few_shot_text_generation_classifier_one_shot_detailed(
-#         the_input,
-#         expected_output,
-#         capture_output_for_report,
-#         few_shot_classifier,
-# ):
-#     handle_test(
-#         capture_output_for_report,
-#         expected_output,
-#         few_shot_classifier,
-#         the_input,
-#         prompt_type=PromptType.ONE_SHOT_PER_CLASS_DETAILED,
-#     )
+@pytest.mark.parametrize("the_input, expected_output", test_data)
+@pytest.mark.report_test()  # Custom marker to include this test in the report
+def test_few_shot_text_generation_classifier_zero_shot_detailed(
+        the_input,
+        expected_output,
+        capture_output_for_report,
+        few_shot_classifier,
+):
+    handle_test(
+        capture_output_for_report,
+        expected_output,
+        few_shot_classifier,
+        the_input,
+        prompt_type=PromptType.ZERO_SHOT_DETAILED,
+    )
+
+
+@pytest.mark.parametrize("the_input, expected_output", test_data)
+@pytest.mark.report_test()  # Custom marker to include this test in the report
+def test_few_shot_text_generation_classifier_one_shot_detailed(
+        the_input,
+        expected_output,
+        capture_output_for_report,
+        few_shot_classifier,
+):
+    handle_test(
+        capture_output_for_report,
+        expected_output,
+        few_shot_classifier,
+        the_input,
+        prompt_type=PromptType.ONE_SHOT_PER_CLASS_DETAILED,
+    )
 
 
 @pytest.mark.parametrize("the_input, expected_output", test_data)
@@ -208,6 +227,7 @@ def handle_test(
     BaseClassifier.set_prompt_type(prompt_type=prompt_type)
     response = few_shot_classifier.classify(input_text=the_input)
     if response.llm_response is not None:
+        print(response.intent.name.lower())
         test_result = response.intent.name.lower() == expected_output.lower()
         capture_output_for_report(output=response.intent.name.lower(), llm_output=response.llm_response, expected=expected_output.lower())
         assert test_result

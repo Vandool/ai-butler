@@ -194,7 +194,7 @@ class CalendarAPI:
             len(
                 CalendarAPI.__list_appointments(
                     time_start=time,
-                    time_end=time,
+                    time_end=utils.ensure_iso_8601_format((datetime.datetime.strptime(time, "%Y-%m-%dT%H:%M:%S%z") + datetime.timedelta(minutes=5)).isoformat()),
                 ),
             )
             == 0

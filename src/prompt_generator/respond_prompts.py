@@ -1,3 +1,6 @@
+import os
+
+from src.prompt_generator.llama3_instruction_prompt_generator import ChatTemplateGenerator
 from src.web_handler.calendar_api import CalendarAPI
 from src.web_handler.lecture_translator_api import LectureTranslatorAPI
 
@@ -395,11 +398,17 @@ answer:
 AM_I_FREE = """
 You are a help desk client.
 You answer to the question if the user is free at a specific time.
+Please answer only with one line stating if the user is free or not, do not invent new examples.
 
 Example:
 user: Am I free in 2 hours?
 data: True
 answer: Yes! You have nothing scheduled in 2 hours.
+
+Example2:
+user: Am I free in 4 hours?
+data: False
+answer: No! You have a meeting scheduled.
 
 user: {last_utterance}
 data: {function_response}
@@ -433,6 +442,7 @@ answer:
 LECTURE_QA = """
 You are a help desk client.
 Your job is to answer questions about the content of the last lecture given as a transcript.
+Please keep your answer short and do not give too extensive answers. Answer in only a few sentences, with few words.
 
 Example:
 user: What was the focus of the last lecture?
@@ -465,7 +475,16 @@ def get_api_respond_prompts(function: str) -> str:
     if function not in api_respond_prompts:
         err_msg = f"Respond Prompt for '{function}' is not registered yet."
         raise ValueError(err_msg)
-    return api_respond_prompts[function]
+
+    chat_template_model = os.getenv("HUGGINGFACE_CHAT_TEMPLATE_MODEL", default="meta-llama/Meta-Llama-3-8B-Instruct")
+    access_token = os.getenv("HUGGINGFACE_ACCESS_TOKEN", default="<TOKEN>")
+
+    chatTemplateGenerator = ChatTemplateGenerator(chat_template_model, access_token)
+
+    llm_prompt = chatTemplateGenerator.apply_chat_template(
+        messages=[{"role": "system", "content": api_respond_prompts[function]}],
+    )
+    return llm_prompt
 
 
 def get_lecture_api_respond_prompts(function: str) -> str:
