@@ -483,15 +483,15 @@ class FunctionCallerState(State):
             self.logger.info(classifier_response.intent.name)
             self.logger.info("--------------------------------------------")
             llm_json = utils.extract_json(classifier_response.llm_response)
+            # Remove assert later
+            self.current_intent = classifier_response.intent
+            function_call_info = utils.parse_function_call(llm_json["function_call"])
         except (json.decoder.JSONDecodeError, TypeError, ValueError, IndexError) as err:
             err_msg = f"Error occurred while parsing classifier's response: {err!s}"
             self.logger.exception(err_msg)
             self.clarify(last_input=user_input)
             return self
 
-        # Remove assert later
-        self.current_intent = classifier_response.intent
-        function_call_info = utils.parse_function_call(llm_json["function_call"])
 
         if self.history:
             self.history.set_classifier_response_level_1(classifier_response=classifier_response)
