@@ -275,11 +275,12 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
         "{candidates}"
         "def irrelevant_function(): ”’If user query is not related to any of the predefined functions, this function will be called. Args: Returns: if the user asks a questiong about the history of the conversation, the question will be answered”’"
         "For time reference:"
-        "Now: {now} which corresponds to {day_of_the_week}"
+        "Now: {now} which corresponds to {day_of_the_week}\n"
         "You always reply with the following format:"
         '{{"text": "<your textual response>", "function_call": "<the function call>"}}'
         "You only reply with the above format and nothing else"
-        "Ensure the output is a syntactically valid function call. If the user asks a question about the history of your conversation, you can answer it based on the history.\n"
+        "Ensure the output is a syntactically valid function call. If the user asks a question about the history of your conversation, you shoulld analyse the chat history and answer it based on the history.\n"
+        "Remember a function is considered called when all it's parameters are known."
         "Here are some examples:\n"
         "{examples}\n"
     )
@@ -308,27 +309,27 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
         shots = [
             {
                 "role": "user",
-                "content": "I want to create an appointment for tomorrow afternoon at 2 o'clock, it should take 2 hours of my time.",
+                "content": "I want to create an appointment with the name Meeting with proffessor for tomorrow afternoon at 2 o'clock, it should take 2 hours of my time.",
             },
             {
                 "role": "assistant",
-                "content": f'{{"text": "Alright, I will create the appointment", "function_call": "create_new_appointment(\'Appointment\', \'{tmw_14.isoformat()!s}\', \'{(tmw_14 + datetime.timedelta(hours=2)).isoformat()!s}\')"}}',
+                "content": f'{{"text": "Alright, I will create the appointment", "function_call": "create_new_appointment(\'Meeting with Proffessor\', \'{tmw_14.isoformat()!s}\', \'{(tmw_14 + datetime.timedelta(hours=2)).isoformat()!s}\')"}}',
             },
             {
                 "role": "user",
-                "content": "What's on my schedule for today?",
+                "content": "What was the name of the first appointment we've created?",
             },
             {
                 "role": "assistant",
-                "content": '{"text": "Today you have no scheduled appointments. Enjoy your free time!", "function_call": "get_next_appointment()"}',
+                "content": '{"text": "Based on our chat history the first meeting that we have created is called Meeting with Professor.", "function_call": "irrelevant_function()"}',
             },
             {
                 "role": "user",
-                "content": "At what time the last appointment we've created start again?",
+                "content": "How long did the last appointment that we have created should last?",
             },
             {
                 "role": "assistant",
-                "content": '{"text": "The last appointment you have create will start tomorrow at two oclock and it would last about two hours.", "function_call": "irrelevant_function()"}',
+                "content": '{"text": "Based on the start and end time of the last appointment that we have created, it should last about two hours.", "function_call": "irrelevant_function()"}',
             },
             {
                 "role": "user",
@@ -336,7 +337,7 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
             },
             {
                 "role": "assistant",
-                "content": '{"text": "We have created only one appointment so far.", "function_call": "irrelevant_function()"}',
+                "content": '{"text": "We have created only one appointment so far. Since only once we managed to call the function with all the required paramters.", "function_call": "irrelevant_function()"}',
             },
         ]
         messages = [
