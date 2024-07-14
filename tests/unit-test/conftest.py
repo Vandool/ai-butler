@@ -9,6 +9,7 @@ import pytz
 from dotenv import load_dotenv
 from huggingface_hub import InferenceClient
 
+from src import utils
 from src.classifier.base_classifier import BaseClassifier
 from src.classifier.few_shot_text_generation_classifier import FewShotTextGenerationClassifier
 from src.classifier.ollama_classifier import OllamaClassifier
@@ -473,7 +474,7 @@ def mock_get_now_tz_berlin():  # noqa: PT004
     with mock.patch(
         target="src.utils.get_now_tz_berlin",
         return_value=(
-            datetime.fromisoformat("2024-01-01T00:00:00.00")
+            datetime.fromisoformat("2024-01-01T11:00:00.00")
             .replace(tzinfo=UTC)
             .astimezone(pytz.timezone("Europe/Berlin"))
         ),
@@ -482,8 +483,8 @@ def mock_get_now_tz_berlin():  # noqa: PT004
 
 
 @pytest.fixture()
-def chat_history():
-    now_utc = datetime.now(UTC)
+def chat_history(mock_get_now_tz_berlin):
+    now_utc = utils.get_now_tz_berlin()
     berlin_tz = pytz.timezone("Europe/Berlin")
     now = now_utc.astimezone(berlin_tz)
     now = now.replace(minute=0, second=0, microsecond=0)
@@ -495,7 +496,7 @@ def chat_history():
         hour=14,
         minute=0,
         second=0,
-        tzinfo=berlin_tz,
+        tzinfo=tmw.tzinfo,
     )
     next_week = now + timedelta(days=7)
     next_week_10 = datetime(
@@ -505,7 +506,7 @@ def chat_history():
         hour=10,
         minute=0,
         second=0,
-        tzinfo=berlin_tz,
+        tzinfo=tmw.tzinfo,
     )
 
     return [
@@ -583,11 +584,11 @@ def chat_history():
         },
         {
             "role": "user",
-            "content": "I think the appointment would take one hour maximum.",
+            "content": "I think the appointment would take three hours maximum.",
         },
         {
             "role": "assistant",
-            "content": f'{{"text": "Gotcha, I can now set the appointment for you", "function_call": "create_new_appointment(\'Doctor Appointment\', \'{next_week_10.isoformat()!s}\', \'{(next_week_10 + timedelta(hours=1)).isoformat()!s}\')"}}',
+            "content": f'{{"text": "Gotcha, I can now set the appointment for you", "function_call": "create_new_appointment(\'Doctor Appointment\', \'{next_week_10.isoformat()!s}\', \'{(next_week_10 + timedelta(hours=3)).isoformat()!s}\')"}}',
         },
         {
             "role": "user",

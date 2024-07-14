@@ -14,13 +14,22 @@ from src.state.state import InitialState, State
 
 test_tuples = [
     # Questions, correct answers
-    ("Hey Butler, hhat was the name of the first appointment we've created?", ["Project Meeting"]),
+    ("Hey Butler, what was the name of the first appointment we've created?", ["Project Meeting"]),
     ("Hey Butler, what was the name of the last appointment we've created?", ["Client Call"]),
     ("Hey Butler, how many appointments did we actually create an appointment?", ["4", "four"]),
     ("Hey Butler, how many times did I ask question regarding the lecture content?", ["2", "two", "twice"]),
     ("Hey Butler, how long the last appointment that we've created last", ["one", "1", "once"]),
     ("Hey Butler, how many appointments did we delete so far?", ["one", "1", "once"]),
-    ("Hey Butler, at what time my doctor's appointment begin?", ["one", "1", "once"]),
+    ("Hey Butler, at what time my doctor's appointment begin?", ["ten", "10"]),
+    (
+        "Hey Butler, which one of the appointments we have created starts first, the client call or team meeting?",
+        ["client call"],
+    ),
+    ("Hey Butler, what was the last function that we have called?", ["get_lecture_content"]),
+    (
+        "Hey Butler, when does my project meeting that ends?",
+        ["16", "four"],
+    ),
 ]
 
 

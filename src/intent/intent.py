@@ -47,8 +47,7 @@ CHAT_HISTORY: Intent = Intent(
         "At what time the last appointment we've created start?",
         "What was the name of the first meeting we have scheduled?",
     ],
-    description="Handlers tasks related to chat history. "
-    "Any question regarding the actions that happened in the previous interactions",
+    description="Handles tasks related to chat history. This includes any questions about previous interactions, such as details of appointments (e.g., names, times, duration, and order), the number of times specific actions were taken (e.g., creating or deleting appointments, asking about lecture content), and other historical queries regarding the chat's activity.",
 )
 
 UNKNOWN: Intent = Intent(

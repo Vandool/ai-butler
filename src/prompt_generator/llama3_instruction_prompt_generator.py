@@ -267,8 +267,8 @@ class LectureAPIPromptGenerator(PromptGeneratorLLama3Instruct):
 class QAPromptGenerator(PromptGeneratorLLama3Instruct):
     _SYS_PROMPT_FMT: ClassVar[str] = (
         "Your job to answer question regarding the latest interactions with the user."
-        "For time reference:"
-        "Now: {now} which corresponds to {day_of_the_week}\n"
+        "For time reference:\n"
+        "Now: {now} which corresponds to {day_of_the_week}.\n"
         "You always reply with the following format:"
         '{{"text": "<your textual response>", "function_call": "irrelevant_function()"}}'
         "You only reply with the above format and nothing else"
