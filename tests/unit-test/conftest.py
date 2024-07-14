@@ -469,7 +469,7 @@ def capture_output_for_report(request):
 
 
 @pytest.fixture()
-def mock_get_now_tz_berlin():
+def mock_get_now_tz_berlin():  # noqa: PT004
     with mock.patch(
         target="src.utils.get_now_tz_berlin",
         return_value=(
