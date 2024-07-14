@@ -73,7 +73,12 @@ class BaseClassifier(abc.ABC):
 
         # Special case handling
         if isinstance(self, FunctionCallClassifier):
-            function_name = utils.parse_function_call(text=llm_output).function_name
+            try:
+                function_name = utils.parse_function_call(text=llm_output).function_name
+            except IndexError:
+                err_msg = f"Error occurred parsing llm output: {llm_output}"
+                self.logger.exception(err_msg)
+                raise
         else:
             function_name = llm_output
 

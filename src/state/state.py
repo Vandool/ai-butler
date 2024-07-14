@@ -471,21 +471,21 @@ class FunctionCallerState(State):
         if self.slot_filler is not None and self.history is not None:
             self.history.add_message(Message().set_text(user_input).set_role(Role.USER))
 
-        classifier_response = self.classifier.classify(
-            input_text=user_input,
-            prompt_type=PromptType.FEW_SHOT_DETAILED,
-            history=self.history.get_level_1_history(),
-        )
-        self.logger.info("------------LLM Response--------------------")
-        self.logger.info(classifier_response.llm_response)
-        self.logger.info("------------Intent Class--------------------")
-        self.logger.info(classifier_response.intent.name)
-        self.logger.info("--------------------------------------------")
-
         try:
+            classifier_response = self.classifier.classify(
+                input_text=user_input,
+                prompt_type=PromptType.FEW_SHOT_DETAILED,
+                history=self.history.get_level_1_history(),
+            )
+            self.logger.info("------------LLM Response--------------------")
+            self.logger.info(classifier_response.llm_response)
+            self.logger.info("------------Intent Class--------------------")
+            self.logger.info(classifier_response.intent.name)
+            self.logger.info("--------------------------------------------")
             llm_json = utils.extract_json(classifier_response.llm_response)
-        except (json.decoder.JSONDecodeError, TypeError, ValueError):
-            # if self.found_no_intent(current_intent=classifier_response.intent):
+        except (json.decoder.JSONDecodeError, TypeError, ValueError, IndexError) as err:
+            err_msg = f"Error occurred while parsing classifier's response: {err!s}"
+            self.logger.exception(err_msg)
             self.clarify(last_input=user_input)
             return self
 
