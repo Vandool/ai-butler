@@ -93,7 +93,7 @@ class PromptGeneratorLLama3Instruct(ABC):
             messages=self.get_default_chat_messages(
                 user_input=input_text,
                 candidates=self.candidates,
-                num_shots=2 * 2,
+                num_shots=-1,
                 extend_messages=history,
             ),
         )
@@ -184,6 +184,9 @@ class CalendarAPIPromptGenerator(PromptGeneratorLLama3Instruct):
                 "content": '{"text": "We have created only one appointment so far.", "function_call": "irrelevant_function()"}',
             },
         ]
+
+        if num_shots < 0:
+            num_shots = len(shots)
 
         messages = [
             {
@@ -339,6 +342,8 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
                 "content": '{"text": "We have created only one appointment so far. Since only once we managed to call the function with all the required paramters.", "function_call": "irrelevant_function()"}',
             },
         ]
+        if num_shots < 0:
+            num_shots = len(shots)
         messages = [
             {
                 "role": "system",
@@ -348,7 +353,7 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
                     n_candidates=len(candidates) + 1,
                     candidates="\n".join(candidates) if candidates else "",
                     chat_history="\n".join([f"{shot['role']}: {shot['content']}" for shot in history]),
-                    examples="\n".join([f"{shot['role']}: {shot['content']}" for shot in shots]),
+                    examples="\n".join([f"{shot['role']}: {shot['content']}" for shot in shots[:num_shots]]),
                 ),
             },
         ]

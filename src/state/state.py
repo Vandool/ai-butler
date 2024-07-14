@@ -492,7 +492,6 @@ class FunctionCallerState(State):
             self.clarify(last_input=user_input)
             return self
 
-
         if self.history:
             self.history.set_classifier_response_level_1(classifier_response=classifier_response)
 
