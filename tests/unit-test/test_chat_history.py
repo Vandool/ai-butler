@@ -14,11 +14,11 @@ from src.state.state import InitialState, State
 
 test_tuples = [
     # Questions, correct answers
-    # ("Hey Butler, What was the name of the first appointment we've created?", ["Project Meeting"]),
-    # ("Hey Butler, What was the name of the last appointment we've created?", ["Client Call", ""]),
+    ("Hey Butler, What was the name of the first appointment we've created?", ["Project Meeting"]),
+    ("Hey Butler, What was the name of the last appointment we've created?", ["Client Call", ""]),
     ("Hey Butler, How many appointments did we actually create an appointment?", ["4", "four"]),
-    ("Hey Butler, How many times did I ask question regarding the lecture content?", ["2", "two"]),
-    ("Hey Butler, How long the last appointment that we've created last", ["one", "1"]),
+    ("Hey Butler, How many times did I ask question regarding the lecture content?", ["2", "two", "twice"]),
+    ("Hey Butler, How long the last appointment that we've created last", ["one", "1", "once"]),
 ]
 
 
