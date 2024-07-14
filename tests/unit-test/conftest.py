@@ -26,121 +26,121 @@ one_off_test = (("get_next_appointment13.mp3", "Hey butler, whats up next?", CAL
 dialog_test_data = [
     [
         (
-            "create_appointment0_0.mp3",
+            "create_new_appointment0_0.mp3",
             "Hey butler, please create an appointment tomorrow from 10 to 11 titled 'Team Meeting' in the Conference Room.",
         ),
     ],
     [
         (
-            "create_appointment1_0.mp3",
+            "create_new_appointment1_0.mp3",
             "Hey butler, schedule an appointment next Monday from 2 PM to 3 PM titled 'Project Review'.",
         ),
     ],
     [
         (
-            "create_appointment2_0.mp3",
+            "create_new_appointment2_0.mp3",
             "Hey butler, set up a meeting next Friday from 9 AM to 10 AM titled 'Weekly Sync' with description 'Weekly team sync-up'.",
         ),
     ],
     # Dialogs where the end time is provided after the initial request
     [
-        ("create_appointment3_0.mp3", "Hey butler, create an appointment tomorrow at 10 titled 'Client Call'."),
-        ("create_appointment3_1.mp3", "It ends at 11."),
+        ("create_new_appointment3_0.mp3", "Hey butler, create an appointment tomorrow at 10 titled 'Client Call'."),
+        ("create_new_appointment3_1.mp3", "It ends at 11."),
     ],
     [
         (
-            "create_appointment4_0.mp3",
+            "create_new_appointment4_0.mp3",
             "Hey butler, schedule an appointment next Monday at 2 PM titled 'Doctor's Appointment'.",
         ),
-        ("create_appointment4_1.mp3", "It should end at 3 PM."),
+        ("create_new_appointment4_1.mp3", "It should end at 3 PM."),
     ],
     # Dialogs where the system asks for the end time after some optional parameters are provided
     [
-        ("create_appointment5_0.mp3", "Hey butler, create an appointment tomorrow at 10."),
-        ("create_appointment5_1.mp3", "Title it 'Team Sync'."),
-        ("create_appointment5_2.mp3", "It should end at 11."),
+        ("create_new_appointment5_0.mp3", "Hey butler, create an appointment tomorrow at 10."),
+        ("create_new_appointment5_1.mp3", "Title it 'Team Sync'."),
+        ("create_new_appointment5_2.mp3", "It should end at 11."),
     ],
     [
-        ("create_appointment6_0.mp3", "Hey butler, schedule a meeting next Tuesday at 1 PM."),
-        ("create_appointment6_1.mp3", "Description is 'Project Discussion'."),
-        ("create_appointment6_2.mp3", "It ends at 2 PM."),
+        ("create_new_appointment6_0.mp3", "Hey butler, schedule a meeting next Tuesday at 1 PM."),
+        ("create_new_appointment6_1.mp3", "Description is 'Project Discussion'."),
+        ("create_new_appointment6_2.mp3", "It ends at 2 PM."),
     ],
     # Dialogs with additional optional parameters provided in the initial request
     [
         (
-            "create_appointment7_0.mp3",
+            "create_new_appointment7_0.mp3",
             "Hey butler, create an appointment tomorrow from 10 to 11 titled 'Team Meeting' with description 'Discuss project updates'.",
         ),
     ],
     [
         (
-            "create_appointment8_0.mp3",
+            "create_new_appointment8_0.mp3",
             "Hey butler, schedule an appointment next Monday from 2 PM to 3 PM with title 'Project Discussion' at 'Conference Room'.",
         ),
     ],
     [
         (
-            "create_appointment9_0.mp3",
+            "create_new_appointment9_0.mp3",
             "Hey butler, set up a meeting next Friday from 9 AM to 10 AM titled 'Strategy Session' with location 'Meeting Room 1'.",
         ),
     ],
     # Dialogs with only the start time initially, followed by optional parameters, then the end time
     [
-        ("create_appointment10_0.mp3", "Hey butler, create an appointment tomorrow at 10."),
-        ("create_appointment10_1.mp3", "Title it 'Team Meeting'."),
-        ("create_appointment10_2.mp3", "It should end at 11."),
+        ("create_new_appointment10_0.mp3", "Hey butler, create an appointment tomorrow at 10."),
+        ("create_new_appointment10_1.mp3", "Title it 'Team Meeting'."),
+        ("create_new_appointment10_2.mp3", "It should end at 11."),
     ],
     [
-        ("create_appointment11_0.mp3", "Hey butler, schedule an appointment next Monday at 2 PM."),
-        ("create_appointment11_1.mp3", "Location is 'Conference Room'."),
-        ("create_appointment11_2.mp3", "It ends at 3 PM."),
+        ("create_new_appointment11_0.mp3", "Hey butler, schedule an appointment next Monday at 2 PM."),
+        ("create_new_appointment11_1.mp3", "Location is 'Conference Room'."),
+        ("create_new_appointment11_2.mp3", "It ends at 3 PM."),
     ],
     # Dialogs with title given first, then start time, followed by optional parameters and end time
     [
-        ("create_appointment12_0.mp3", "Hey butler, create an appointment titled 'Team Sync'."),
-        ("create_appointment12_1.mp3", "It starts tomorrow at 10."),
-        ("create_appointment12_2.mp3", "Description is 'Weekly team sync-up'."),
-        ("create_appointment12_3.mp3", "It should end at 11."),
+        ("create_new_appointment12_0.mp3", "Hey butler, create an appointment titled 'Team Sync'."),
+        ("create_new_appointment12_1.mp3", "It starts tomorrow at 10."),
+        ("create_new_appointment12_2.mp3", "Description is 'Weekly team sync-up'."),
+        ("create_new_appointment12_3.mp3", "It should end at 11."),
     ],
     [
-        ("create_appointment13_0.mp3", "Hey butler, schedule a meeting titled 'Client Presentation'."),
-        ("create_appointment13_1.mp3", "It starts next Monday at 2 PM."),
-        ("create_appointment13_2.mp3", "Location is 'Main Hall'."),
-        ("create_appointment13_3.mp3", "It should end at 3 PM."),
+        ("create_new_appointment13_0.mp3", "Hey butler, schedule a meeting titled 'Client Presentation'."),
+        ("create_new_appointment13_1.mp3", "It starts next Monday at 2 PM."),
+        ("create_new_appointment13_2.mp3", "Location is 'Main Hall'."),
+        ("create_new_appointment13_3.mp3", "It should end at 3 PM."),
     ],
     # Longer dialogs with multiple interactions for all parameters
     [
-        ("create_appointment14_0.mp3", "Hey butler, create an appointment titled 'Team Sync'."),
-        ("create_appointment14_1.mp3", "It starts tomorrow at 10."),
-        ("create_appointment14_2.mp3", "Description is 'Weekly team sync-up'."),
-        ("create_appointment14_3.mp3", "Location is 'Office Room 1'."),
-        ("create_appointment14_4.mp3", "It ends at 11."),
+        ("create_new_appointment14_0.mp3", "Hey butler, create an appointment titled 'Team Sync'."),
+        ("create_new_appointment14_1.mp3", "It starts tomorrow at 10."),
+        ("create_new_appointment14_2.mp3", "Description is 'Weekly team sync-up'."),
+        ("create_new_appointment14_3.mp3", "Location is 'Office Room 1'."),
+        ("create_new_appointment14_4.mp3", "It ends at 11."),
     ],
     [
-        ("create_appointment15_0.mp3", "Hey butler, schedule an appointment titled 'Client Meeting'."),
-        ("create_appointment15_1.mp3", "It starts next Monday at 2 PM."),
-        ("create_appointment15_2.mp3", "Description is 'Discuss quarterly report'."),
-        ("create_appointment15_3.mp3", "Location is 'Meeting Room 2'."),
-        ("create_appointment15_4.mp3", "It ends at 3 PM."),
+        ("create_new_appointment15_0.mp3", "Hey butler, schedule an appointment titled 'Client Meeting'."),
+        ("create_new_appointment15_1.mp3", "It starts next Monday at 2 PM."),
+        ("create_new_appointment15_2.mp3", "Description is 'Discuss quarterly report'."),
+        ("create_new_appointment15_3.mp3", "Location is 'Meeting Room 2'."),
+        ("create_new_appointment15_4.mp3", "It ends at 3 PM."),
     ],
     [
-        ("create_appointment16_0.mp3", "Hey butler, set up a meeting titled 'Project Kickoff'."),
-        ("create_appointment16_1.mp3", "It starts next Friday at 9 AM."),
-        ("create_appointment16_2.mp3", "Description is 'Kickoff for the new project'."),
-        ("create_appointment16_3.mp3", "Location is 'Conference Hall'."),
-        ("create_appointment16_4.mp3", "It should end at 10 AM."),
+        ("create_new_appointment16_0.mp3", "Hey butler, set up a meeting titled 'Project Kickoff'."),
+        ("create_new_appointment16_1.mp3", "It starts next Friday at 9 AM."),
+        ("create_new_appointment16_2.mp3", "Description is 'Kickoff for the new project'."),
+        ("create_new_appointment16_3.mp3", "Location is 'Conference Hall'."),
+        ("create_new_appointment16_4.mp3", "It should end at 10 AM."),
     ],
     [
         (
-            "create_appointment17_0.mp3",
+            "create_new_appointment17_0.mp3",
             "Hey butler, please create an appointment on Wednesday from 3 PM to 4 PM titled 'Budget Meeting' in Room 5.",
         ),
     ],
     [
-        ("create_appointment18_0.mp3", "Hey butler, create an appointment on Thursday at 11 AM."),
-        ("create_appointment18_1.mp3", "Title it 'HR Meeting'."),
-        ("create_appointment18_2.mp3", "Description is 'Discuss new hires'."),
-        ("create_appointment18_3.mp3", "It should end at 12 PM."),
+        ("create_new_appointment18_0.mp3", "Hey butler, create an appointment on Thursday at 11 AM."),
+        ("create_new_appointment18_1.mp3", "Title it 'HR Meeting'."),
+        ("create_new_appointment18_2.mp3", "Description is 'Discuss new hires'."),
+        ("create_new_appointment18_3.mp3", "It should end at 12 PM."),
     ],
     # Dialogs where title is given first, then start time, followed by end time and other optional parameters
     [("create_new_appointment19_0.mp3", "Hey butler, create an appointment titled 'One-on-One Meeting'."),
@@ -151,10 +151,10 @@ dialog_test_data = [
 
     # Dialogs where the end time is provided after the initial request
     [
-        ("create_appointment20_0.mp3", "Hey butler, schedule an appointment next Friday at 10 AM."),
-        ("create_appointment20_1.mp3", "Title it 'Team Check-In'."),
-        ("create_appointment20_2.mp3", "Location is 'Conference Room A'."),
-        ("create_appointment20_3.mp3", "It ends at 11 AM."),
+        ("create_new_appointment20_0.mp3", "Hey butler, schedule an appointment next Friday at 10 AM."),
+        ("create_new_appointment20_1.mp3", "Title it 'Team Check-In'."),
+        ("create_new_appointment20_2.mp3", "Location is 'Conference Room A'."),
+        ("create_new_appointment20_3.mp3", "It ends at 11 AM."),
     ],
 ]
 
