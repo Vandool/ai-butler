@@ -1,6 +1,6 @@
 # tests/unit-test/conftest.py
-import datetime
 import os
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest import mock
 
@@ -474,7 +474,7 @@ def mock_get_now_tz_berlin():  # noqa: PT004
         target="src.utils.get_now_tz_berlin",
         return_value=(
             datetime.fromisoformat("2024-01-01T00:00:00.00")
-            .replace(tzinfo=datetime.UTC)
+            .replace(tzinfo=UTC)
             .astimezone(pytz.timezone("Europe/Berlin"))
         ),
     ):
@@ -483,12 +483,12 @@ def mock_get_now_tz_berlin():  # noqa: PT004
 
 @pytest.fixture()
 def chat_history():
-    now_utc = datetime.datetime.now(datetime.UTC)
+    now_utc = datetime.now(UTC)
     berlin_tz = pytz.timezone("Europe/Berlin")
     now = now_utc.astimezone(berlin_tz)
     now = now.replace(minute=0, second=0, microsecond=0)
-    tmw = now + datetime.timedelta(days=1)
-    tmw_14 = datetime.datetime(
+    tmw = now + timedelta(days=1)
+    tmw_14 = datetime(
         year=tmw.year,
         month=tmw.month,
         day=tmw.day,
@@ -497,8 +497,8 @@ def chat_history():
         second=0,
         tzinfo=berlin_tz,
     )
-    next_week = now + datetime.timedelta(days=7)
-    next_week_10 = datetime.datetime(
+    next_week = now + timedelta(days=7)
+    next_week_10 = datetime(
         year=next_week.year,
         month=next_week.month,
         day=next_week.day,
@@ -515,7 +515,7 @@ def chat_history():
         },
         {
             "role": "assistant",
-            "content": f'{{"text": "Alright, I will create the appointment", "function_call": "create_new_appointment(\'Project Meeting\', \'{tmw_14.isoformat()!s}\', \'{(tmw_14 + datetime.timedelta(hours=2)).isoformat()!s}\')"}}',
+            "content": f'{{"text": "Alright, I will create the appointment", "function_call": "create_new_appointment(\'Project Meeting\', \'{tmw_14.isoformat()!s}\', \'{(tmw_14 + timedelta(hours=2)).isoformat()!s}\')"}}',
         },
         {
             "role": "user",
@@ -539,7 +539,7 @@ def chat_history():
         },
         {
             "role": "assistant",
-            "content": f'{{"text": "I will check your availability for tomorrow at 3 PM.", "function_call": "am_i_free(\'{(tmw_14 + datetime.timedelta(hours=1)).isoformat()!s}\')"}}',
+            "content": f'{{"text": "I will check your availability for tomorrow at 3 PM.", "function_call": "am_i_free(\'{(tmw_14 + timedelta(hours=1)).isoformat()!s}\')"}}',
         },
         {
             "role": "user",
@@ -587,7 +587,7 @@ def chat_history():
         },
         {
             "role": "assistant",
-            "content": f'{{"text": "Gotcha, I can now set the appointment for you", "function_call": "create_new_appointment(\'Doctor Appointment\', \'{next_week_10.isoformat()!s}\', \'{(next_week_10 + datetime.timedelta(hours=1)).isoformat()!s}\')"}}',
+            "content": f'{{"text": "Gotcha, I can now set the appointment for you", "function_call": "create_new_appointment(\'Doctor Appointment\', \'{next_week_10.isoformat()!s}\', \'{(next_week_10 + timedelta(hours=1)).isoformat()!s}\')"}}',
         },
         {
             "role": "user",
@@ -619,7 +619,7 @@ def chat_history():
         },
         {
             "role": "assistant",
-            "content": f'{{"text": "Alright, I will create the appointment for the team meeting.", "function_call": "create_new_appointment(\'Team Meeting\', \'{(tmw_14 - datetime.timedelta(hours=5)).isoformat()!s}\', \'{(tmw_14 - datetime.timedelta(hours=4)).isoformat()!s}\')"}}',
+            "content": f'{{"text": "Alright, I will create the appointment for the team meeting.", "function_call": "create_new_appointment(\'Team Meeting\', \'{(tmw_14 - timedelta(hours=5)).isoformat()!s}\', \'{(tmw_14 - timedelta(hours=4)).isoformat()!s}\')"}}',
         },
         {
             "role": "user",
@@ -627,7 +627,7 @@ def chat_history():
         },
         {
             "role": "assistant",
-            "content": f'{{"text": "Sure, I will create the appointment for the client call.", "function_call": "create_new_appointment(\'Client Call\', \'{(next_week - datetime.timedelta(days=5, hours=3)).isoformat()!s}\', \'{(next_week - datetime.timedelta(days=5, hours=2)).isoformat()!s}\')"}}',
+            "content": f'{{"text": "Sure, I will create the appointment for the client call.", "function_call": "create_new_appointment(\'Client Call\', \'{(next_week - timedelta(days=5, hours=3)).isoformat()!s}\', \'{(next_week - timedelta(days=5, hours=2)).isoformat()!s}\')"}}',
         },
         {
             "role": "user",

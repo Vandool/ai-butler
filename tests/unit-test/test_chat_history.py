@@ -1,9 +1,7 @@
 import sys
-from datetime import UTC, datetime
 from unittest import mock
 
 import pytest
-from freezegun import freeze_time
 from huggingface_hub import InferenceClient
 
 from src.asr_butler.asr_butler import ASRModule
@@ -27,8 +25,13 @@ test_tuples = [
 
 
 @pytest.mark.parametrize("input, expected_outputs", test_tuples)
-# @freeze_time(datetime.fromisoformat("2024-01-01T00:00:00.00").replace(tzinfo=UTC))
-def test_chat_history_text_only(input, expected_outputs, chat_history, capture_output_for_report):
+def test_chat_history_text_only(
+    input,  # noqa: A002
+    expected_outputs,
+    chat_history,
+    capture_output_for_report,
+    mock_get_now_tz_berlin,  # noqa: ARG001
+):
     sys.argv = [sys.argv[0]]
     arguments = get_asr_llm_config()
 
