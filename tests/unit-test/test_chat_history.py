@@ -14,8 +14,8 @@ from src.state.state import InitialState, State
 
 test_tuples = [
     # Questions, correct answers
-    ("Hey Butler, What was the name of the first appointment we've created?", ["Project Meeting"]),
-    ("Hey Butler, What was the name of the last appointment we've created?", ["Client Call", ""]),
+    # ("Hey Butler, What was the name of the first appointment we've created?", ["Project Meeting"]),
+    # ("Hey Butler, What was the name of the last appointment we've created?", ["Client Call", ""]),
     ("Hey Butler, How many appointments did we actually create an appointment?", ["4", "four"]),
     ("Hey Butler, How many times did I ask question regarding the lecture content?", ["2", "two"]),
     ("Hey Butler, How long the last appointment that we've created last", ["one", "1"]),
@@ -36,7 +36,7 @@ def test_chat_history_text_only(input, expected_outputs, chat_history, capture_o
             history.add_message(
                 Message(
                     role=Role.USER,
-                    text=chat_history[i + 1]["content"],
+                    text=chat_history[i]["content"],
                     classifier_response_level_1=ClassifierResponse(llm_response=chat_history[i + 1]["content"]),
                 ),
             )

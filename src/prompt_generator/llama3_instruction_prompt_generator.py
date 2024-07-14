@@ -175,6 +175,14 @@ class CalendarAPIPromptGenerator(PromptGeneratorLLama3Instruct):
                 "role": "assistant",
                 "content": '{"text": "I assume the timezone should be by default your local timezone", "function_call": "irrelevant_function()"}',
             },
+            {
+                "role": "user",
+                "content": "How many appointments did we create so far?",
+            },
+            {
+                "role": "assistant",
+                "content": '{"text": "We have created only one appointment so far.", "function_call": "irrelevant_function()"}',
+            },
         ]
 
         messages = [
@@ -320,7 +328,15 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
             },
             {
                 "role": "assistant",
-                "content": "The last appointment you have create will start tomorrow at two o'clock and it would last about two hours.",
+                "content": '{"text": "The last appointment you have create will start tomorrow at two oclock and it would last about two hours.", "function_call": "irrelevant_function()"}',
+            },
+            {
+                "role": "user",
+                "content": "How many appointments did we create so far?",
+            },
+            {
+                "role": "assistant",
+                "content": '{"text": "We have created only one appointment so far.", "function_call": "irrelevant_function()"}',
             },
         ]
         messages = [
