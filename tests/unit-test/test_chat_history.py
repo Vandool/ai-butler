@@ -14,16 +14,33 @@ from src.state.state import InitialState, State
 
 test_tuples = [
     # Questions, correct answers
-    ("Hey Butler, What was the name of the first appointment we've created?", ["Project Meeting"]),
-    ("Hey Butler, What was the name of the last appointment we've created?", ["Client Call", ""]),
-    ("Hey Butler, How many appointments did we actually create an appointment?", ["4", "four"]),
-    ("Hey Butler, How many times did I ask question regarding the lecture content?", ["2", "two", "twice"]),
-    ("Hey Butler, How long the last appointment that we've created last", ["one", "1", "once"]),
+    ("Hey Butler, what was the name of the first appointment we've created?", ["Project Meeting"]),
+    ("Hey Butler, what was the name of the last appointment we've created?", ["Client Call"]),
+    ("Hey Butler, how many appointments did we actually create an appointment?", ["4", "four"]),
+    ("Hey Butler, how many times did I ask question regarding the lecture content?", ["2", "two", "twice"]),
+    ("Hey Butler, how long the last appointment that we've created last", ["one", "1", "once"]),
+    ("Hey Butler, how many appointments did we delete so far?", ["one", "1", "once"]),
+    ("Hey Butler, at what time my doctor's appointment which we have created together begins?", ["ten", "10"]),
+    (
+        "Hey Butler, which one of the appointments we have created starts first, the client call or team meeting?",
+        ["team meeting"],
+    ),
+    ("Hey Butler, what was the last function that we have called?", ["get_lecture_content"]),
+    (
+        "Hey Butler, when does my project meeting which we have created together ends?",
+        ["16", "four"],
+    ),
 ]
 
 
 @pytest.mark.parametrize("input, expected_outputs", test_tuples)
-def test_chat_history_text_only(input, expected_outputs, chat_history, capture_output_for_report):
+def test_chat_history_text_only(
+    input,  # noqa: A002
+    expected_outputs,
+    chat_history,
+    capture_output_for_report,
+    mock_get_now_tz_berlin,  # noqa: ARG001
+):
     sys.argv = [sys.argv[0]]
     arguments = get_asr_llm_config()
 
@@ -60,8 +77,8 @@ def test_chat_history_text_only(input, expected_outputs, chat_history, capture_o
             [input],
         )
 
-        butler_response = butler_output.call_args[1]["response"]
-        if not any(correct_response in butler_response for correct_response in expected_outputs):
+        butler_response = str(butler_output.call_args[1]["response"]).lower()
+        if not any(correct_response.lower() in butler_response for correct_response in expected_outputs):
             pytest.fail(f"Butler Response: {butler_response}, Excepted indicators: {expected_outputs!s}")
         capture_output_for_report(output=butler_response, llm_output=None, expected=expected_outputs)
         # butler_outpe.assert_called_once()

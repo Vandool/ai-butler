@@ -18,6 +18,7 @@ from huggingface_hub import InferenceClient
 from sseclient import SSEClient
 
 from src import utils
+from src.classifier.base_classifier import BaseClassifier
 from src.config.asr_llm_config import get_asr_llm_config
 from src.history.chathistory import ChatHistory
 from src.llm_client.llm_client import LLMClient
@@ -607,16 +608,15 @@ if __name__ == "__main__":
         is_text_interface=True,
     )
     # asr_module.run_session()
-    # asr_module.run_cli_interface()
-    asr_module.run_text_interface(
-        [
-            "Butler, create an appointment tomorrow at 10.",
-            "Title at TeamSynced.",
-            "It should end at 11.",
-        ],
-    )
+    asr_module.run_cli_interface()
+    # asr_module.run_text_interface(
+    #     [
+    #         "Butler, create an appointment tomorrow at 10.",
+    #         "Title at TeamSynced.",
+    #         "It should end at 11.",
+    #     ],
+    # )
     # Setup Global Prompt Type
-    # BaseClassifier.set_prompt_type(PromptType.ZERO_SHOT)
-
+    BaseClassifier.set_prompt_type(PromptType.ZERO_SHOT)
     print("---HISTORY---")
     print(asr_module.history)

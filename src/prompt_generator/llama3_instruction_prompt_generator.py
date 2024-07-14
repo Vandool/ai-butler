@@ -5,7 +5,6 @@ import os
 from abc import ABC, abstractmethod
 from typing import ClassVar
 
-import pytz
 from dotenv import load_dotenv
 from huggingface_hub import HfFolder
 from transformers import AutoTokenizer
@@ -93,7 +92,7 @@ class PromptGeneratorLLama3Instruct(ABC):
             messages=self.get_default_chat_messages(
                 user_input=input_text,
                 candidates=self.candidates,
-                num_shots=2 * 2,
+                num_shots=-1,
                 extend_messages=history,
             ),
         )
@@ -117,9 +116,7 @@ class CalendarAPIPromptGenerator(PromptGeneratorLLama3Instruct):
         extend_messages: list[dict] | None = None,
         num_shots: int = 0,
     ) -> list[dict]:
-        now_utc = datetime.datetime.now(datetime.UTC)
-        berlin_tz = pytz.timezone("Europe/Berlin")
-        now = now_utc.astimezone(berlin_tz)
+        now = utils.get_now_tz_berlin()
         now = now.replace(minute=0, second=0, microsecond=0)
         twm = now + datetime.timedelta(days=1)
         tmw_14 = datetime.datetime(
@@ -129,7 +126,7 @@ class CalendarAPIPromptGenerator(PromptGeneratorLLama3Instruct):
             hour=14,
             minute=0,
             second=0,
-            tzinfo=berlin_tz,
+            tzinfo=twm.tzinfo,
         )
         next_week = now + datetime.timedelta(days=7)
         next_week_10 = datetime.datetime(
@@ -139,7 +136,7 @@ class CalendarAPIPromptGenerator(PromptGeneratorLLama3Instruct):
             hour=10,
             minute=0,
             second=0,
-            tzinfo=berlin_tz,
+            tzinfo=twm.tzinfo,
         )
 
         shots = [
@@ -185,6 +182,9 @@ class CalendarAPIPromptGenerator(PromptGeneratorLLama3Instruct):
             },
         ]
 
+        if num_shots < 0:
+            num_shots = len(shots)
+
         messages = [
             {
                 "role": "system",
@@ -218,8 +218,7 @@ class LectureAPIPromptGenerator(PromptGeneratorLLama3Instruct):
         extend_messages: list[dict] | None = None,
         num_shots: int = 0,
     ) -> list[dict]:
-        now_utc = datetime.datetime.now(datetime.UTC)
-        now = now_utc.astimezone(pytz.timezone("Europe/Berlin"))
+        now = utils.get_now_tz_berlin()
         now = now.replace(minute=0, second=0, microsecond=0)
         shots = [
             {
@@ -267,21 +266,18 @@ class LectureAPIPromptGenerator(PromptGeneratorLLama3Instruct):
 
 class QAPromptGenerator(PromptGeneratorLLama3Instruct):
     _SYS_PROMPT_FMT: ClassVar[str] = (
-        "Below, you are presented with {n_candidates} candidate functions. Your task is to analyze a specific user input to "
-        "determine which of these functions most appropriately addresses the query. Then, construct the correct function"
-        " call with all necessary parameters, adhering to proper syntax. "
-        "Format for function call: function_name(param1, param2, ...) "
-        "Candidate Functions: \n"
-        "{candidates}"
-        "def irrelevant_function(): ”’If user query is not related to any of the predefined functions, this function will be called. Args: Returns: if the user asks a questiong about the history of the conversation, the question will be answered”’"
-        "For time reference:"
-        "Now: {now} which corresponds to {day_of_the_week}\n"
+        "Your job to answer question regarding the latest interactions with the user. "
+        "For time reference:\n"
+        "Now: {now} which corresponds to {day_of_the_week}.\n"
         "You always reply with the following format:"
-        '{{"text": "<your textual response>", "function_call": "<the function call>"}}'
+        '{{"text": "<your textual response>", "function_call": "irrelevant_function()"}}'
         "You only reply with the above format and nothing else"
-        "Ensure the output is a syntactically valid function call. If the user asks a question about the history of your conversation, you shoulld analyse the chat history and answer it based on the history.\n"
+        "If the user asks a question about the history of your conversation, you should analyse the chat history and answer it based on the history.\n"
         "Remember a function is considered called when all it's parameters are known."
-        "Here are some examples:\n"
+        "Let's take a look at some examples:.\n"
+        "The following is an imaginary chat history just as an example. Please do not reference these in the real questions:\n"
+        "{chat_history}\n"
+        "These are some example correct interactions based on the imaginary chat history:\n"
         "{examples}\n"
     )
 
@@ -292,9 +288,7 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
         extend_messages: list[dict] | None = None,
         num_shots: int = 0,
     ) -> list[dict]:
-        now_utc = datetime.datetime.now(datetime.UTC)
-        berlin_tz = pytz.timezone("Europe/Berlin")
-        now = now_utc.astimezone(berlin_tz)
+        now = utils.get_now_tz_berlin()
         now = now.replace(minute=0, second=0, microsecond=0)
         twm = now + datetime.timedelta(days=1)
         tmw_14 = datetime.datetime(
@@ -304,9 +298,19 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
             hour=14,
             minute=0,
             second=0,
-            tzinfo=berlin_tz,
+            tzinfo=twm.tzinfo,
         )
-        shots = [
+        next_week = now + datetime.timedelta(days=7)
+        next_week_10 = datetime.datetime(
+            year=next_week.year,
+            month=next_week.month,
+            day=next_week.day,
+            hour=10,
+            minute=0,
+            second=0,
+            tzinfo=twm.tzinfo,
+        )
+        history = [
             {
                 "role": "user",
                 "content": "I want to create an appointment with the name Meeting with proffessor for tomorrow afternoon at 2 o'clock, it should take 2 hours of my time.",
@@ -315,6 +319,32 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
                 "role": "assistant",
                 "content": f'{{"text": "Alright, I will create the appointment", "function_call": "create_new_appointment(\'Meeting with Proffessor\', \'{tmw_14.isoformat()!s}\', \'{(tmw_14 + datetime.timedelta(hours=2)).isoformat()!s}\')"}}',
             },
+            {
+                "role": "user",
+                "content": "user: What was the focus of the last lecture?",
+            },
+            {
+                "role": "assistant",
+                "content": '{"text": "Alright, I will retrieve the content of the last lecture for you.", "function_call": "get_lecture_content()"}',
+            },
+            {
+                "role": "user",
+                "content": "I want to create an appointment for next week at at 10 o'clock.",
+            },
+            {
+                "role": "assistant",
+                "content": f'{{"text": "Okey, can you tell me when should it end?", "function_call": "create_new_appointment(\'Appointment\', \'{next_week_10.isoformat()!s}\', None)"}}',
+            },
+            {
+                "role": "user",
+                "content": "Of course, it end at ten thirty. Please put screening call as the title",
+            },
+            {
+                "role": "assistant",
+                "content": f'{{"text": "Very well, now I can create the appointment for you.", "function_call": "create_new_appointment(\'Screening Call\', \'{next_week_10.isoformat()!s}\', \'{(next_week_10 + datetime.timedelta(hours=5)).isoformat()!s}\')"}}',
+            },
+        ]
+        shots = [
             {
                 "role": "user",
                 "content": "What was the name of the first appointment we've created?",
@@ -329,7 +359,7 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
             },
             {
                 "role": "assistant",
-                "content": '{"text": "Based on the start and end time of the last appointment that we have created, it should last about two hours.", "function_call": "irrelevant_function()"}',
+                "content": '{"text": "Based on the start and end time of the last appointment that we have created, it should last about half an hours or about thirty minutes.", "function_call": "irrelevant_function()"}',
             },
             {
                 "role": "user",
@@ -337,9 +367,11 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
             },
             {
                 "role": "assistant",
-                "content": '{"text": "We have created only one appointment so far. Since only once we managed to call the function with all the required paramters.", "function_call": "irrelevant_function()"}',
+                "content": '{"text": "We have created two appointment so far. Since only once we managed to call the function twice with all the required paramters.", "function_call": "irrelevant_function()"}',
             },
         ]
+        if num_shots < 0:
+            num_shots = len(shots)
         messages = [
             {
                 "role": "system",
@@ -348,7 +380,8 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
                     day_of_the_week=now.strftime("%A"),
                     n_candidates=len(candidates) + 1,
                     candidates="\n".join(candidates) if candidates else "",
-                    examples="\n".join([f"{shot['role']}: {shot['content']}" for shot in shots]),
+                    chat_history="\n".join([f"{shot['role']}: {shot['content']}" for shot in history]),
+                    examples="\n".join([f"{shot['role']}: {shot['content']}" for shot in shots[:num_shots]]),
                 ),
             },
         ]

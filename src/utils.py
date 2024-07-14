@@ -204,6 +204,10 @@ def ensure_iso_8601_format(date_str: str) -> str:
             raise ValueError("The provided date string is not in a recognizable format.")
 
 
+def get_now_tz_berlin() -> datetime:
+    return datetime.now(tz=pytz.timezone("Europe/Berlin"))
+
+
 if __name__ == "__main__":
     text = """{"text": "I'll set the meeting for you", "function_call": "create_new_appointment('Meeting with Supervisor', '2024-07-02 10:00:00+00:00', None, 'Final Presentation Discussion', 'Office')"}assistant
 
