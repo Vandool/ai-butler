@@ -416,20 +416,49 @@ def get_prompt_generator(api: CalendarAPI | LectureTranslatorAPI | None = None) 
 
 
 if __name__ == "__main__":
+    print(
+        "Your job to answer question regarding the latest interactions with the user. "
+        "For time reference:\n"
+        "Now: {now} which corresponds to {day_of_the_week}.\n"
+        "You always reply with the following format:"
+        '{{"text": "<your textual response>", "function_call": "irrelevant_function()"}}'
+        "You only reply with the above format and nothing else"
+        "If the user asks a question about the history of your conversation, you should analyse the chat history and answer it based on the history.\n"
+        "Remember a function is considered called when all it's parameters are known."
+        "{shots_sys_prompt}\n",
+    )
+    print(
+        "Below, you are presented with {n_candidates} candidate functions. Your task is to analyze a specific user input to "
+        "determine which of these functions most appropriately addresses the query. Then, construct the correct function"
+        " call with all necessary parameters, adhering to proper syntax. "
+        "Format for function call: function_name(param1, param2, ...) "
+        "Candidate Functions: \n"
+        "{candidates}, "
+        "def irrelevant_function(): ”’If user query is not related to any of the predefined functions, this function will be called. Args: Returns: if the user asks a questiong about the history of the conversation, the question will be answered”’"
+        "For time reference: "
+        "Now: {now} which corresponds to {day_of_the_week}. "
+        "You always reply with the following format: "
+        '{{"text": "<your textual response>", "function_call": "<the function call>"}} '
+        "You only reply with the above format and nothing else. "
+        "Your goal is to select the most suitable function out of the {n_candidates} candidates and generate an accurate function call that directly addresses the user's last input or the previous ones, if they are 100% related. Ensure the output is a syntactically valid function call. If the user asks a question about the history of your conversation, you can answer it based on the history.\n"
+        "{shots_begin}"
+        "{examples}\n",
+    )
+
     print("+++++++++++++++++++++CALENDAR")
     capi = get_prompt_generator(api=CalendarAPI())
     for p in PromptType:
         print(f"====={p.name}")
         print(capi.generate_prompt("hi", prompt_type=p))
 
-    print("+++++++++++++++++++++LectureTranslator")
-    lecture = get_prompt_generator(api=LectureTranslatorAPI())
-    for p in PromptType:
-        print(f"====={p.name}")
-        print(lecture.generate_prompt("hi", prompt_type=p))
-
-    print("+++++++++++++++++++++QA")
-    qa = get_prompt_generator()
-    for p in PromptType:
-        print(f"====={p.name}")
-        print(qa.generate_prompt("hi", prompt_type=p))
+    # print("+++++++++++++++++++++LectureTranslator")
+    # lecture = get_prompt_generator(api=LectureTranslatorAPI())
+    # for p in PromptType:
+    #     print(f"====={p.name}")
+    #     print(lecture.generate_prompt("hi", prompt_type=p))
+    #
+    # print("+++++++++++++++++++++QA")
+    # qa = get_prompt_generator()
+    # for p in PromptType:
+    #     print(f"====={p.name}")
+    #     print(qa.generate_prompt("hi", prompt_type=p))
