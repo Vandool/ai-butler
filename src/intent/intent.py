@@ -54,7 +54,7 @@ UNKNOWN: Intent = Intent(
     name="Unknown",
     examples=[
         "Blorf zibber zquark",
-        "Let's throw a stone at moond",
+        "Let's throw a stone at moon",
         "Who won the last football match?",
     ],
     description="Handles activities that do not fit into any predefined classes.",

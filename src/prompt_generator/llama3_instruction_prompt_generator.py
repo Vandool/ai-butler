@@ -40,15 +40,16 @@ class PromptGeneratorLLama3Instruct(ABC):
         " call with all necessary parameters, adhering to proper syntax. "
         "Format for function call: function_name(param1, param2, ...) "
         "Candidate Functions: \n"
-        "{candidates}"
+        "{candidates} \n"
         "def irrelevant_function(): ”’If user query is not related to any of the predefined functions, this function will be called. Args: Returns: if the user asks a questiong about the history of the conversation, the question will be answered”’"
-        "For time reference: "
+        "\nFor time reference: "
         "Now: {now} which corresponds to {day_of_the_week}. "
-        "You always reply with the following format: "
+        "\nYou always reply with the following format:\n"
         '{{"text": "<your textual response>", "function_call": "<the function call>"}} '
-        "You only reply with the above format and nothing else. "
-        "Your goal is to select the most suitable function out of the {n_candidates} candidates and generate an accurate function call that directly addresses the user's last input or the previous ones, if they are 100% related. Ensure the output is a syntactically valid function call. If the user asks a question about the history of your conversation, you can answer it based on the history.\n"
-        "Here are some examples:\n"
+        "\nYou only reply with the above format and nothing else. "
+        "\nYour goal is to select the most suitable function out of the {n_candidates} candidates and generate an accurate function call that directly addresses the user's last input or the previous ones, if they are 100% related. Ensure the output is a syntactically valid function call."
+        "\nIf the user asks a question about the history of your conversation, you can answer it based on the history.\n"
+        "{shots_begin}"
         "{examples}\n"
     )
 
@@ -193,6 +194,7 @@ class CalendarAPIPromptGenerator(PromptGeneratorLLama3Instruct):
                     day_of_the_week=now.strftime("%A"),
                     n_candidates=len(candidates) + 1,
                     candidates="\n".join(candidates),
+                    shots_begin="Here are some examples:\n" if num_shots > 0 else "",
                     examples="\n".join([f"{shot['role']}: {shot['content']}" for shot in shots[:num_shots]]),
                 ),
             },
@@ -247,6 +249,7 @@ class LectureAPIPromptGenerator(PromptGeneratorLLama3Instruct):
                     day_of_the_week=now.strftime("%A"),
                     n_candidates=len(candidates) + 1,
                     candidates="\n".join(candidates),
+                    shots_begin="Here are some examples:\n" if num_shots > 0 else "",
                     examples="\n".join([f"{shot['role']}: {shot['content']}" for shot in shots[:num_shots]]),
                 ),
             },
@@ -269,11 +272,14 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
         "Your job to answer question regarding the latest interactions with the user. "
         "For time reference:\n"
         "Now: {now} which corresponds to {day_of_the_week}.\n"
-        "You always reply with the following format:"
+        "You always reply with the following format:\n"
         '{{"text": "<your textual response>", "function_call": "irrelevant_function()"}}'
-        "You only reply with the above format and nothing else"
+        "\nYou only reply with the above format and nothing else"
         "If the user asks a question about the history of your conversation, you should analyse the chat history and answer it based on the history.\n"
-        "Remember a function is considered called when all it's parameters are known."
+        "\nRemember a function is considered called when all it's parameters are known."
+        "\n{shots_sys_prompt}\n"
+    )
+    _SHOTS_SYS_PROMPT_FMT: ClassVar[str] = (
         "Let's take a look at some examples:.\n"
         "The following is an imaginary chat history just as an example. Please do not reference these in the real questions:\n"
         "{chat_history}\n"
@@ -370,6 +376,7 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
                 "content": '{"text": "We have created two appointment so far. Since only once we managed to call the function twice with all the required paramters.", "function_call": "irrelevant_function()"}',
             },
         ]
+
         if num_shots < 0:
             num_shots = len(shots)
         messages = [
@@ -380,8 +387,12 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
                     day_of_the_week=now.strftime("%A"),
                     n_candidates=len(candidates) + 1,
                     candidates="\n".join(candidates) if candidates else "",
-                    chat_history="\n".join([f"{shot['role']}: {shot['content']}" for shot in history]),
-                    examples="\n".join([f"{shot['role']}: {shot['content']}" for shot in shots[:num_shots]]),
+                    shots_sys_prompt=""
+                    if num_shots <= 0
+                    else self._SHOTS_SYS_PROMPT_FMT.format(
+                        chat_history="\n".join([f"{shot['role']}: {shot['content']}" for shot in history]),
+                        examples="\n".join([f"{shot['role']}: {shot['content']}" for shot in shots[:num_shots]]),
+                    ),
                 ),
             },
         ]
@@ -397,9 +408,33 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
         return messages
 
 
-def get_prompt_generator(api: CalendarAPI | LectureTranslatorAPI | None) -> PromptGeneratorLLama3Instruct:
+def get_prompt_generator(api: CalendarAPI | LectureTranslatorAPI | None = None) -> PromptGeneratorLLama3Instruct:
     if isinstance(api, CalendarAPI):
         return CalendarAPIPromptGenerator(module=api)
     if isinstance(api, LectureTranslatorAPI):
         return LectureAPIPromptGenerator(module=api)
     return QAPromptGenerator()
+
+
+if __name__ == "__main__":
+    print(LectureAPIPromptGenerator._SYS_PROMPT_FMT)
+    print(QAPromptGenerator._SYS_PROMPT_FMT)
+    print(QAPromptGenerator._SHOTS_SYS_PROMPT_FMT)
+
+    # print("+++++++++++++++++++++CALENDAR")
+    # capi = get_prompt_generator(api=CalendarAPI())
+    # for p in PromptType:
+    #     print(f"====={p.name}")
+    #     print(capi.generate_prompt("hi", prompt_type=p))
+
+    # print("+++++++++++++++++++++LectureTranslator")
+    # lecture = get_prompt_generator(api=LectureTranslatorAPI())
+    # for p in PromptType:
+    #     print(f"====={p.name}")
+    #     print(lecture.generate_prompt("hi", prompt_type=p))
+    #
+    print("+++++++++++++++++++++QA")
+    qa = get_prompt_generator()
+    for p in PromptType:
+        print(f"====={p.name}")
+        print(qa.generate_prompt("hi", prompt_type=p))

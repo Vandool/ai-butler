@@ -607,6 +607,7 @@ if __name__ == "__main__":
         # tts_client=tts,
         is_text_interface=True,
     )
+    BaseClassifier.set_prompt_type(PromptType.ZERO_SHOT)
     # asr_module.run_session()
     asr_module.run_cli_interface()
     # asr_module.run_text_interface(
@@ -617,6 +618,5 @@ if __name__ == "__main__":
     #     ],
     # )
     # Setup Global Prompt Type
-    BaseClassifier.set_prompt_type(PromptType.ZERO_SHOT)
     print("---HISTORY---")
     print(asr_module.history)
