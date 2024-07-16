@@ -13,7 +13,7 @@ load_dotenv()
 @dataclass
 class AsrLlmConfig:
     token: str
-    llm_url: str = "https://hardy-casual-adder.ngrok-free.app"
+    llm_url: str = "https://5114-141-3-25-29.ngrok-free.app"
     zero_shot_model: str = "facebook/bart-large-mnli"
     url: str = "https://lt2srv-backup.iar.kit.edu"
     input: str = "portaudio"
@@ -185,13 +185,13 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--ffmpeg-pre",
         help="Ffmpeg options inserted before input parameter (-f). Don't forget to escape via string so this will be "
-             "one single parameter.",
+        "one single parameter.",
         type=str,
     )
     parser.add_argument(
         "--ffmpeg-post",
         help="Ffmpeg options inserted after input parameter (-f). Don't forget to escape via string so this will be "
-             "one single parameter.",
+        "one single parameter.",
         type=str,
     )
     parser.add_argument("--volume", help="Adjust the volume via ffmpeg", type=float, default=1.0)
@@ -219,7 +219,7 @@ def parse_arguments() -> argparse.Namespace:
         type=lambda kv: kv.split("="),
         dest="asr_properties",
         help="Used ASR properties, e.g. --asr-kv version=online --asr-kv segmenter=VAD --asr-kv "
-             "stability_detection=False for online or --asr-kv version=offline --asr-kv segmenter=None for offline",
+        "stability_detection=False for online or --asr-kv version=offline --asr-kv segmenter=None for offline",
     )
     parser.add_argument("--no-textsegmenter", help="Set this to not use a textsegmenter", action="store_true")
     parser.add_argument("--textseg-kv", action="append", type=lambda kv: kv.split("="), dest="textseg_properties")
