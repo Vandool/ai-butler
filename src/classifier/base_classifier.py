@@ -56,7 +56,6 @@ class BaseClassifier(abc.ABC):
 
     @intent_manager.setter
     def intent_manager(self, intent_manager: IntentManager) -> None:
-        # assert intent_manager.get_intent_length() > 1
         self._intent_manager = intent_manager
         self.__initialize_prompt_generator()
 

@@ -490,7 +490,9 @@ class FunctionCallerState(State):
             err_msg = f"Error occurred while parsing classifier's response: {err!s}"
             self.logger.exception(err_msg)
             self.clarify(last_input=user_input)
-            return self
+            if self.slot_filler is not None:
+                return self
+            return InitialState(llm_client=self.llm_client, tts_client=self.tts_client, use_function_caller=True)
 
         if self.history:
             self.history.set_classifier_response_level_1(classifier_response=classifier_response)

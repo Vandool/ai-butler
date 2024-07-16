@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from src.classifier.base_classifier import BaseClassifier
-from src.intent.intent import CALENDAR, LECTURE, UNKNOWN, CHAT_HISTORY
+from src.intent.intent import CALENDAR, CHAT_HISTORY, LECTURE, UNKNOWN
 from src.prompt_generator.prompt_generator import PromptType
 
 test_data = [
@@ -54,7 +54,6 @@ additional_test_data = [
     ("What's the tallest mountain in the world?", UNKNOWN.name),
     ("What's the latest news today?", UNKNOWN.name),
     ("Can you recommend a good book?", UNKNOWN.name),
-
     # Lecture Translator general
     ("Summarize the key concepts from the lecture", LECTURE.name),
     ("Translate these lecture notes", LECTURE.name),
@@ -66,7 +65,6 @@ additional_test_data = [
     ("Provide the main ideas discussed in the lecture", LECTURE.name),
     ("Make a transcript of the professor's talk", LECTURE.name),
     ("Translate the notes from today's class", LECTURE.name),
-    
     ("what was the name of the first appointment we've created?", CHAT_HISTORY.name),
     ("what was the name of the last appointment we've created?", CHAT_HISTORY.name),
     ("how many appointments did we actually create?", CHAT_HISTORY.name),
@@ -94,13 +92,14 @@ test_data = [(b, c) for _, b, c in test_data]
 
 test_data = test_data + additional_test_data + [(b, c) for _, b, c in pytest.one_off_test_data][:10]
 
+
 @pytest.mark.parametrize("the_input, expected_output", test_data)
 @pytest.mark.report_test()  # Custom marker to include this test in the report
 def test_few_shot_text_generation_classifier_zero_shot(
-        the_input,
-        expected_output,
-        capture_output_for_report,
-        few_shot_classifier,
+    the_input,
+    expected_output,
+    capture_output_for_report,
+    few_shot_classifier,
 ):
     handle_test(
         capture_output_for_report,
@@ -114,10 +113,10 @@ def test_few_shot_text_generation_classifier_zero_shot(
 @pytest.mark.parametrize("the_input, expected_output", test_data)
 @pytest.mark.report_test()  # Custom marker to include this test in the report
 def test_few_shot_text_generation_classifier_zero_shot_detailed(
-        the_input,
-        expected_output,
-        capture_output_for_report,
-        few_shot_classifier,
+    the_input,
+    expected_output,
+    capture_output_for_report,
+    few_shot_classifier,
 ):
     handle_test(
         capture_output_for_report,
@@ -131,10 +130,10 @@ def test_few_shot_text_generation_classifier_zero_shot_detailed(
 @pytest.mark.parametrize("the_input, expected_output", test_data)
 @pytest.mark.report_test()  # Custom marker to include this test in the report
 def test_few_shot_text_generation_classifier_one_shot_detailed(
-        the_input,
-        expected_output,
-        capture_output_for_report,
-        few_shot_classifier,
+    the_input,
+    expected_output,
+    capture_output_for_report,
+    few_shot_classifier,
 ):
     handle_test(
         capture_output_for_report,
@@ -148,10 +147,10 @@ def test_few_shot_text_generation_classifier_one_shot_detailed(
 @pytest.mark.parametrize("the_input, expected_output", test_data)
 @pytest.mark.report_test()  # Custom marker to include this test in the report
 def test_few_shot_text_generation_classifier_few_shot_detailed(
-        the_input,
-        expected_output,
-        capture_output_for_report,
-        few_shot_classifier,
+    the_input,
+    expected_output,
+    capture_output_for_report,
+    few_shot_classifier,
 ):
     handle_test(
         capture_output_for_report,
@@ -176,10 +175,10 @@ def test_few_shot_text_generation_classifier_few_shot_detailed(
 #         ollama_classifier,
 #         the_input,
 #         prompt_type=PromptType.ONE_SHOT_PER_CLASS_DETAILED,
-# 
+#
 #     )
 
-# 
+#
 # @pytest.mark.parametrize("the_input, expected_output", test_data)
 # @pytest.mark.report_test()  # Custom marker to include this test in the report
 # def test_ollama_text_generation_classifier_zero_shot(
@@ -195,8 +194,8 @@ def test_few_shot_text_generation_classifier_few_shot_detailed(
 #         the_input,
 #         prompt_type=PromptType.ZERO_SHOT,
 #     )
-# 
-# 
+#
+#
 # @pytest.mark.parametrize("the_input, expected_output", test_data)
 # @pytest.mark.report_test()  # Custom marker to include this test in the report
 # def test_ollama_text_generation_few_shot(
@@ -215,11 +214,11 @@ def test_few_shot_text_generation_classifier_few_shot_detailed(
 
 
 def handle_test(
-        capture_output_for_report,
-        expected_output,
-        few_shot_classifier,
-        the_input,
-        prompt_type: PromptType | None = None,
+    capture_output_for_report,
+    expected_output,
+    few_shot_classifier,
+    the_input,
+    prompt_type: PromptType | None = None,
 ):
     # Can be done in both ways
     # 1) Global setter
@@ -229,7 +228,9 @@ def handle_test(
     if response.llm_response is not None:
         print(response.intent.name.lower())
         test_result = response.intent.name.lower() == expected_output.lower()
-        capture_output_for_report(output=response.intent.name.lower(), llm_output=response.llm_response, expected=expected_output.lower())
+        capture_output_for_report(
+            output=response.intent.name.lower(), llm_output=response.llm_response, expected=expected_output.lower()
+        )
         assert test_result
     else:
         capture_output_for_report(output=False, llm_output=response.llm_response)

@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from huggingface_hub import HfFolder
 from transformers import AutoTokenizer
 
-from src.intent.intent_manager import IntentManager
+from src.intent.intent_manager import IntentManager, IntentManagerFactory
 from src.prompt_generator.prompt_generator import PromptType, create_or_list
 
 load_dotenv()
@@ -35,20 +35,10 @@ class Llama3PromptGenerator:
         return getattr(self, prompt_type.func_name)(input_text)
 
     def _generate_zero_shot_prompt(self, input_text: str) -> str:
-        """Generate a simple classification prompt."""
-        messages = [
-            {"role": "system", "content": f"Classify the text into one of the following classes: {self.classes}"},
-            {"role": "user", "content": input_text},
-        ]
-        return self.apply_chat_template(messages)
+        return self._generate_detailed_prompt(input_text, num_shots=0, is_detailed=False)
 
     def _generate_zero_shot_detailed_prompt(self, input_text: str) -> str:
-        """Generate a simple classification prompt with class descriptions."""
-        messages = [
-            {"role": "system", "content": "Classify the text into one of the following classes:"},
-            {"role": "user", "content": f"{input_text}"},
-        ]
-        return self.apply_chat_template(messages)
+        return self._generate_detailed_prompt(input_text, num_shots=0, is_detailed=True)
 
     def _generate_one_shot_per_class_detailed_prompt(self, input_text: str) -> str:
         return self._generate_detailed_prompt(input_text, num_shots=1, is_detailed=True)
@@ -68,8 +58,7 @@ class Llama3PromptGenerator:
         messages = [
             {
                 "role": "system",
-                "content": f"You are chatbot helping the user to complete his tasks. "
-                f"Classify the text into one of the following classes: "
+                "content": "Classify the text into one of the following classes: "
                 f"{self.classes_detailed if is_detailed else self.classes}",
             },
         ]
@@ -92,3 +81,13 @@ class Llama3PromptGenerator:
     def apply_chat_template(self, messages):
         """Use Hugging Face's apply_chat_template method to format messages."""
         return self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+
+
+if __name__ == "__main__":
+    llama3_prompt_generator = Llama3PromptGenerator(
+        intent_manager=IntentManagerFactory.get_intent_manager_with_unknown_intent(),
+    )
+    print("+++++++++++++++++++++LLAMA3IntentClassificationPrompt")
+    for p in PromptType:
+        print(f"====={p.name}")
+        print(llama3_prompt_generator.generate_prompt("hi", prompt_type=p))

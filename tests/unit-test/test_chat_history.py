@@ -16,7 +16,7 @@ test_tuples = [
     # Questions, correct answers
     ("Hey Butler, what was the name of the first appointment we've created?", ["Project Meeting"]),
     ("Hey Butler, what was the name of the last appointment we've created?", ["Client Call"]),
-    ("Hey Butler, how many appointments did we actually create an appointment?", ["4", "four"]),
+    ("Hey Butler, how many appointments did we actually create together?", ["4", "four"]),
     ("Hey Butler, how many times did I ask question regarding the lecture content?", ["2", "two", "twice"]),
     ("Hey Butler, how long the last appointment that we've created last", ["one", "1", "once"]),
     ("Hey Butler, how many appointments did we delete so far?", ["one", "1", "once"]),
