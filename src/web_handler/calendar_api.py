@@ -100,6 +100,12 @@ class CalendarAPI:
 
     @staticmethod
     @catch_http_exception
+    def delete_appointment_by_id(appointment_id: int) -> bool:
+        service.events().delete(calendarId=gc_config.calendar_id, eventId=appointment_id).execute()
+        return True
+
+    @staticmethod
+    @catch_http_exception
     @utils.mark_intent
     def delete_next_appointment() -> bool:
         """Delete the next appointment in the calendar.

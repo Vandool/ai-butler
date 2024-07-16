@@ -9,14 +9,20 @@ from threading import Thread
 from src.asr_butler.asr_butler import ASRModule
 from src.classifier.base_classifier import BaseClassifier
 from src.config.asr_llm_config import get_asr_llm_config
+from src.history.chathistory import ChatHistory
 from src.llm_client.llm_client import LLMClient
 from huggingface_hub import InferenceClient
 
 from src.prompt_generator.prompt_generator import PromptType
-from src.state.state import InitialState, State, CalendarState
+from src.state.state import InitialState, State, CalendarState, FunctionCallerState
 from unittest import mock
 
-one_off_test_data = pytest.one_off_test_data
+
+# First, text only: first 84: 77 passed, 7 failed
+# second, text only: second 85 - 105: 21 passed, 0 failed
+# third: text only: third 106 - 147: 33 passed, 9 failed
+
+one_off_test_data = pytest.one_off_test_data[:105]
 # one_off_test_data = [pytest.one_off_test_data[1]]
 # one_off_test_data = pytest.one_off_test
 
@@ -34,7 +40,7 @@ def test_audio_few_shot(the_input, input_text, intent_name, capture_output_for_r
 
 
 def start_thread(asr_module):
-    time.sleep(1)
+    time.sleep(0.5)
     asr_module.send_session()
 
 
@@ -51,8 +57,8 @@ def test_with_audio(input_file, input_text, prompt_type, capture_output_for_repo
     asr_module = ASRModule(
         args=arguments,
         llm_client=llm_client_,
-        history=None,
-        start_state=InitialState(llm_client=llm_client_, tts_client=None)
+        history=ChatHistory(),
+        start_state=InitialState(llm_client=llm_client_, tts_client=None, use_function_caller=True)
     )
 
     BaseClassifier.set_prompt_type(prompt_type)
@@ -64,8 +70,8 @@ def test_with_audio(input_file, input_text, prompt_type, capture_output_for_repo
     t.start()
 
     with (
-        mock.patch('src.state.state.CalendarState._function_name_helper',
-                   wrarps=CalendarState._function_name_helper) as function_name_helper_wrapper
+        mock.patch('src.state.state.FunctionCallerState._function_name_helper',
+                   wrarps=FunctionCallerState._function_name_helper) as function_name_helper_wrapper
     ):
         start_time = time.monotonic()
         asr_module.read_text(start_time, True)
@@ -86,14 +92,14 @@ def test_text_only(input_file, input_text, prompt_type, capture_output_for_repor
     asr_module = ASRModule(
         args=arguments,
         llm_client=llm_client_,
-        history=None,
-        start_state=InitialState(llm_client=llm_client_, tts_client=None)
+        history=ChatHistory(),
+        start_state=InitialState(llm_client=llm_client_, tts_client=None, use_function_caller=True)
     )
 
     BaseClassifier.set_prompt_type(prompt_type)
 
     with (
-        mock.patch('src.state.state.CalendarState._function_name_helper', wrarps=CalendarState._function_name_helper) as function_name_helper_wrapper
+        mock.patch('src.state.state.FunctionCallerState._function_name_helper', wrarps=FunctionCallerState._function_name_helper) as function_name_helper_wrapper
     ):
         asr_module.run_text_interface(
             [

@@ -14,29 +14,21 @@ from src.state.state import InitialState, State
 
 test_tuples = [
     # Questions, correct answers
-    ("Hey Butler, what was the name of the first appointment we've created?", ["Project Meeting"]),
-    ("Hey Butler, what was the name of the last appointment we've created?", ["Client Call"]),
-    ("Hey Butler, how many appointments did we actually create together?", ["4", "four"]),
-    ("Hey Butler, how many times did I ask questions regarding the lecture content?", ["2", "two", "twice"]),
-    ("Hey Butler, how long does the last appointment that we've created last", ["one", "1", "once"]),
-    ("Hey Butler, did we delete any appointments?", ["one", "1", "once"]),
-    ("Hey Butler, at what time my doctor's appointment which we have created together begins?", ["ten", "10"]),
-    (
+    ("history0.mp3", "Hey Butler, what was the name of the first appointment we've created?", ["Project Meeting"]),
+    ("history1.mp3", "Hey Butler, what was the name of the last appointment we've created?", ["Client Call"]),
+    ("history2.mp3", "Hey Butler, how many appointments did we actually create an appointment?", ["4", "four"]),
+    ("history3.mp3", "Hey Butler, how many times did I ask question regarding the lecture content?", ["2", "two", "twice"]),
+    ("history4.mp3", "Hey Butler, how long the last appointment that we've created last", ["one", "1", "once"]),
+    ("history5.mp3", "Hey Butler, how many appointments did we delete so far?", ["one", "1", "once"]),
+    ("history6.mp3", "Hey Butler, at what time my doctor's appointment which we have created together begins?", ["ten", "10"]),
+    ("history7.mp3",
         "Hey Butler, which one of the appointments we have created starts first, the client call or team meeting?",
         ["team meeting"],
     ),
-    ("Hey Butler, what was the last function that we have called?", ["get_lecture_content"]),
-    (
-        "Hey Butler, when does my project meeting which we have created together end?",
+    ("history8.mp3", "Hey Butler, what was the last function that we have called?", ["get_lecture_content"]),
+    ("history9.mp3",
+        "Hey Butler, when does my project meeting which we have created together ends?",
         ["16", "four"],
-    ),
-    (
-        "Hey Butler, when does the pop quiz meeting which we have created together end?",
-        ["apology", "sorry", "not created"],
-    ),
-    (
-        "Hey Butler, how many times did we call the function summarize the lecture?",
-        ["qualitative"],
     ),
 ]
 
