@@ -276,7 +276,7 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
         '{{"text": "<your textual response>", "function_call": "irrelevant_function()"}}'
         "\nYou only reply with the above format and nothing else"
         "If the user asks a question about the history of your conversation, you should analyse the chat history and answer it based on the history.\n"
-        "\nRemember a function is considered called when all it's parameters are known."
+        "\nRemember a function is considered called when all it's none-optional parameters are known."
         "\n{shots_sys_prompt}\n"
     )
     _SHOTS_SYS_PROMPT_FMT: ClassVar[str] = (
@@ -285,6 +285,7 @@ class QAPromptGenerator(PromptGeneratorLLama3Instruct):
         "{chat_history}\n"
         "These are some example correct interactions based on the imaginary chat history:\n"
         "{examples}\n"
+        "The Real chat history begins now. Ignore the previous chat history.\n"
     )
 
     def get_default_chat_messages(
@@ -421,18 +422,18 @@ if __name__ == "__main__":
     print(QAPromptGenerator._SYS_PROMPT_FMT)
     print(QAPromptGenerator._SHOTS_SYS_PROMPT_FMT)
 
-    # print("+++++++++++++++++++++CALENDAR")
-    # capi = get_prompt_generator(api=CalendarAPI())
-    # for p in PromptType:
-    #     print(f"====={p.name}")
-    #     print(capi.generate_prompt("hi", prompt_type=p))
+    print("+++++++++++++++++++++CALENDAR")
+    capi = get_prompt_generator(api=CalendarAPI())
+    for p in PromptType:
+        print(f"====={p.name}")
+        print(capi.generate_prompt("hi", prompt_type=p))
 
-    # print("+++++++++++++++++++++LectureTranslator")
-    # lecture = get_prompt_generator(api=LectureTranslatorAPI())
-    # for p in PromptType:
-    #     print(f"====={p.name}")
-    #     print(lecture.generate_prompt("hi", prompt_type=p))
-    #
+    print("+++++++++++++++++++++LectureTranslator")
+    lecture = get_prompt_generator(api=LectureTranslatorAPI())
+    for p in PromptType:
+        print(f"====={p.name}")
+        print(lecture.generate_prompt("hi", prompt_type=p))
+
     print("+++++++++++++++++++++QA")
     qa = get_prompt_generator()
     for p in PromptType:

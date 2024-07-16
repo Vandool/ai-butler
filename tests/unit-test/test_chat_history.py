@@ -17,9 +17,9 @@ test_tuples = [
     ("Hey Butler, what was the name of the first appointment we've created?", ["Project Meeting"]),
     ("Hey Butler, what was the name of the last appointment we've created?", ["Client Call"]),
     ("Hey Butler, how many appointments did we actually create together?", ["4", "four"]),
-    ("Hey Butler, how many times did I ask question regarding the lecture content?", ["2", "two", "twice"]),
-    ("Hey Butler, how long the last appointment that we've created last", ["one", "1", "once"]),
-    ("Hey Butler, how many appointments did we delete so far?", ["one", "1", "once"]),
+    ("Hey Butler, how many times did I ask questions regarding the lecture content?", ["2", "two", "twice"]),
+    ("Hey Butler, how long does the last appointment that we've created last", ["one", "1", "once"]),
+    ("Hey Butler, did we delete any appointments?", ["one", "1", "once"]),
     ("Hey Butler, at what time my doctor's appointment which we have created together begins?", ["ten", "10"]),
     (
         "Hey Butler, which one of the appointments we have created starts first, the client call or team meeting?",
@@ -27,8 +27,16 @@ test_tuples = [
     ),
     ("Hey Butler, what was the last function that we have called?", ["get_lecture_content"]),
     (
-        "Hey Butler, when does my project meeting which we have created together ends?",
+        "Hey Butler, when does my project meeting which we have created together end?",
         ["16", "four"],
+    ),
+    (
+        "Hey Butler, when does the pop quiz meeting which we have created together end?",
+        ["apology", "sorry", "not created"],
+    ),
+    (
+        "Hey Butler, how many times did we call the function summarize the lecture?",
+        ["qualitative"],
     ),
 ]
 
