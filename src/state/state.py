@@ -6,6 +6,7 @@ import json
 from typing import ClassVar, TypeAlias
 
 import pytz
+import requests
 from fuzzywuzzy import fuzz
 from huggingface_hub import InferenceClient
 
@@ -502,6 +503,7 @@ class FunctionCallerState(State):
             output = llm_json["text"]
             if self.history:
                 self.history.add_message(Message().set_text(output).set_role(Role.ASSISTANT))
+            requests.post('http://localhost:6969/submit', data={'content': output, 'type': 'butler'})
             self.output(response=output)
             return InitialState(llm_client=self.llm_client, tts_client=self.tts_client, use_function_caller=True)
 
@@ -519,6 +521,7 @@ class FunctionCallerState(State):
             output = llm_json["text"]
             if self.history:
                 self.history.add_message(Message().set_text(output).set_role(Role.ASSISTANT))
+            requests.post('http://localhost:6969/submit', data={'content': output, 'type': 'butler'})
             self.output(response=output)
             return self
 
@@ -568,7 +571,7 @@ class FunctionCallerState(State):
                 .set_function_args(kwargs.items())
                 .set_function_response(fn_response),
             )
-
+        requests.post('http://localhost:6969/submit', data={'content': response, 'type': 'butler'})
         self.output(response=response)
 
     def get_clarify_prompt(self, last_input: str) -> None:

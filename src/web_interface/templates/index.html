@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Butler Chat History</title>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #content {
+            max-width: 80%;
+            margin: 0 auto;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+            max-width: 60%;
+        }
+        .user {
+            background-color: #d4edda;
+            text-align: right;
+            margin-left: auto;
+        }
+        .butler {
+            background-color: #f8d7da;
+            text-align: left;
+            margin-right: auto;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const socket = io();
+
+            // Listen for 'update_content' events from the server
+            socket.on('update_content', (data) => {
+                const contentDiv = document.getElementById('content');
+                contentDiv.innerHTML = ''; // Clear existing content
+
+                data.content.forEach(item => {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.classList.add('message');
+                    messageDiv.classList.add(item.type);  // Add 'user' or 'butler' class
+                    messageDiv.textContent = item.content;
+                    contentDiv.appendChild(messageDiv);
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1 align="center">Butler Chat History</h1>
+    <div id="content">
+        {% for item in content %}
+            <div class="message {{ item.type }}">{{ item.content }}</div>
+        {% endfor %}
+    </div>
+</body>
+</html>
