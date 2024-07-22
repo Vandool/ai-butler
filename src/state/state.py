@@ -576,7 +576,7 @@ class FunctionCallerState(State):
             )
         self.output(response=response)
 
-    def get_clarify_prompt(self, last_input: str) -> None:
+    def get_clarify_prompt(self, last_input: str) -> None: 
         return respond_prompts.INIT_STATE_REPEAT_FMT.format(
             last_utterance=last_input,
         )
