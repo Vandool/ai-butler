@@ -74,7 +74,6 @@ class State(abc.ABC):
             prompt=self.get_clarify_prompt(last_input=last_input),
         )
         self.logger.info(llm_response)
-        requests.post("http://localhost:6969/submit", data={"content": llm_response, "type": "butler"})
         if self.history:
             self.history.add_message(
                 Message(text=llm_response, role=Role.ASSISTANT),

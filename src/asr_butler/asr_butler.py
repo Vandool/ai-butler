@@ -361,7 +361,7 @@ class ASRModule:
                 self._save_json_output(asr_output)
 
     def process_command(self, user_input: str):
-        requests.post("http://localhost:6969/submit", data={"content": user_input, "type": "user"})
+        #requests.post("http://localhost:6969/submit", data={"content": user_input, "type": "user"})
         if self.state:
             self.state.history = self.history
             self.state = self.state.process(user_input)
