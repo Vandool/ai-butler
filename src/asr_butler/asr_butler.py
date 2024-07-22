@@ -361,7 +361,6 @@ class ASRModule:
                 self._save_json_output(asr_output)
 
     def process_command(self, user_input: str):
-        requests.post('http://localhost:6969/submit', data={'content': user_input, 'type': 'user'})
         if self.state:
             self.state.history = self.history
             self.state = self.state.process(user_input)
@@ -450,7 +449,7 @@ class ASRModule:
         d["tts_prop"] = self.args.tts_properties
         d["lip_prop"] = self.args.video_properties
 
-        logger.info("Requesting default graph for ASR")
+        logger.info("Requesting default graph for ASR: " + f"{self.args.url}/{self.args.api}/start_praktikum")
         res = requests.post(
             f"{self.args.url}/{self.args.api}/start_praktikum",
             json=json.dumps(d),
@@ -595,7 +594,8 @@ class TheButler(ASRModule):
 if __name__ == "__main__":
     arguments = get_asr_llm_config()
     llm_client_ = LLMClient(client=InferenceClient(arguments.llm_url))
-    #tts = MicrosoftSpeechT5TTS(model_path=Path.cwd() / "models" / "speecht5_tts.pt")
+    model_path = Path(os.environ["PROJECT_DIR"] + "/models/speecht5_tts.pt")
+    tts = MicrosoftSpeechT5TTS(model_path=model_path)
     history = ChatHistory()
     asr_module = TheButler(
         args=arguments,
@@ -603,17 +603,17 @@ if __name__ == "__main__":
         llm_client=llm_client_,
         start_state=InitialState(
             llm_client=llm_client_,
-            # tts_client=tts
+            tts_client=tts,
             use_function_caller=True,
         ),
-        # tts_client=tts,
+        tts_client=tts,
         is_text_interface=True,
     )
-    BaseClassifier.set_prompt_type(PromptType.ZERO_SHOT)
-    # asr_module.run_session()
+    BaseClassifier.set_prompt_type(PromptType.FEW_SHOT_DETAILED)
     server_thread = threading.Thread(target=web_interface.start_server)
     server_thread.daemon = True
     server_thread.start()
+    #asr_module.run_session()
     asr_module.run_cli_interface()
     # asr_module.run_text_interface(
     #     [

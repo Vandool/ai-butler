@@ -4,6 +4,12 @@ from src.prompt_generator.llama3_instruction_prompt_generator import ChatTemplat
 from src.web_handler.calendar_api import CalendarAPI
 from src.web_handler.lecture_translator_api import LectureTranslatorAPI
 
+chat_template_model = os.getenv("HUGGINGFACE_CHAT_TEMPLATE_MODEL", default="meta-llama/Meta-Llama-3-8B-Instruct")
+access_token = os.getenv("HUGGINGFACE_ACCESS_TOKEN", default="<TOKEN>")
+
+chatTemplateGenerator = ChatTemplateGenerator(chat_template_model, access_token)
+
+
 GET_NEXT_APPOINTMENT = """
 You are a help desk client.
 You can convert structured data into proper responses in natural language
@@ -424,8 +430,10 @@ Be short and precise.
 user: {last_utterance}
 answer:
 """
+#INIT_STATE_REPEAT_FMT = """
 
-INIT_STATE_REPEAT_FMT = """
+INIT_STATE_REPEAT_FMT = chatTemplateGenerator.apply_chat_template(
+        messages=[{"role": "system", "content": """
 You are a butler working at help desk client.
 Tell user that you either didn't understand what they've requested or you can't perform their requested task.
 Do not give any reason why.
@@ -438,6 +446,8 @@ answer: Excuse me, I can't perform that task. Do you have any other wishes?
 user: {last_utterance}
 answer:
 """
+}]
+)
 
 LECTURE_QA = """
 You are a help desk client.
@@ -475,11 +485,6 @@ def get_api_respond_prompts(function: str) -> str:
     if function not in api_respond_prompts:
         err_msg = f"Respond Prompt for '{function}' is not registered yet."
         raise ValueError(err_msg)
-
-    chat_template_model = os.getenv("HUGGINGFACE_CHAT_TEMPLATE_MODEL", default="meta-llama/Meta-Llama-3-8B-Instruct")
-    access_token = os.getenv("HUGGINGFACE_ACCESS_TOKEN", default="<TOKEN>")
-
-    chatTemplateGenerator = ChatTemplateGenerator(chat_template_model, access_token)
 
     llm_prompt = chatTemplateGenerator.apply_chat_template(
         messages=[{"role": "system", "content": api_respond_prompts[function]}],

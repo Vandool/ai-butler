@@ -62,7 +62,7 @@ class State(abc.ABC):
         self._history = history
 
     @abc.abstractmethod
-    def process(self, user_input: str) -> State:
+    def process(self, user_input: str, is_trimmed: bool = False) -> State:
         pass
 
     @abc.abstractmethod
@@ -81,6 +81,7 @@ class State(abc.ABC):
             )
 
         self.text_to_speech(llm_response)
+        requests.post('http://localhost:6969/submit', data={'content': llm_response, 'type': 'butler'})
 
     def text_to_speech(self, text: str) -> None:
         if self.tts_client:
@@ -119,13 +120,14 @@ class InitialState(State):
         self.message = Message()
         self.use_function_caller = use_function_caller
 
-    def process(self, user_input: str) -> State:
+    def process(self, user_input: str, is_trimmed: bool = False) -> State:
         next_state = self
         if self._keyword_spotting(user_input):
             if self.history:
                 self.message = self.message.set_text(user_input).set_role(Role.USER)
 
             self.logger.info("Keyword spotted, sending to classifier.")
+            requests.post('http://localhost:6969/submit', data={'content': user_input, 'type': 'user'})
             trimmed_transcript = self._trim_transcript(user_input)
             self.logger.info(f"Trimmed sequence: {trimmed_transcript}")
             next_state = self._check_and_send_to_classifier(trimmed_transcript)
@@ -183,7 +185,7 @@ class InitialState(State):
                     history=self.history,
                     api=CalendarAPI(),
                 ).process(
-                    user_input,
+                    user_input, True
                 )
             if classifier_response.intent == intent.LECTURE:
                 return FunctionCallerState(
@@ -192,7 +194,7 @@ class InitialState(State):
                     history=self.history,
                     api=LectureTranslatorAPI(),
                 ).process(
-                    user_input,
+                    user_input, True
                 )
             if classifier_response.intent == intent.CHAT_HISTORY:
                 return FunctionCallerState(
@@ -200,7 +202,7 @@ class InitialState(State):
                     tts_client=self.tts_client,
                     history=self.history,
                 ).process(
-                    user_input,
+                    user_input, True
                 )
 
         self.clarify(last_input=user_input)
@@ -469,7 +471,10 @@ class FunctionCallerState(State):
     def current_intent(self, user_intent: Intent):
         self._current_intent = user_intent
 
-    def process(self, user_input: str) -> State:
+    def process(self, user_input: str, is_trimmed: bool = False) -> State:
+        if not is_trimmed:
+            requests.post('http://localhost:6969/submit', data={'content': user_input, 'type': 'user'})
+
         if self.slot_filler is not None and self.history is not None:
             self.history.add_message(Message().set_text(user_input).set_role(Role.USER))
 

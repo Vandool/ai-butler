@@ -12,6 +12,15 @@
             max-width: 80%;
             margin: 0 auto;
         }
+         #chat-container {
+            max-width: 80%;
+            height: 80vh; /* Fixed height for the chat box */
+            margin: 0 auto;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            overflow-y: auto; /* Enable vertical scrolling */
+            padding: 10px;
+        }
         .message {
             margin: 10px 0;
             padding: 10px;
@@ -29,33 +38,96 @@
             text-align: left;
             margin-right: auto;
         }
+        .loading {
+        display: flex;
+    }
+    .loading span {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        margin: 0 2px;
+        border-radius: 50%;
+        background-color: #333;
+        animation: loadingDots 1.4s infinite;
+    }
+    .loading span:nth-child(1) {
+        animation-delay: 0s;
+    }
+    .loading span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    .loading span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes loadingDots {
+        0%, 80%, 100% {
+            transform: translateY(0);
+            opacity: 0.2;
+        }
+        40% {
+            transform: translateY(-7px);
+            opacity: 1;
+        }
+    }
     </style>
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const socket = io();
+    document.addEventListener('DOMContentLoaded', () => {
+        const socket = io();
+        const contentDiv = document.getElementById('content');
+        let loadingDiv = null; // Track the loading div
 
-            // Listen for 'update_content' events from the server
-            socket.on('update_content', (data) => {
-                const contentDiv = document.getElementById('content');
-                contentDiv.innerHTML = ''; // Clear existing content
+        // Function to create a message div
+        function createMessageDiv(type, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', type); // Add 'user' or 'butler' class
+            messageDiv.textContent = content;
+            return messageDiv;
+        }
 
-                data.content.forEach(item => {
-                    const messageDiv = document.createElement('div');
-                    messageDiv.classList.add('message');
-                    messageDiv.classList.add(item.type);  // Add 'user' or 'butler' class
-                    messageDiv.textContent = item.content;
-                    contentDiv.appendChild(messageDiv);
-                });
+        // Function to add a loading animation
+        function addLoadingAnimation() {
+            loadingDiv = document.createElement('div');
+            loadingDiv.classList.add('message', 'butler', 'loading');
+            loadingDiv.innerHTML = '<span></span><span></span><span></span>';
+            contentDiv.appendChild(loadingDiv);
+        }
+
+         function scrollToBottom() {
+                const chatContainer = document.getElementById('chat-container');
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+         }
+
+        // Listen for 'update_content' events from the server
+        socket.on('update_content', (data) => {
+            let lastMessageType = null; // Track the type of the last message
+            contentDiv.innerHTML = '';
+            data.content.forEach(item => {
+                const messageDiv = createMessageDiv(item.type, item.content);
+                contentDiv.appendChild(messageDiv);
+                console.log("Appended" , messageDiv)
+                lastMessageType = item.type;
             });
+            // Check the last message type to decide on the loading animation
+            if (lastMessageType === 'user') {
+                addLoadingAnimation(); // Show loading animation if the last message is a user message
+            }
+            scrollToBottom();
         });
-    </script>
+    });
+</script>
+
+
 </head>
 <body>
     <h1 align="center">Butler Chat History</h1>
-    <div id="content">
-        {% for item in content %}
-            <div class="message {{ item.type }}">{{ item.content }}</div>
-        {% endfor %}
+    <div id="chat-container">
+        <div id="content">
+            {% for item in content %}
+                <div class="message {{ item.type }}">{{ item.content }}</div>
+            {% endfor %}
+        </div>
     </div>
 </body>
 </html>
