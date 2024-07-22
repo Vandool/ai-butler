@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import pathlib
 import webbrowser
 
 from src import utils
@@ -28,7 +30,7 @@ class LectureTranslatorAPI:
             - Please give me the content of the last lecture.
             - Can you give me the content of the last lecture?
         """
-        f = open("C:\\Users\\namid\\PycharmProjects\\NLP_practical\\lecture.txt")
+        f = open(pathlib.Path(os.getenv("PROJECT_DIR")) / "lecture.txt")
         lecture_content = f.read()
         return lecture_content
 
