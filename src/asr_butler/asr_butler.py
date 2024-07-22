@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import threading
 import base64
 import copy
 import datetime
@@ -10,6 +9,7 @@ import os
 import re
 import socket
 import sys
+import threading
 import time
 from pathlib import Path
 from threading import Thread
@@ -28,7 +28,7 @@ from src.pythonrecordingclient.ffmpegStreamAdapter import FfmpegStream
 from src.pythonrecordingclient.helper import BugException
 from src.pythonrecordingclient.pyaudioStreamAdapter import PortaudioStream
 from src.state.state import InitialState, State
-from src.text2speech.microsoft_speecht5_tts import MicrosoftSpeechT5TTS, TextToSpeech
+from src.text2speech.microsoft_speecht5_tts import TextToSpeech
 from src.web_handler.my_web_utils import check_status_code, return_json
 from src.web_interface import web_interface
 
@@ -361,7 +361,7 @@ class ASRModule:
                 self._save_json_output(asr_output)
 
     def process_command(self, user_input: str):
-        requests.post('http://localhost:6969/submit', data={'content': user_input, 'type': 'user'})
+        requests.post("http://localhost:6969/submit", data={"content": user_input, "type": "user"})
         if self.state:
             self.state.history = self.history
             self.state = self.state.process(user_input)
@@ -592,10 +592,11 @@ class ASRModule:
 class TheButler(ASRModule):
     """ASRModule is the butler, the butler is ASR"""
 
+
 if __name__ == "__main__":
     arguments = get_asr_llm_config()
     llm_client_ = LLMClient(client=InferenceClient(arguments.llm_url))
-    #tts = MicrosoftSpeechT5TTS(model_path=Path.cwd() / "models" / "speecht5_tts.pt")
+    # tts = MicrosoftSpeechT5TTS(model_path=Path.cwd() / "models" / "speecht5_tts.pt")
     history = ChatHistory()
     asr_module = TheButler(
         args=arguments,

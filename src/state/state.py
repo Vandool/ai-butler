@@ -74,7 +74,7 @@ class State(abc.ABC):
             prompt=self.get_clarify_prompt(last_input=last_input),
         )
         self.logger.info(llm_response)
-
+        requests.post("http://localhost:6969/submit", data={"content": llm_response, "type": "butler"})
         if self.history:
             self.history.add_message(
                 Message(text=llm_response, role=Role.ASSISTANT),
@@ -93,7 +93,7 @@ class State(abc.ABC):
     def output(self, response: str) -> None:
         self.logger.info(response)
         self.text_to_speech(response)
-        requests.post('http://localhost:6969/submit', data={'content': response, 'type': 'butler'})
+        requests.post("http://localhost:6969/submit", data={"content": response, "type": "butler"})
 
 
 class InitialState(State):
