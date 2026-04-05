@@ -81,7 +81,6 @@ class LTHandler:
 
     def start_lt(self):
         if not self.logged_in:
-            # self.login_lt("admin@kit.edu","!pwd!")
             self.driver.get("https://lt2srv-backup.iar.kit.edu/index/live")
 
         else:
@@ -141,7 +140,12 @@ class LTHandler:
 
 
 if __name__ == "__main__":
+    import os
+
     driver = webutils.create_driver()
     driver.get("https://witeboard.com/")
     handler = LTHandler(driver=driver)
-    handler.login_lt(username="ubppd", pwd="7+d`ZH!I%mK{*46M")
+    handler.login_lt(
+        username=os.environ.get("LT_USERNAME", ""),
+        pwd=os.environ.get("LT_PASSWORD", ""),
+    )

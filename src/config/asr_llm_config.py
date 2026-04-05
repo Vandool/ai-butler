@@ -13,7 +13,7 @@ load_dotenv()
 @dataclass
 class AsrLlmConfig:
     token: str
-    llm_url: str = "https://5114-141-3-25-29.ngrok-free.app"
+    llm_url: str = "http://localhost:8080"
     zero_shot_model: str = "facebook/bart-large-mnli"
     url: str = "https://lt2srv-backup.iar.kit.edu"
     input: str = "portaudio"

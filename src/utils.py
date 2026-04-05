@@ -1,4 +1,3 @@
-import functools
 import inspect
 import json
 import logging
@@ -82,36 +81,6 @@ def parse_docstring(docstring) -> (str, list[str]):
 
     return description, examples
 
-
-def decorator_test(func):
-    """Decorator that checks the status code of an HTTP response and logs any errors."""
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        response = func(*args, **kwargs)
-        print(response)
-        return response
-
-    return wrapper
-
-
-class TestObjCall:
-    def __init__(self):
-        self.c = "c"
-
-    @staticmethod
-    @decorator_test
-    def func_a(a: str):
-        return f"a = {a}"
-
-    def func_b(self, a: str, b: str) -> str:
-        return f"{a} = {b} = {self.c}"
-
-    def func_c(self, a: str, b: str, c: str) -> str:
-        return f"{a} = {b} = {c} = {self.c}"
-
-    def func_d(self, a: str, b: str, c: str, d: str) -> str:
-        return f"{a} = {b} = {c} = {self.c} = {d}"
 
 
 def extract_json(text: str) -> dict[str, Any]:
@@ -208,17 +177,3 @@ def get_now_tz_berlin() -> datetime:
     return datetime.now(tz=pytz.timezone("Europe/Berlin"))
 
 
-if __name__ == "__main__":
-    text = """{"text": "I'll set the meeting for you", "function_call": "create_new_appointment('Meeting with Supervisor', '2024-07-02 10:00:00+00:00', None, 'Final Presentation Discussion', 'Office')"}assistant
-
-Note: I assumed the current date is 2024-06-30, so the meeting is set for 2024-07-02.assistant
-
-{"text": "I'll set the meeting for you", "function_call": "create_new_appointment('Meeting with Supervisor', '2024-07-02"""
-    print(extract_first_curly(text))
-    json = extract_json(text)
-    print(json)
-    print(json["text"])
-    print(json["function_call"])
-    print(parse_function_call(json["function_call"]))
-    text = '{"text": "I\'d be happy to help you with that", "function_call": "create_new_appointment("Appointment", "2024-07-03 10:00:00+00:00", None)"}'
-    print(escape_all_inner_quotes(text))
